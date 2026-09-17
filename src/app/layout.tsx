@@ -23,6 +23,9 @@ const openSans = Open_Sans({
 export const metadata: Metadata = {
   title: "Hôm Nay Ăn Gì?",
   description: "Trợ lý random món ăn cho sinh viên và người trẻ ở Cần Thơ.",
+  verification: {
+    google: "rrF8L3nUmBA8oDvnlbVxHfWi0Aq9Y_2x8l6X7sRelZg",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
