@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Food, FoodCategory } from "@/types/food";
+import type { Food } from "@/types/food";
 import {
   computeSavedStats,
   filterAndSortSaved,
@@ -9,11 +9,11 @@ import {
   pickRandomSavedFood,
   type SavedSortOrder,
 } from "./savedFoodsLogic";
-import type { SavedFoodRecord } from "@/data/savedFoods";
-import { getSavedFoodRecords, removeSavedFood } from "@/services/savedFoodService";
+import { getSavedFoodRecords, removeSavedFood, type SavedFoodRecord } from "@/services/savedFoodService";
 import { addHistoryEntry } from "@/services/historyService";
 import { readSoundPreference } from "@/features/settings/settingsLogic";
 import { playRandomizeChime } from "@/lib/sound";
+import { useToast } from "@/components/ui/ToastProvider";
 
 const MODAL_TRANSITION_MS = 350;
 
@@ -30,13 +30,13 @@ export function useSavedFoods({
 }: UseSavedFoodsOptions) {
   const [records, setRecords] = useState<SavedFoodRecord[]>(initialRecords);
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<FoodCategory | "all">("all");
+  const [categoryId, setCategoryId] = useState<string | "all">("all");
   const [sortOrder, setSortOrder] = useState<SavedSortOrder>("recent");
 
   const [modalFood, setModalFood] = useState<Food | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRerolling, setIsRerolling] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     // SSR không đọc được localStorage — đồng bộ lại dữ liệu thật ngay sau khi mount.
@@ -47,16 +47,20 @@ export function useSavedFoods({
   const saved = useMemo(() => joinSavedWithFood(records, allFoods), [records, allFoods]);
 
   const categoryCounts = useMemo(() => {
-    const counts = new Map<FoodCategory, number>();
+    const counts = new Map<string, { name: string; count: number }>();
     for (const item of saved) {
-      counts.set(item.food.category, (counts.get(item.food.category) ?? 0) + 1);
+      for (const category of item.food.categories) {
+        const entry = counts.get(category.id);
+        if (entry) entry.count += 1;
+        else counts.set(category.id, { name: category.name, count: 1 });
+      }
     }
     return counts;
   }, [saved]);
 
   const visibleSaved = useMemo(
-    () => filterAndSortSaved(saved, { search, category, sortOrder }),
-    [saved, search, category, sortOrder],
+    () => filterAndSortSaved(saved, { search, categoryId, sortOrder }),
+    [saved, search, categoryId, sortOrder],
   );
 
   const stats = useMemo(
@@ -97,13 +101,12 @@ export function useSavedFoods({
     addHistoryEntry({
       foodId: modalFood.id,
       timestamp: new Date().toISOString(),
-      hungerLevel: modalFood.hungerLevel,
+      eatingLevel: modalFood.eatingLevels[0] ?? null,
       wasEaten: true,
       isSaved: true,
     });
-    setToastMessage(`Đã chốt ăn "${modalFood.name}" — đã ghi vào lịch sử!`);
+    showToast(`Đã chốt ăn "${modalFood.name}" — đã ghi vào lịch sử!`, "success");
     setIsModalOpen(false);
-    window.setTimeout(() => setToastMessage(null), 2800);
   };
 
   const closeModal = () => setIsModalOpen(false);
@@ -115,8 +118,8 @@ export function useSavedFoods({
     categoryCounts,
     search,
     setSearch,
-    category,
-    setCategory,
+    categoryId,
+    setCategoryId,
     sortOrder,
     setSortOrder,
     unsave,
@@ -128,7 +131,6 @@ export function useSavedFoods({
     rerollModal,
     confirmModal,
     closeModal,
-    toastMessage,
     isEmpty: saved.length === 0,
     hasNoFilterMatch: saved.length > 0 && visibleSaved.length === 0,
   };

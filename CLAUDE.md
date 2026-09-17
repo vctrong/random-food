@@ -1,6 +1,8 @@
-# CLAUDE.md — Random Food App (Cần Thơ)
+# CLAUDE.md — NayAnGi (Random Food App, Cần Thơ)
 
 Đây là file quy tắc bắt buộc cho Claude Code khi làm việc trong repo này. Đọc kỹ trước khi code bất kỳ dòng nào. Nếu có mâu thuẫn giữa file này và trí nhớ/thói quen mặc định của Claude, **file này luôn thắng**.
+
+> **Lưu ý về bản chất file này:** `CLAUDE.md` chỉ chứa **rule chung** — quy tắc kiến trúc, coding convention, design system, quy trình làm việc. File này **không phải nơi để giao yêu cầu/tính năng cụ thể**. Yêu cầu công việc cụ thể (build tính năng X, sửa bug Y, redesign trang Z...) sẽ được nhập trực tiếp qua prompt trên Claude Code CLI ở từng phiên làm việc. Khi đọc file này, hãy hiểu nó như "hiến pháp" của project, không phải "việc cần làm hôm nay".
 
 ---
 
@@ -10,11 +12,12 @@
 
 - Nếu thiếu thông tin để làm đúng (data chưa có, chưa rõ hành vi mong muốn, chưa rõ tên field, chưa rõ route, chưa rõ style cho 1 trường hợp cụ thể...) → **DỪNG LẠI VÀ HỎI NGAY**, không tự đoán, không tự "làm tạm cho chạy".
 - **KHÔNG** tự bịa ra:
-    - Dữ liệu món ăn, địa chỉ, giá cả, hình ảnh không có trong `src/data/`
-    - Tên package/thư viện không có trong `package.json`
-    - API endpoint, route, hoặc backend chưa tồn tại
-    - Số liệu thống kê, testimonial, nội dung marketing giả
-    - Icon/asset không có sẵn trong `public/`
+  - Dữ liệu món ăn, địa chỉ, giá cả, hình ảnh không có trong `src/data/` hoặc chưa có trong DB
+  - Tên package/thư viện không có trong `package.json`
+  - API endpoint, route, hoặc backend chưa tồn tại
+  - **Field mới trong schema Mongoose, tên collection mới, hoặc thay đổi kiểu dữ liệu của field đã chốt** — schema ở mục 7 là bản đã thống nhất, thêm/sửa/xoá field hoặc bảng phải hỏi trước
+  - Số liệu thống kê, testimonial, nội dung marketing giả
+  - Icon/asset không có sẵn trong `public/`
 - Nếu cần thêm 1 package mới → hỏi trước, giải thích lý do, chờ xác nhận rồi mới cài.
 - Nếu 1 yêu cầu có thể hiểu theo nhiều cách → liệt kê ngắn gọn các cách hiểu và hỏi, thay vì chọn đại 1 cách rồi code.
 - Thà hỏi "ngu" còn hơn code sai hướng rồi phải sửa lại từ đầu.
@@ -24,9 +27,19 @@
 ## 1. Bối cảnh dự án
 
 - Web app random món ăn từ danh sách quán ăn tại Cần Thơ do chủ dự án (Ttong) tự cung cấp.
-- Giai đoạn hiện tại: **frontend-only**, dùng data cứng (hardcoded), **chưa có backend**.
-- Kiến trúc được thiết kế để sau này gắn backend thật vào **không phải sửa lại component**, chỉ thay nội dung trong lớp `services/`.
+- **Giai đoạn hiện tại: đã có hình dạng cơ bản của app, backend + database đã được gắn vào (không còn frontend-only nữa), đăng nhập Google qua NextAuth.js đã hoạt động.** Dữ liệu cứng cũ trong `src/data/` chỉ còn giữ vai trò tham khảo/legacy, ưu tiên dữ liệu thật từ MongoDB Atlas.
+- Kiến trúc được thiết kế để gắn backend thật không phải sửa lại component, chỉ thay nội dung trong lớp `services/` (giờ `services/` sẽ gọi API route thay vì đọc `data/` trực tiếp).
+- Backend viết chung trong cùng project Next.js (API Routes / Route Handlers), **không tách server riêng**.
 - Đối tượng người dùng: sinh viên và người trẻ tại Cần Thơ — cần cảm giác gọn, nhanh, đáng tin, không "sến" hay "trẻ con".
+- Schema DB ở mục 7 là **bản chốt tạm thời** — có thể mở rộng thêm field/bảng khi cần, nhưng mọi thay đổi phá vỡ cấu trúc đã chốt (xoá field, đổi kiểu dữ liệu, tách bảng) đều phải hỏi trước vì có thể cần migration.
+
+### 1.1 BẮT BUỘC: đọc tài liệu trong `/docs` trước khi code
+
+- Ở root repo có thư mục `/docs` chứa các file `.md` tài liệu tham khảo (ví dụ: mô tả database chi tiết, business logic, luồng nghiệp vụ, quyết định sản phẩm...) do Ttong cung cấp.
+- **Trước khi bắt đầu bất kỳ task nào**, Claude Code phải quét và đọc các file `.md` liên quan trong `/docs` để hiểu đúng ngữ cảnh nghiệp vụ/dữ liệu, thay vì chỉ dựa vào rule/style trong `CLAUDE.md` này.
+- `CLAUDE.md` chỉ quy định **rule và style chung** (kiến trúc, coding convention, design system, quy trình). Còn **nội dung nghiệp vụ, chi tiết database, ngữ cảnh sản phẩm** thì lấy từ `/docs`.
+- Nếu `/docs` có thông tin mâu thuẫn với schema/rule đã chốt trong file này (ví dụ mục 7), phải dừng lại và hỏi Ttong xem nên ưu tiên tài liệu nào trước khi code — không tự ý chọn.
+- Nếu 1 file trong `/docs` không rõ ràng, thiếu, hoặc có vẻ đã lỗi thời so với code hiện tại → hỏi lại thay vì đoán.
 
 ---
 
@@ -34,11 +47,18 @@
 
 ```
 src/
-├── app/                    # Next.js App Router — chỉ routing + layout, KHÔNG chứa business logic
+├── app/                    # Next.js App Router — routing + layout + API routes
 │   ├── layout.tsx
 │   ├── page.tsx
 │   ├── globals.css
-│   └── favicon.ico
+│   ├── favicon.ico
+│   └── api/                # Route Handlers — LỚP BACKEND DUY NHẤT, giữ mỏng
+│       ├── auth/           # đăng ký / đăng nhập / session
+│       ├── foods/
+│       ├── categories/
+│       ├── favorites/
+│       ├── history/
+│       └── logs/
 │
 ├── components/
 │   ├── ui/                 # Component nguyên tử, tái sử dụng, KHÔNG chứa business logic
@@ -49,6 +69,7 @@ src/
 │   │   ├── FoodCard.tsx
 │   │   ├── RandomFoodResult.tsx
 │   │   └── RandomButton.tsx
+│   ├── map/                 # Component bản đồ (Leaflet) — LocationPicker, FoodMap
 │   └── filters/
 │       └── FilterBar.tsx
 │
@@ -57,32 +78,46 @@ src/
 │       ├── useRandomFood.ts   # Hook quản lý state
 │       └── randomLogic.ts     # Thuật toán random thuần (không UI, không fetch)
 │
-├── services/                # LỚP DUY NHẤT được phép "biết" data đến từ đâu (data cứng hay API)
+├── services/                # LỚP DUY NHẤT được phép "biết" data đến từ đâu (API thật hay data cứng cũ)
 │   └── foodService.ts
 │
-├── data/                    # Data cứng — sẽ bị thay thế bởi backend, KHÔNG import trực tiếp từ component
+├── lib/
+│   ├── mongodb.ts            # Kết nối MongoDB Atlas (singleton, tránh mở nhiều connection khi hot reload)
+│   ├── cloudinary.ts          # Config Cloudinary SDK
+│   ├── models/                # Mongoose schema — theo đúng mục 7, không tự thêm field
+│   │   ├── User.ts
+│   │   ├── UserProfile.ts
+│   │   ├── Category.ts
+│   │   ├── Food.ts
+│   │   ├── Favorite.ts
+│   │   ├── History.ts
+│   │   └── Log.ts
+│   └── utils.ts               # Hàm tiện ích thuần túy, không liên quan business logic
+│
+├── data/                    # LEGACY — data cứng cũ, đang được thay dần bởi DB thật, KHÔNG import trực tiếp từ component
 │   └── foods.ts
 │
 ├── types/
 │   └── food.ts
-│
-├── lib/                      # Hàm tiện ích thuần túy, không liên quan business logic
-│   └── utils.ts
 │
 ├── constants/
 │   └── categories.ts
 │
 └── config/
     └── env.ts
+
+docs/                        # Tài liệu tham khảo (database, business, nghiệp vụ...) — xem mục 1.1
 ```
 
 ### Quy tắc ranh giới (KHÔNG được vi phạm):
 
-1. **`components/` KHÔNG BAO GIỜ import trực tiếp từ `data/`.** Luôn đi qua `services/`.
+1. **`components/` KHÔNG BAO GIỜ import trực tiếp từ `data/` hoặc `lib/models/`.** Luôn đi qua `services/`.
 2. **`app/page.tsx` phải mỏng** — chỉ compose component + gọi hook, không chứa logic random hay logic lọc dữ liệu.
 3. **`features/*/randomLogic.ts` phải là hàm thuần (pure function)** — không side effect, không fetch, dễ test.
-4. File nào cần `useState`, `useEffect`, `onClick`... phải có `"use client"` ở dòng đầu tiên.
-5. Không tạo thư mục mới ngoài cấu trúc trên nếu chưa hỏi và được xác nhận.
+4. **`app/api/**/route.ts` phải mỏng** — parse request, gọi model/service, trả response. Không nhét business logic phức tạp trực tiếp trong route handler.
+5. File nào cần `useState`, `useEffect`, `onClick`... phải có `"use client"` ở dòng đầu tiên.
+6. Component dùng `react-leaflet` bắt buộc import động (`next/dynamic`, `ssr: false`) vì thư viện cần `window`/DOM.
+7. Không tạo thư mục mới ngoài cấu trúc trên nếu chưa hỏi và được xác nhận.
 
 ---
 
@@ -91,14 +126,17 @@ src/
 - **Ngôn ngữ:** TypeScript strict — không dùng `any` trừ khi thực sự bất khả kháng (và phải giải thích tại sao trong comment).
 - **Component:** function component + arrow function hoặc `function` khai báo rõ ràng, không mixed style trong cùng file.
 - **Đặt tên:**
-    - Component: PascalCase (`FoodCard.tsx`)
-    - Hook: camelCase, tiền tố `use` (`useRandomFood.ts`)
-    - Hàm thuần / util: camelCase (`pickRandomFood`)
-    - Type/interface: PascalCase, không tiền tố `I` (`Food`, không phải `IFood`)
+  - Component: PascalCase (`FoodCard.tsx`)
+  - Hook: camelCase, tiền tố `use` (`useRandomFood.ts`)
+  - Hàm thuần / util: camelCase (`pickRandomFood`)
+  - Type/interface: PascalCase, không tiền tố `I` (`Food`, không phải `IFood`)
+  - Mongoose model: PascalCase số ít (`User`, `Food`, không phải `Users`/`Foods`)
 - **Import path:** luôn dùng alias `@/` (map tới `src/`), không dùng relative path dài (`../../../`).
-- **Styling:** Tailwind CSS. Không viết inline style trừ khi giá trị động (vd: random vị trí, animation tính toán runtime).
+- **Styling:** Tailwind CSS. Không viết inline style trừ khi giá trị động (vd: random vị trí, animation tính toán runtime, hoặc kích thước bản đồ Leaflet).
 - **Không cài thêm thư viện quản lý state (Zustand, Redux...) nếu chưa được yêu cầu** — mặc định dùng `useState`/`useReducer` trong hook riêng.
 - Không xoá hoặc sửa file config (`next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `postcss.config.mjs`) trừ khi được yêu cầu rõ ràng.
+- Biến môi trường (`.env.local`) không bao giờ commit lên git — đảm bảo có trong `.gitignore`.
+- **Icon:** dùng thống nhất `lucide-react` (đã có trong `package.json`) cho toàn bộ giao diện — không dùng Material Symbols hoặc icon font khác, không trộn nhiều bộ icon.
 
 ---
 
@@ -142,15 +180,21 @@ Modern, professional, friendly, playful nhưng trưởng thành (playful but mat
 - Đa số nền: trắng / cream / soft-blue / soft-pink rất nhạt.
 - **Không được** biến mọi component thành nhiều màu — giữ visual hierarchy tiết chế, chuyên nghiệp.
 - Khai báo các màu này như CSS variables / Tailwind theme tokens ngay từ đầu (không hardcode hex rải rác trong component).
+- Marker/pin trên bản đồ Leaflet: ưu tiên dùng Primary Blue hoặc Primary Pink, không dùng marker mặc định sặc sỡ của Leaflet nếu không cần thiết.
 
 ### 4.4 Typography
-- Font sans-serif hiện đại, hỗ trợ tiếng Việt tốt (dấu, ký tự đặc biệt hiển thị đúng).
+
+**Font đã chốt: Montserrat (heading) + Open Sans (body).** Cả hai đều là sans-serif hiện đại, hỗ trợ dấu tiếng Việt tốt, load qua Google Fonts. Không dùng font serif/script (Playfair Display, Lora, Lobster, Pacifico...) — clash với định hướng "modern, clean" ở mục 4.1 và dễ rơi vào vùng "sến"/cổ điển mà mục 4.2 đã liệt kê tránh.
+
+- `font-heading` (Montserrat, weight 600) — dùng cho hero heading, section heading, tên món ăn nổi bật.
+- `font-body` (Open Sans, weight 400/500) — dùng cho toàn bộ body text, label, button.
 - Phân cấp:
-    - Hero heading: lớn, phong cách editorial
-    - Section heading: cỡ trung
-    - Body text: dễ đọc, thoải mái
-    - Button label: rõ ràng, ngắn gọn
-- Chữ đậm có chủ đích, **tránh font-weight quá nặng** (không lạm dụng `font-black`/900).
+  - Hero heading: lớn, phong cách editorial, Montserrat 600–700
+  - Section heading: cỡ trung, Montserrat 600
+  - Body text: dễ đọc, thoải mái, Open Sans 400
+  - Button label: rõ ràng, ngắn gọn, Open Sans 500/600
+- Chữ đậm có chủ đích, **tránh font-weight quá nặng** (không lạm dụng `font-black`/900 kể cả với Montserrat).
+- Khai báo 2 font này trong `next/font/google` ngay từ đầu, expose qua CSS variable (`--font-heading`, `--font-body`) và Tailwind theme token — không hardcode tên font rải rác.
 
 ### 4.5 Ngôn ngữ thiết kế tổng thể
 - Border radius: 12–20px tuỳ kích cỡ component (nút nhỏ dùng radius nhỏ hơn card lớn).
@@ -158,7 +202,7 @@ Modern, professional, friendly, playful nhưng trưởng thành (playful but mat
 - Border rõ ràng, sạch (dùng màu `Border #E5E7EB`).
 - Spacing rộng rãi, thoáng.
 - Card responsive, có breakpoint hợp lý cho mobile/tablet/desktop.
-- Ảnh món ăn: chất lượng cao, đúng tỉ lệ, không kéo méo.
+- Ảnh món ăn/avatar: chất lượng cao, đúng tỉ lệ, không kéo méo — luôn lấy từ Cloudinary, không dùng ảnh raw base64.
 - Icon: đơn giản, liên quan chủ đề đồ ăn, nhất quán style (line icon hoặc filled icon — chọn 1 style xuyên suốt, không trộn).
 - Transition/micro-interaction: mượt, tinh tế (hover, tap feedback), không lạm dụng animation nặng gây giật lag.
 
@@ -166,12 +210,12 @@ Modern, professional, friendly, playful nhưng trưởng thành (playful but mat
 
 ## 5. Quy trình làm việc với Claude Code
 
-1. **Trước khi code 1 tính năng mới:** tóm tắt ngắn gọn kế hoạch (file nào sẽ tạo/sửa, luồng data đi qua đâu) rồi mới bắt đầu — để dễ review.
+1. **Trước khi code 1 tính năng mới:** đọc `/docs` liên quan (mục 1.1) nếu có, rồi tóm tắt ngắn gọn kế hoạch (file nào sẽ tạo/sửa, luồng data đi qua đâu) trước khi bắt đầu — để dễ review.
 2. **Khi sửa file có sẵn:** đọc lại toàn bộ file trước khi sửa, không đoán nội dung từ trí nhớ.
-3. **Khi không chắc chắn** về: tên field data, hành vi UX cụ thể (vd: random có loại trừ kết quả vừa ra không?), route, hoặc bất kỳ quyết định nào ảnh hưởng kiến trúc → **hỏi Ttong trước**, đưa ra tối đa 2–3 lựa chọn ngắn gọn kèm đề xuất cá nhân.
-4. **Không tự ý refactor lớn** (đổi cấu trúc thư mục, đổi tên file hàng loạt) nếu không được yêu cầu.
-5. Sau khi hoàn thành 1 tính năng, liệt kê ngắn gọn: file đã tạo/sửa + còn thiếu gì để hoạt động đầy đủ (vd: "cần thêm ảnh vào public/images/foods/").
-6. Không viết comment thừa thãi kiểu giải thích code hiển nhiên; chỉ comment khi logic không tự nói lên được (vd: lý do chọn thuật toán random cụ thể).
+3. **Khi không chắc chắn** về: tên field data, hành vi UX cụ thể (vd: random có loại trừ kết quả vừa ra không?), route, cấu trúc schema, hoặc bất kỳ quyết định nào ảnh hưởng kiến trúc → **hỏi Ttong trước**, đưa ra tối đa 2–3 lựa chọn ngắn gọn kèm đề xuất cá nhân.
+4. **Không tự ý refactor lớn** (đổi cấu trúc thư mục, đổi tên file hàng loạt, đổi schema DB) nếu không được yêu cầu.
+5. Sau khi hoàn thành 1 tính năng, liệt kê ngắn gọn: file đã tạo/sửa + còn thiếu gì để hoạt động đầy đủ (vd: "cần thêm MONGODB_URI vào .env.local").
+6. Không viết comment thừa thãi kiểu giải thích code hiển nhiên; chỉ comment khi logic không tự nói lên được (vd: lý do chọn thuật toán random cụ thể, lý do cấu trúc GeoJSON).
 
 ---
 
@@ -182,8 +226,58 @@ Modern, professional, friendly, playful nhưng trưởng thành (playful but mat
 - Thêm màu ngoài bảng màu ở mục 4.3
 - Viết section/nội dung marketing không được yêu cầu
 - Tạo dữ liệu món ăn mẫu để "demo cho đẹp" — nếu cần data mẫu để test UI, phải hỏi trước và ghi rõ đây là data tạm, dễ nhận diện để xoá sau (vd: field `isPlaceholder: true`).
+- **Thêm/xoá/đổi tên field trong schema Mongoose đã chốt ở mục 7, thêm collection mới, hoặc đổi kiểu dữ liệu của field có sẵn**
+- **Viết hoặc chạy migration script** (vd: `updateMany`, đổi cấu trúc field hàng loạt) mà chưa xác nhận
 - Deploy, đổi config production, hoặc chạy lệnh có thể ảnh hưởng ra ngoài phạm vi local dev.
 
 ---
 
-*File này sẽ được cập nhật khi dự án có thêm quyết định kiến trúc mới. Nếu Claude Code thấy quy tắc nào ở đây mâu thuẫn với yêu cầu mới của Ttong, phải hỏi lại để xác nhận nên ưu tiên cái nào trước khi code.*
+## 7. Kiến trúc Backend & Database (bản chốt tạm thời v1)
+
+### 7.1 Stack
+
+| Thành phần | Lựa chọn | Ghi chú |
+|---|---|---|
+| Backend | Next.js API Routes (Route Handlers) | Không tách server riêng |
+| Database | MongoDB Atlas (free tier / M0) | Dùng Mongoose làm ODM |
+| Lưu ảnh | Cloudinary | Cho cả avatar user và ảnh món ăn — DB chỉ lưu URL, không lưu file/base64 |
+| Bản đồ / định vị | Leaflet + OpenStreetMap | Miễn phí, không cần API key |
+| Tìm địa chỉ | Nominatim (OSM) | Chỉ dùng cho gợi ý tìm kiếm, giới hạn ~1 request/giây, cần header `User-Agent` khi gọi từ server |
+| Đăng nhập | NextAuth.js (Auth.js) + MongoDB Adapter | Xử lý cả đăng nhập email/password (Credentials Provider) và Google OAuth (Google Provider) — **Google OAuth đã tích hợp và hoạt động** |
+| Icon | lucide-react | Icon set duy nhất trong toàn bộ giao diện |
+
+**Lưu ý về NextAuth.js:** dùng MongoDB Adapter sẽ tự sinh thêm 3 collection ngoài 7 bảng đã chốt: `accounts`, `sessions`, `verification_tokens`. Đây là collection do NextAuth quản lý, **không tự sửa schema của chúng** — chỉ tương tác qua API của NextAuth. Cần env vars: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`.
+
+### 7.2 Danh sách model (7 collection)
+
+1. **User** — email, passwordHash (**optional** — user đăng nhập qua Google sẽ không có), name, avatarUrl, phone, role, isVerified, lastLoginAt, createdAt
+2. **UserProfile** — quan hệ 1-1 với User, tách riêng để User nhẹ. Gồm: userId (FK), bio, birthday, gender, favoriteCategories, dietaryTags
+3. **Category** — name, slug, imageUrl, description
+4. **Food** — name, categoryId (FK), description, address, **location (GeoJSON Point, bắt buộc index `2dsphere`)**, imageUrl, priceRange, tags, avgRating, ratingCount, status, createdAt, updatedAt
+5. **Favorite** — bảng trung gian userId (FK) + foodId (FK), quan hệ nhiều-nhiều, tách riêng khỏi UserProfile để tránh mảng phình to
+6. **History** — userId (FK, có thể null cho khách chưa đăng nhập), sessionId, foodId (FK), filterUsed, status, note, pickedAt
+7. **Log** — userId (FK), action, entityType, entityId, level, ip, createdAt
+
+> Chi tiết mở rộng, ví dụ dữ liệu thật, hoặc các quyết định nghiệp vụ liên quan đến các model này (nếu có cập nhật) nên được ghi trong `/docs`, không sửa trực tiếp bảng trên trừ khi đó là thay đổi đã chốt và xác nhận với Ttong.
+
+### 7.3 Quy tắc riêng cho field `location` (Food)
+
+```js
+location: {
+  type: { type: String, enum: ["Point"], default: "Point" },
+  coordinates: { type: [Number], required: true } // LUÔN [lng, lat] — không phải [lat, lng]
+}
+```
+- Bắt buộc tạo index: `foodSchema.index({ location: "2dsphere" })`.
+- Khi thêm món mới: lấy toạ độ bằng cách cho user click lên bản đồ Leaflet (`LocationPicker`), không tự bịa toạ độ hoặc suy ra từ địa chỉ text nếu chưa có kết quả geocode thật.
+- `address` (string hiển thị) và `location` (toạ độ dùng cho bản đồ + query khoảng cách) luôn đi cùng nhau, không được thiếu 1 trong 2 khi tạo Food mới.
+
+### 7.4 Nguyên tắc mở rộng schema về sau
+
+- **Thêm field mới / thêm collection mới:** an toàn, không cần hỏi kỹ lưỡng nhưng vẫn nên báo trước khi làm (theo mục 5.3).
+- **Xoá field, đổi kiểu dữ liệu, hoặc tách 1 bảng thành nhiều bảng:** đều cần migration script và **bắt buộc hỏi + xác nhận trước khi làm**, vì ảnh hưởng data cũ.
+- Ưu tiên cách tiếp cận "thêm mới" hơn "sửa đổi phá vỡ cấu trúc cũ" khi có thể.
+
+---
+
+*File này sẽ được cập nhật khi dự án có thêm quyết định kiến trúc mới. Nếu Claude Code thấy quy tắc nào ở đây mâu thuẫn với yêu cầu mới của Ttong, phải hỏi lại để xác nhận nên ưu tiên cái nào trước khi code. Yêu cầu công việc cụ thể luôn nằm ở prompt CLI, không nằm trong file này.*

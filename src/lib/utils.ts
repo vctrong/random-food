@@ -37,3 +37,15 @@ export function formatClockTime(isoTimestamp: string): string {
   const date = new Date(isoTimestamp);
   return new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit" }).format(date);
 }
+
+/**
+ * Link mở thẳng vị trí trên Google Maps (không cần API key — chỉ là URL điều hướng
+ * công khai). Ưu tiên toạ độ chính xác nếu có, fallback về tìm theo địa chỉ text.
+ */
+export function getGoogleMapsUrl(
+  location: { lat: number; lng: number } | null | undefined,
+  address: string,
+): string {
+  const query = location ? `${location.lat},${location.lng}` : address;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}

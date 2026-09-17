@@ -1,9 +1,9 @@
 import { Lightbulb } from "lucide-react";
-import type { HungerBreakdownSlice } from "@/features/history-log/historyLogic";
+import type { EatingLevelBreakdownSlice } from "@/features/history-log/historyLogic";
 
 interface HistoryStatsSidebarProps {
   totalCount: number;
-  breakdown: HungerBreakdownSlice[];
+  breakdown: EatingLevelBreakdownSlice[];
   topMealTimeInsight: { label: string; percent: number } | null;
 }
 
@@ -16,7 +16,7 @@ export function HistoryStatsSidebar({
   topMealTimeInsight,
 }: HistoryStatsSidebarProps) {
   const slicesWithOffset = breakdown.reduce<
-    { slice: HungerBreakdownSlice; dashOffset: number }[]
+    { slice: EatingLevelBreakdownSlice; dashOffset: number }[]
   >((acc, slice) => {
     const cumulativePercent = acc.reduce((sum, item) => sum + item.slice.percent, 0);
     const dashOffset = CIRCUMFERENCE - (cumulativePercent / 100) * CIRCUMFERENCE;
@@ -34,7 +34,7 @@ export function HistoryStatsSidebar({
               <circle cx="18" cy="18" r={RADIUS} fill="none" stroke="#E5E7EB" strokeWidth="3.5" />
               {slicesWithOffset.map(({ slice, dashOffset }) => (
                 <circle
-                  key={slice.hungerLevel}
+                  key={slice.eatingLevel}
                   cx="18"
                   cy="18"
                   r={RADIUS}
@@ -54,7 +54,7 @@ export function HistoryStatsSidebar({
           </div>
           <div className="space-y-1.5 min-w-0 flex-1">
             {breakdown.map((slice) => (
-              <div key={slice.hungerLevel} className="flex items-center justify-between text-sm">
+              <div key={slice.eatingLevel} className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-1.5 truncate">
                   <span
                     className="w-2 h-2 rounded-full shrink-0"

@@ -1,6 +1,6 @@
-import type { Food, HungerLevel } from "@/types/food";
+import type { EatingLevel, Food } from "@/types/food";
 import type { HistoryEntry } from "@/types/history";
-import { HUNGER_LEVELS } from "@/constants/categories";
+import { EATING_LEVEL_LABELS } from "@/constants/categories";
 
 export interface HistoryWithFood extends HistoryEntry {
   food: Food;
@@ -11,7 +11,7 @@ export type SortOrder = "newest" | "oldest";
 
 export interface HistoryFilters {
   search: string;
-  hungerLevel: HungerLevel | "all";
+  eatingLevel: EatingLevel | "all";
   quickFilter: QuickFilter;
   sortOrder: SortOrder;
 }
@@ -35,7 +35,7 @@ export function filterAndSortHistory(
 
   const filtered = entries.filter((entry) => {
     if (keyword && !entry.food.name.toLowerCase().includes(keyword)) return false;
-    if (filters.hungerLevel !== "all" && entry.hungerLevel !== filters.hungerLevel) return false;
+    if (filters.eatingLevel !== "all" && entry.eatingLevel !== filters.eatingLevel) return false;
     if (filters.quickFilter === "saved" && !entry.isSaved) return false;
     if (filters.quickFilter === "eaten" && !entry.wasEaten) return false;
     return true;
@@ -94,8 +94,8 @@ export interface HistoryStats {
   totalCount: number;
   savedCount: number;
   savedPercentOfMenu: number;
-  topHungerLevelLabel: string | null;
-  topHungerLevelPercent: number;
+  topEatingLevelLabel: string | null;
+  topEatingLevelPercent: number;
   eatenCount: number;
   eatenPercent: number;
 }
@@ -106,62 +106,63 @@ export function computeStats(entries: HistoryWithFood[], totalFoodsInMenu: numbe
   const savedCount = new Set(entries.filter((e) => e.isSaved).map((e) => e.foodId)).size;
   const eatenCount = entries.filter((e) => e.wasEaten).length;
 
-  const hungerCounts = new Map<HungerLevel, number>();
+  const eatingLevelCounts = new Map<EatingLevel, number>();
   for (const entry of entries) {
-    hungerCounts.set(entry.hungerLevel, (hungerCounts.get(entry.hungerLevel) ?? 0) + 1);
+    if (!entry.eatingLevel) continue;
+    eatingLevelCounts.set(entry.eatingLevel, (eatingLevelCounts.get(entry.eatingLevel) ?? 0) + 1);
   }
-  let topHungerLevel: HungerLevel | null = null;
+  let topEatingLevel: EatingLevel | null = null;
   let topCount = 0;
-  for (const [level, count] of hungerCounts) {
+  for (const [level, count] of eatingLevelCounts) {
     if (count > topCount) {
-      topHungerLevel = level;
+      topEatingLevel = level;
       topCount = count;
     }
   }
-  const topHungerLevelLabel = topHungerLevel
-    ? HUNGER_LEVELS.find((l) => l.id === topHungerLevel)?.label ?? null
-    : null;
+  const topEatingLevelLabel = topEatingLevel ? EATING_LEVEL_LABELS[topEatingLevel] : null;
 
   return {
     totalCount,
     savedCount,
     savedPercentOfMenu: totalFoodsInMenu > 0 ? Math.round((savedCount / totalFoodsInMenu) * 100) : 0,
-    topHungerLevelLabel,
-    topHungerLevelPercent: totalCount > 0 ? Math.round((topCount / totalCount) * 100) : 0,
+    topEatingLevelLabel,
+    topEatingLevelPercent: totalCount > 0 ? Math.round((topCount / totalCount) * 100) : 0,
     eatenCount,
     eatenPercent: totalCount > 0 ? Math.round((eatenCount / totalCount) * 100) : 0,
   };
 }
 
-export interface HungerBreakdownSlice {
-  hungerLevel: HungerLevel;
+export interface EatingLevelBreakdownSlice {
+  eatingLevel: EatingLevel;
   label: string;
   count: number;
   percent: number;
   color: string;
 }
 
-const HUNGER_LEVEL_COLORS: Record<HungerLevel, string> = {
-  "an-vat": "#F07FA5",
-  "an-binh-thuong": "#5B9EEB",
-  "an-vua-vua": "#23466F",
-  "an-lon": "#F4C95D",
+const EATING_LEVEL_COLORS: Record<EatingLevel, string> = {
+  snack: "#F07FA5",
+  normal: "#5B9EEB",
+  hearty: "#23466F",
+  full: "#F4C95D",
 };
 
-export function computeHungerBreakdown(entries: HistoryWithFood[]): HungerBreakdownSlice[] {
+export function computeEatingLevelBreakdown(entries: HistoryWithFood[]): EatingLevelBreakdownSlice[] {
   const total = entries.length;
   if (total === 0) return [];
 
-  return HUNGER_LEVELS.map((config) => {
-    const count = entries.filter((e) => e.hungerLevel === config.id).length;
-    return {
-      hungerLevel: config.id,
-      label: config.label,
-      count,
-      percent: Math.round((count / total) * 100),
-      color: HUNGER_LEVEL_COLORS[config.id],
-    };
-  }).filter((slice) => slice.count > 0);
+  return (Object.keys(EATING_LEVEL_LABELS) as EatingLevel[])
+    .map((level) => {
+      const count = entries.filter((e) => e.eatingLevel === level).length;
+      return {
+        eatingLevel: level,
+        label: EATING_LEVEL_LABELS[level],
+        count,
+        percent: Math.round((count / total) * 100),
+        color: EATING_LEVEL_COLORS[level],
+      };
+    })
+    .filter((slice) => slice.count > 0);
 }
 
 const MEAL_BUCKET_LABELS = ["Khuya/Sáng sớm", "Sáng", "Trưa", "Xế", "Tối"] as const;

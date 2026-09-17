@@ -52,10 +52,10 @@ export function buildHistoryExportJson(entries: HistoryWithFood[]): string {
   const rows = entries.map((entry) => ({
     thoiGian: entry.timestamp,
     monAn: entry.food.name,
-    mucDoDoi: entry.hungerLevel,
-    gia: `${entry.food.priceMin}-${entry.food.priceMax}`,
-    quan: entry.food.restaurantName,
-    khuVuc: entry.food.area,
+    mucDoAn: entry.eatingLevel,
+    gia: `${entry.food.priceMin ?? "?"}-${entry.food.priceMax ?? "?"}`,
+    quan: entry.food.restaurant?.name ?? "",
+    diaChi: entry.food.restaurant?.address ?? "",
     daAn: entry.wasEaten,
     daLuu: entry.isSaved,
   }));
@@ -68,15 +68,15 @@ function csvEscape(value: string | number | boolean): string {
 }
 
 export function buildHistoryExportCsv(entries: HistoryWithFood[]): string {
-  const header = ["Thời gian", "Món ăn", "Mức độ đói", "Giá", "Quán", "Khu vực", "Đã ăn", "Đã lưu"];
+  const header = ["Thời gian", "Món ăn", "Mức độ ăn", "Giá", "Quán", "Địa chỉ", "Đã ăn", "Đã lưu"];
   const rows = entries.map((entry) =>
     [
       entry.timestamp,
       entry.food.name,
-      entry.hungerLevel,
-      `${entry.food.priceMin}-${entry.food.priceMax}`,
-      entry.food.restaurantName,
-      entry.food.area,
+      entry.eatingLevel ?? "",
+      `${entry.food.priceMin ?? "?"}-${entry.food.priceMax ?? "?"}`,
+      entry.food.restaurant?.name ?? "",
+      entry.food.restaurant?.address ?? "",
       entry.wasEaten ? "Có" : "Không",
       entry.isSaved ? "Có" : "Không",
     ]
@@ -89,8 +89,8 @@ export function buildHistoryExportCsv(entries: HistoryWithFood[]): string {
 export function buildSavedBackupJson(saved: SavedFood[]): string {
   const rows = saved.map((item) => ({
     monAn: item.food.name,
-    quan: item.food.restaurantName,
-    khuVuc: item.food.area,
+    quan: item.food.restaurant?.name ?? "",
+    diaChi: item.food.restaurant?.address ?? "",
     luuLuc: item.savedAt,
   }));
   return JSON.stringify(rows, null, 2);

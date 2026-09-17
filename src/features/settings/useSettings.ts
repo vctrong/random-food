@@ -3,13 +3,12 @@
 import { useEffect, useState } from "react";
 import type { UserSettings } from "@/types/settings";
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from "./settingsLogic";
-
-const TOAST_DURATION_MS = 2600;
+import { useToast } from "@/components/ui/ToastProvider";
 
 export function useSettings() {
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [isHydrated, setIsHydrated] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     // Đồng bộ 1 lần từ localStorage sau khi mount — không thể đọc lúc SSR nên
@@ -33,12 +32,6 @@ export function useSettings() {
     }
   }, [settings, isHydrated]);
 
-  useEffect(() => {
-    if (!toastMessage) return;
-    const timer = window.setTimeout(() => setToastMessage(null), TOAST_DURATION_MS);
-    return () => window.clearTimeout(timer);
-  }, [toastMessage]);
-
   function update<K extends keyof UserSettings>(key: K, value: UserSettings[K]) {
     setSettings((prev) => ({ ...prev, [key]: value }));
   }
@@ -51,7 +44,7 @@ export function useSettings() {
         ? prev
         : { ...prev, favoriteFoodNames: [...prev.favoriteFoodNames, trimmed] },
     );
-    setToastMessage(`Đã thêm "${trimmed}" vào món yêu thích!`);
+    showToast(`Đã thêm "${trimmed}" vào món yêu thích!`, "success");
   }
 
   function removeFavorite(name: string) {
@@ -69,7 +62,7 @@ export function useSettings() {
         ? prev
         : { ...prev, dislikedIngredients: [...prev.dislikedIngredients, trimmed] },
     );
-    setToastMessage(`Đã thêm "${trimmed}" vào danh sách dị ứng!`);
+    showToast(`Đã thêm "${trimmed}" vào danh sách dị ứng!`, "success");
   }
 
   function removeDisliked(name: string) {
@@ -82,7 +75,7 @@ export function useSettings() {
   function toggleVegetarian() {
     setSettings((prev) => {
       const next = !prev.vegetarianMode;
-      setToastMessage(next ? "Đã bật chế độ ăn chay!" : "Đã tắt chế độ ăn chay");
+      showToast(next ? "Đã bật chế độ ăn chay!" : "Đã tắt chế độ ăn chay", "info");
       return { ...prev, vegetarianMode: next };
     });
   }
@@ -94,18 +87,18 @@ export function useSettings() {
   function toggleSound() {
     setSettings((prev) => {
       const next = !prev.soundEffectsEnabled;
-      setToastMessage(next ? "Đã bật âm thanh hiệu ứng" : "Đã tắt âm thanh");
+      showToast(next ? "Đã bật âm thanh hiệu ứng" : "Đã tắt âm thanh", "info");
       return { ...prev, soundEffectsEnabled: next };
     });
   }
 
   function resetAll() {
     setSettings(DEFAULT_SETTINGS);
-    setToastMessage("Đã đặt lại toàn bộ cài đặt về mặc định!");
+    showToast("Đã đặt lại toàn bộ cài đặt về mặc định!", "info");
   }
 
   function notify(message: string) {
-    setToastMessage(message);
+    showToast(message);
   }
 
   return {
@@ -120,6 +113,5 @@ export function useSettings() {
     toggleSound,
     resetAll,
     notify,
-    toastMessage,
   };
 }

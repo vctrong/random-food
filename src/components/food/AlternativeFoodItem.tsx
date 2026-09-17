@@ -1,8 +1,8 @@
 import Image from "next/image";
-import { Clock } from "lucide-react";
+import { MapPin, UtensilsCrossed } from "lucide-react";
 import type { Food } from "@/types/food";
 import { formatPriceRange } from "@/lib/utils";
-import { HUNGER_LEVELS } from "@/constants/categories";
+import { EATING_LEVEL_LABELS } from "@/constants/categories";
 
 interface AlternativeFoodItemProps {
   food: Food;
@@ -10,7 +10,12 @@ interface AlternativeFoodItemProps {
 }
 
 export function AlternativeFoodItem({ food, onSelect }: AlternativeFoodItemProps) {
-  const hungerLabel = HUNGER_LEVELS.find((level) => level.id === food.hungerLevel)?.label;
+  const eatingLevelLabel = food.eatingLevels[0] ? EATING_LEVEL_LABELS[food.eatingLevels[0]] : null;
+  const coverImage = food.images[0] ?? null;
+  const priceLabel =
+    food.priceMin !== null && food.priceMax !== null
+      ? formatPriceRange(food.priceMin, food.priceMax)
+      : "Chưa cập nhật giá";
 
   return (
     <button
@@ -18,31 +23,37 @@ export function AlternativeFoodItem({ food, onSelect }: AlternativeFoodItemProps
       onClick={() => onSelect(food)}
       className="group flex items-center gap-3 p-2 rounded-xl hover:bg-soft-blue transition-colors text-left w-full"
     >
-      <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 shadow-sm">
-        <Image
-          src={`https://picsum.photos/seed/${food.imageSeed}/128/128`}
-          alt={`Ảnh minh hoạ ${food.name}`}
-          fill
-          sizes="64px"
-          className="object-cover"
-        />
+      <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 shadow-sm bg-soft-blue">
+        {coverImage ? (
+          <Image
+            src={coverImage}
+            alt={`Ảnh minh hoạ ${food.name}`}
+            fill
+            sizes="64px"
+            className="object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-primary-blue">
+            <UtensilsCrossed className="size-5" aria-hidden />
+          </div>
+        )}
       </div>
       <div className="flex flex-col flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <h3 className="font-semibold text-text-primary truncate group-hover:text-primary-blue transition-colors">
             {food.name}
           </h3>
-          <span className="text-xs font-semibold text-primary-blue shrink-0">
-            {formatPriceRange(food.priceMin, food.priceMax)}
-          </span>
+          <span className="text-xs font-semibold text-primary-blue shrink-0">{priceLabel}</span>
         </div>
         <p className="text-xs text-text-secondary truncate">
-          {hungerLabel} • {food.restaurantName}
+          {eatingLevelLabel} • {food.restaurant?.name ?? "Chưa rõ quán"}
         </p>
-        <div className="flex items-center gap-1 mt-1 text-xs text-text-secondary">
-          <Clock className="size-3 text-primary-blue" aria-hidden />
-          {food.area}
-        </div>
+        {food.restaurant && (
+          <div className="flex items-center gap-1 mt-1 text-xs text-text-secondary">
+            <MapPin className="size-3 text-primary-blue" aria-hidden />
+            <span className="truncate">{food.restaurant.address}</span>
+          </div>
+        )}
       </div>
     </button>
   );

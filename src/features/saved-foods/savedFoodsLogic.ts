@@ -1,5 +1,5 @@
-import type { Food, FoodCategory } from "@/types/food";
-import type { SavedFoodRecord } from "@/data/savedFoods";
+import type { Food } from "@/types/food";
+import type { SavedFoodRecord } from "@/services/savedFoodService";
 
 export interface SavedFood extends SavedFoodRecord {
   food: Food;
@@ -20,13 +20,13 @@ export function joinSavedWithFood(records: SavedFoodRecord[], foods: Food[]): Sa
 
 export function filterAndSortSaved(
   saved: SavedFood[],
-  { search, category, sortOrder }: { search: string; category: FoodCategory | "all"; sortOrder: SavedSortOrder },
+  { search, categoryId, sortOrder }: { search: string; categoryId: string | "all"; sortOrder: SavedSortOrder },
 ): SavedFood[] {
   const keyword = search.trim().toLowerCase();
 
   const filtered = saved.filter((item) => {
     if (keyword && !item.food.name.toLowerCase().includes(keyword)) return false;
-    if (category !== "all" && item.food.category !== category) return false;
+    if (categoryId !== "all" && !item.food.categories.some((c) => c.id === categoryId)) return false;
     return true;
   });
 
@@ -35,9 +35,9 @@ export function filterAndSortSaved(
       case "name-asc":
         return a.food.name.localeCompare(b.food.name, "vi");
       case "price-asc":
-        return a.food.priceMin - b.food.priceMin;
+        return (a.food.priceMin ?? 0) - (b.food.priceMin ?? 0);
       case "price-desc":
-        return b.food.priceMax - a.food.priceMax;
+        return (b.food.priceMax ?? 0) - (a.food.priceMax ?? 0);
       case "recent":
       default:
         return new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime();
@@ -47,7 +47,7 @@ export function filterAndSortSaved(
 
 export interface SavedStats {
   totalCount: number;
-  avgCalories: number;
+  avgCalories: number | null;
   priceRangeLabel: string;
   categoryDiversityLabel: string;
 }
@@ -56,20 +56,33 @@ export interface SavedStats {
 export function computeSavedStats(saved: SavedFood[], totalCategoriesAvailable: number): SavedStats {
   const totalCount = saved.length;
   if (totalCount === 0) {
-    return { totalCount: 0, avgCalories: 0, priceRangeLabel: "—", categoryDiversityLabel: "—" };
+    return { totalCount: 0, avgCalories: null, priceRangeLabel: "—", categoryDiversityLabel: "—" };
   }
 
-  const avgCalories = Math.round(
-    saved.reduce((sum, item) => sum + item.food.calories, 0) / totalCount,
+  const caloriesMidpoints = saved
+    .map((item) =>
+      item.food.caloriesMin !== null && item.food.caloriesMax !== null
+        ? (item.food.caloriesMin + item.food.caloriesMax) / 2
+        : null,
+    )
+    .filter((value): value is number => value !== null);
+  const avgCalories =
+    caloriesMidpoints.length > 0
+      ? Math.round(caloriesMidpoints.reduce((sum, value) => sum + value, 0) / caloriesMidpoints.length)
+      : null;
+
+  const prices = saved.flatMap((item) =>
+    item.food.priceMin !== null && item.food.priceMax !== null ? [item.food.priceMin, item.food.priceMax] : [],
   );
-  const minPrice = Math.min(...saved.map((item) => item.food.priceMin));
-  const maxPrice = Math.max(...saved.map((item) => item.food.priceMax));
-  const uniqueCategories = new Set(saved.map((item) => item.food.category)).size;
+  const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+  const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+
+  const uniqueCategories = new Set(saved.flatMap((item) => item.food.categories.map((c) => c.id))).size;
 
   return {
     totalCount,
     avgCalories,
-    priceRangeLabel: `${Math.round(minPrice / 1000)}k – ${Math.round(maxPrice / 1000)}k`,
+    priceRangeLabel: prices.length > 0 ? `${Math.round(minPrice / 1000)}k – ${Math.round(maxPrice / 1000)}k` : "—",
     categoryDiversityLabel: `${uniqueCategories}/${totalCategoriesAvailable} loại món`,
   };
 }

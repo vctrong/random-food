@@ -1,14 +1,41 @@
 import Link from "next/link";
-import { ArrowRight, CalendarDays, Sparkles } from "lucide-react";
-import { HUNGER_LEVELS } from "@/constants/categories";
-import { getFoodById } from "@/services/foodService";
-import { getRecentHistory } from "@/services/historyService";
+import { getServerSession } from "next-auth";
+import { ArrowRight, CalendarDays, Compass, Sparkles } from "lucide-react";
+import { authOptions } from "@/lib/auth";
+import { connectDB } from "@/lib/mongodb";
+import { Experience } from "@/lib/models/Experience";
+import { EATING_LEVELS } from "@/constants/categories";
+import { getAllFoods } from "@/services/foodService";
 import { HeroRandomSection } from "@/components/food/HeroRandomSection";
 import { HungerLevelCard } from "@/components/food/HungerLevelCard";
-import { HistoryLogCard } from "@/components/food/HistoryLogCard";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Button } from "@/components/ui/Button";
 
-export default function Home() {
-  const recentHistory = getRecentHistory(4);
+export default async function Home() {
+  const session = await getServerSession(authOptions);
+  let experienceCount = 0;
+
+  if (session?.user) {
+    await connectDB();
+    const userId = (session.user as { id: string }).id;
+    experienceCount = await Experience.countDocuments({ userId });
+  }
+
+  const allFoods = await getAllFoods();
+  const highlightFoods = allFoods.slice(0, 4);
+
+  const categoryCounts = new Map<string, { id: string; name: string; count: number }>();
+  for (const food of allFoods) {
+    for (const category of food.categories) {
+      const entry = categoryCounts.get(category.id);
+      if (entry) entry.count += 1;
+      else categoryCounts.set(category.id, { id: category.id, name: category.name, count: 1 });
+    }
+  }
+  const popularCategories = [...categoryCounts.values()]
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 4)
+    .map(({ id, name }) => ({ id, name }));
 
   return (
     <div className="w-full">
@@ -35,10 +62,10 @@ export default function Home() {
             gợi ý chuẩn vị cho bạn trong tích tắc.
           </p>
 
-          <HeroRandomSection />
+          <HeroRandomSection categories={popularCategories} />
         </section>
 
-        {/* Hunger levels */}
+        {/* Eating levels */}
         <section className="mb-16">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-2">
             <div>
@@ -55,27 +82,23 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {HUNGER_LEVELS.map((level, index) => (
+            {EATING_LEVELS.map((level, index) => (
               <div
                 key={level.id}
                 className="animate-fade-slide-up"
                 style={{ animationDelay: `${index * 80}ms` }}
               >
-                <HungerLevelCard
-                  config={level}
-                  highlighted={level.id === "an-binh-thuong"}
-                  priority={index === 0}
-                />
+                <HungerLevelCard config={level} highlighted={level.id === "normal"} priority={index === 0} />
               </div>
             ))}
           </div>
         </section>
 
-        {/* Recent history */}
-        {recentHistory.length > 0 && (
-          <section className="mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-              <div className="flex items-center gap-3">
+        {/* Recent activity: cá nhân hoá cho user, highlight công khai cho guest */}
+        <section className="mb-8">
+          {session?.user ? (
+            <>
+              <div className="flex items-center gap-3 mb-6">
                 <div className="w-8 h-8 rounded-xl bg-soft-blue flex items-center justify-center text-primary-blue">
                   <CalendarDays className="size-4.5" aria-hidden />
                 </div>
@@ -84,36 +107,78 @@ export default function Home() {
                     Bạn đã ăn gì gần đây?
                   </h2>
                   <p className="text-sm text-text-secondary">
-                    Lịch sử các món bạn đã random hoặc đã chọn thưởng thức
+                    Check-in tại quán để lưu lại trải nghiệm ăn uống của bạn
                   </p>
                 </div>
               </div>
-              <Link
-                href="/lich-su"
-                className="inline-flex items-center gap-1 text-sm font-medium text-primary-blue hover:text-[#4a8ddb] transition-colors self-start sm:self-center"
-              >
-                <span>Xem toàn bộ lịch sử</span>
-                <ArrowRight className="size-4" aria-hidden />
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {recentHistory.map((entry, index) => {
-                const food = getFoodById(entry.foodId);
-                if (!food) return null;
-                return (
-                  <div
-                    key={entry.id}
-                    className="animate-fade-slide-up"
-                    style={{ animationDelay: `${index * 80}ms` }}
-                  >
-                    <HistoryLogCard entry={entry} food={food} />
+              {experienceCount === 0 ? (
+                <EmptyState
+                  icon={CalendarDays}
+                  title="Chưa có trải nghiệm ăn uống nào"
+                  description="Random một món, ghé quán và quay lại đánh dấu đã ăn để lịch sử của bạn hiện ở đây."
+                  action={
+                    <Button href="/random" size="sm">
+                      Random ngay
+                    </Button>
+                  }
+                />
+              ) : (
+                <Link
+                  href="/lich-su"
+                  className="inline-flex items-center gap-1 text-sm font-medium text-primary-blue hover:text-[#4a8ddb] transition-colors"
+                >
+                  <span>Xem toàn bộ lịch sử</span>
+                  <ArrowRight className="size-4" aria-hidden />
+                </Link>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-soft-pink flex items-center justify-center text-primary-pink">
+                    <Compass className="size-4.5" aria-hidden />
                   </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
+                  <div>
+                    <h2 className="text-lg font-semibold text-text-primary">
+                      Món ăn nổi bật hôm nay
+                    </h2>
+                    <p className="text-sm text-text-secondary">
+                      Đăng ký để lưu món yêu thích và xem lại lịch sử ăn uống của bạn
+                    </p>
+                  </div>
+                </div>
+                <Button href="/dang-ky" variant="secondary" size="sm">
+                  Đăng ký miễn phí
+                </Button>
+              </div>
+
+              {highlightFoods.length === 0 ? (
+                <EmptyState
+                  icon={Compass}
+                  title="Chưa có món ăn nào"
+                  description="Món ăn được cộng đồng đóng góp và kiểm duyệt sẽ xuất hiện tại đây."
+                />
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {highlightFoods.map((food, index) => (
+                    <Link
+                      key={food.id}
+                      href={food.categories[0] ? `/random?category=${food.categories[0].id}` : "/random"}
+                      className="animate-fade-slide-up bg-white rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+                      style={{ animationDelay: `${index * 80}ms` }}
+                    >
+                      <p className="font-semibold text-text-primary truncate">{food.name}</p>
+                      <p className="text-sm text-text-secondary truncate">
+                        {food.restaurant?.name ?? "Chưa rõ quán"}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </section>
       </div>
     </div>
   );
