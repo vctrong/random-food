@@ -2,13 +2,11 @@
 
 import type { ReactNode } from "react";
 import { Dices, Flame, Heart, Layers, Search, Wallet } from "lucide-react";
-import type { Food, FoodCategory } from "@/types/food";
-import type { SavedFoodRecord } from "@/data/savedFoods";
+import type { Food } from "@/types/food";
+import type { SavedFoodRecord } from "@/services/savedFoodService";
 import { useSavedFoods } from "@/features/saved-foods/useSavedFoods";
-import { CATEGORY_LABELS } from "@/constants/categories";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Toast } from "@/components/ui/Toast";
 import { FoodCard } from "./FoodCard";
 import { SavedRandomModal } from "./SavedRandomModal";
 
@@ -17,9 +15,10 @@ interface SavedFoodsPageContentProps {
   allFoods: Food[];
 }
 
-const CATEGORY_OPTIONS = Object.entries(CATEGORY_LABELS) as [FoodCategory, string][];
-
 export function SavedFoodsPageContent({ initialRecords, allFoods }: SavedFoodsPageContentProps) {
+  const totalCategoriesAvailable = new Set(allFoods.flatMap((food) => food.categories.map((c) => c.id)))
+    .size;
+
   const {
     saved,
     visibleSaved,
@@ -27,8 +26,8 @@ export function SavedFoodsPageContent({ initialRecords, allFoods }: SavedFoodsPa
     categoryCounts,
     search,
     setSearch,
-    category,
-    setCategory,
+    categoryId,
+    setCategoryId,
     sortOrder,
     setSortOrder,
     unsave,
@@ -40,10 +39,9 @@ export function SavedFoodsPageContent({ initialRecords, allFoods }: SavedFoodsPa
     rerollModal,
     confirmModal,
     closeModal,
-    toastMessage,
     isEmpty,
     hasNoFilterMatch,
-  } = useSavedFoods({ initialRecords, allFoods, totalCategoriesAvailable: CATEGORY_OPTIONS.length });
+  } = useSavedFoods({ initialRecords, allFoods, totalCategoriesAvailable });
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-10">
@@ -92,7 +90,12 @@ export function SavedFoodsPageContent({ initialRecords, allFoods }: SavedFoodsPa
           {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <MiniStat icon={Heart} label="Tổng món đã lưu" value={`${stats.totalCount} món`} tone="pink" />
-            <MiniStat icon={Flame} label="Mức calo trung bình" value={`~ ${stats.avgCalories} kcal`} tone="blue" />
+            <MiniStat
+              icon={Flame}
+              label="Mức calo trung bình"
+              value={stats.avgCalories !== null ? `~ ${stats.avgCalories} kcal` : "Chưa cập nhật"}
+              tone="blue"
+            />
             <MiniStat icon={Wallet} label="Khoảng giá phổ biến" value={stats.priceRangeLabel} tone="blue" />
             <MiniStat icon={Layers} label="Đa dạng danh mục" value={stats.categoryDiversityLabel} tone="pink" />
           </div>
@@ -129,12 +132,12 @@ export function SavedFoodsPageContent({ initialRecords, allFoods }: SavedFoodsPa
             </div>
 
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-              <CategoryPill active={category === "all"} onClick={() => setCategory("all")}>
+              <CategoryPill active={categoryId === "all"} onClick={() => setCategoryId("all")}>
                 Tất cả ({saved.length})
               </CategoryPill>
-              {CATEGORY_OPTIONS.filter(([id]) => (categoryCounts.get(id) ?? 0) > 0).map(([id, label]) => (
-                <CategoryPill key={id} active={category === id} onClick={() => setCategory(id)}>
-                  {label} ({categoryCounts.get(id) ?? 0})
+              {[...categoryCounts.entries()].map(([id, { name, count }]) => (
+                <CategoryPill key={id} active={categoryId === id} onClick={() => setCategoryId(id)}>
+                  {name} ({count})
                 </CategoryPill>
               ))}
             </div>
@@ -176,7 +179,6 @@ export function SavedFoodsPageContent({ initialRecords, allFoods }: SavedFoodsPa
         onReroll={rerollModal}
         onClose={closeModal}
       />
-      <Toast message={toastMessage} />
     </div>
   );
 }

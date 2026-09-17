@@ -11,7 +11,7 @@ import {
 import type { HistoryEntry } from "@/types/history";
 import type { Food } from "@/types/food";
 import { useHistoryLog } from "@/features/history-log/useHistoryLog";
-import { HUNGER_LEVELS } from "@/constants/categories";
+import { EATING_LEVELS } from "@/constants/categories";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { HistoryTimelineItem } from "./HistoryTimelineItem";
@@ -31,14 +31,14 @@ export function HistoryPageContent({
   const {
     groups,
     stats,
-    hungerBreakdown,
+    eatingLevelBreakdown,
     topMealTimeInsight,
     counts,
     removingIds,
     search,
     setSearch,
-    hungerLevel,
-    setHungerLevel,
+    eatingLevel,
+    setEatingLevel,
     quickFilter,
     setQuickFilter,
     sortOrder,
@@ -113,8 +113,8 @@ export function HistoryPageContent({
             <StatCard
               icon={UtensilsCrossed}
               label="Chế độ ăn nhiều nhất"
-              value={stats.topHungerLevelLabel ?? "—"}
-              hint={`${stats.topHungerLevelPercent}% các lần random`}
+              value={stats.topEatingLevelLabel ?? "—"}
+              hint={`${stats.topEatingLevelPercent}% các lần random`}
             />
             <StatCard
               icon={CheckCircle2}
@@ -142,12 +142,12 @@ export function HistoryPageContent({
               </div>
               <div className="md:col-span-4 relative">
                 <select
-                  value={hungerLevel}
-                  onChange={(e) => setHungerLevel(e.target.value as typeof hungerLevel)}
+                  value={eatingLevel}
+                  onChange={(e) => setEatingLevel(e.target.value as typeof eatingLevel)}
                   className="w-full h-11 px-4 rounded-xl bg-soft-blue/40 text-text-primary text-sm appearance-none focus:outline-none cursor-pointer"
                 >
                   <option value="all">Tất cả chế độ</option>
-                  {HUNGER_LEVELS.map((level) => (
+                  {EATING_LEVELS.map((level) => (
                     <option key={level.id} value={level.id}>
                       {level.label}
                     </option>
@@ -230,7 +230,7 @@ export function HistoryPageContent({
             <div className="lg:col-span-4">
               <HistoryStatsSidebar
                 totalCount={stats.totalCount}
-                breakdown={hungerBreakdown}
+                breakdown={eatingLevelBreakdown}
                 topMealTimeInsight={topMealTimeInsight}
               />
             </div>
@@ -294,4 +294,3 @@ function QuickFilterChip({
     </button>
   );
 }
-

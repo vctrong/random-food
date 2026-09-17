@@ -3,16 +3,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Shuffle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "./Button";
+import { UserMenu } from "@/components/auth/UserMenu";
 
 const NAV_LINKS = [
   { href: "/", label: "Trang chủ" },
+  { href: "/mon-an", label: "Món ăn" },
   { href: "/random", label: "Random" },
-  { href: "/lich-su", label: "Lịch sử" },
-  { href: "/da-luu", label: "Đã lưu" },
-  { href: "/cai-dat", label: "Cài đặt" },
+  { href: "/ve-chung-toi", label: "Về chúng tôi" },
+  { href: "/tin-tuc", label: "Tin tức" },
 ];
 
 export function Header() {
@@ -53,10 +52,7 @@ export function Header() {
           })}
         </nav>
 
-        <Button href="/random" size="sm" leftIcon={<Shuffle className="size-4" aria-hidden />}>
-          <span className="hidden sm:inline">Random ngay</span>
-          <span className="sm:hidden">Random</span>
-        </Button>
+        <UserMenu />
       </div>
     </header>
   );

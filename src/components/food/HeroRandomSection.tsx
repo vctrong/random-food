@@ -2,16 +2,24 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Dice5, History } from "lucide-react";
-import { FilterBar } from "@/components/filters/FilterBar";
-import { QUICK_FILTERS } from "@/constants/categories";
+import { Dice5, History, Soup } from "lucide-react";
+import { FilterBar, type FilterOption } from "@/components/filters/FilterBar";
 
-export function HeroRandomSection() {
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+interface HeroRandomSectionProps {
+  categories: { id: string; name: string }[];
+}
+
+export function HeroRandomSection({ categories }: HeroRandomSectionProps) {
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  const categoryOptions: FilterOption[] = useMemo(
+    () => categories.map((category) => ({ id: category.id, label: category.name, icon: Soup })),
+    [categories],
+  );
 
   const randomHref = useMemo(() => {
-    return activeFilter ? `/random?loc=${activeFilter}` : "/random";
-  }, [activeFilter]);
+    return activeCategory ? `/random?category=${activeCategory}` : "/random";
+  }, [activeCategory]);
 
   return (
     <div className="flex flex-col items-center">
@@ -32,12 +40,14 @@ export function HeroRandomSection() {
         </Link>
       </div>
 
-      <FilterBar
-        options={QUICK_FILTERS}
-        value={activeFilter}
-        onChange={setActiveFilter}
-        className="justify-center pt-8"
-      />
+      {categoryOptions.length > 0 && (
+        <FilterBar
+          options={categoryOptions}
+          value={activeCategory}
+          onChange={setActiveCategory}
+          className="justify-center pt-8"
+        />
+      )}
     </div>
   );
 }

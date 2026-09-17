@@ -56,7 +56,12 @@ export function Button(props: ButtonProps) {
     fullWidth = false,
     className,
     children,
-  } = props;
+    href: _href,
+    ...rest
+  } = props as BaseProps & { href?: string } & Omit<
+      ButtonHTMLAttributes<HTMLButtonElement>,
+      keyof BaseProps
+    >;
 
   const classes = cn(
     "inline-flex items-center justify-center rounded-full font-semibold transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:pointer-events-none",
@@ -86,11 +91,10 @@ export function Button(props: ButtonProps) {
     );
   }
 
-  const buttonProps = props as ButtonAsButton;
   return (
     <button
-      {...buttonProps}
-      disabled={buttonProps.disabled || isLoading}
+      {...rest}
+      disabled={rest.disabled || isLoading}
       className={classes}
     >
       {content}

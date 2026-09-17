@@ -1,24 +1,24 @@
-import { MOCK_FOODS } from "@/data/foods";
-import type { Food, HungerLevel } from "@/types/food";
+import type { Food } from "@/types/food";
 
 /**
- * Lớp duy nhất "biết" data món ăn đến từ đâu (hiện tại là mock, sau này là API).
- * Component không được import `data/foods.ts` trực tiếp.
+ * Lớp duy nhất "biết" data món ăn đến từ đâu — gọi qua API route `/api/foods`
+ * (dữ liệu thật từ MongoDB), không import trực tiếp từ `lib/models/` trong
+ * component (mục 1 CLAUDE.md).
  */
 
-export function getAllFoods(): Food[] {
-  return MOCK_FOODS;
+export async function getAllFoods(): Promise<Food[]> {
+  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+
+  try {
+    const response = await fetch(`${baseUrl}/api/foods`, { cache: "no-store" });
+    if (!response.ok) return [];
+    return (await response.json()) as Food[];
+  } catch {
+    return [];
+  }
 }
 
-export function getFoodById(id: string): Food | undefined {
-  return MOCK_FOODS.find((food) => food.id === id);
-}
-
-export function getFoodsByHungerLevel(level: HungerLevel): Food[] {
-  return MOCK_FOODS.filter((food) => food.hungerLevel === level);
-}
-
-export function getFoodsByIds(ids: string[]): Food[] {
-  const idSet = new Set(ids);
-  return MOCK_FOODS.filter((food) => idSet.has(food.id));
+export async function getFoodById(id: string): Promise<Food | undefined> {
+  const foods = await getAllFoods();
+  return foods.find((food) => food.id === id);
 }

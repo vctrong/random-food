@@ -1,22 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Food, HungerLevel } from "@/types/food";
+import { useSession } from "next-auth/react";
+import type { EatingLevel, Food } from "@/types/food";
 import { filterFoods, pickAlternatives, pickRandomFood, type RandomFilters } from "./randomLogic";
 import { readSoundPreference } from "@/features/settings/settingsLogic";
 import { playRandomizeChime } from "@/lib/sound";
 import { addHistoryEntry } from "@/services/historyService";
 import { addSavedFood, getSavedFoodRecords, removeSavedFood } from "@/services/savedFoodService";
+import { useToast } from "@/components/ui/ToastProvider";
 
 /** Thời gian hiệu ứng "xóc đĩa" trước khi hiện kết quả mới, tính bằng ms. */
 const RANDOMIZE_DURATION_MS = 700;
-/** Thời gian toast tự ẩn. */
-const TOAST_DURATION_MS = 2800;
 const ALTERNATIVES_COUNT = 3;
 
 interface UseRandomFoodOptions {
   allFoods: Food[];
-  initialHungerLevel: HungerLevel | null;
+  initialEatingLevel: EatingLevel | null;
+  initialCategoryId: string | null;
   /** Món + phương án dự phòng được random SẴN trên server, tránh gọi Math.random()
    * lại lúc client hydrate (2 lần random độc lập trên server/client sẽ ra kết quả
    * khác nhau và gây hydration mismatch). */
@@ -26,19 +27,27 @@ interface UseRandomFoodOptions {
 
 export function useRandomFood({
   allFoods,
-  initialHungerLevel,
+  initialEatingLevel,
+  initialCategoryId,
   initialFood,
   initialAlternatives,
 }: UseRandomFoodOptions) {
-  const [hungerLevel] = useState<HungerLevel | null>(initialHungerLevel);
-  const [noSpice, setNoSpice] = useState(false);
-  const [vegetarianOnly, setVegetarianOnly] = useState(false);
-  const [under50k, setUnder50k] = useState(false);
+  const [eatingLevel] = useState<EatingLevel | null>(initialEatingLevel);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
+    initialCategoryId ? [initialCategoryId] : [],
+  );
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isRandomizing, setIsRandomizing] = useState(false);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [currentFood, setCurrentFood] = useState<Food | null>(initialFood);
   const [alternatives, setAlternatives] = useState<Food[]>(initialAlternatives);
+  const [isLoginGateOpen, setIsLoginGateOpen] = useState(false);
+  const { data: session, status } = useSession();
+  // Kiểm tra thêm session.user vì server có thể đã gỡ session.user (idle-timeout/thu
+  // hồi phiên — xem callbacks.session() trong lib/auth.ts) trong lúc status vẫn còn
+  // báo "authenticated" cho tới khi SessionErrorGuard kịp đăng xuất hẳn.
+  const isAuthenticated = status === "authenticated" && Boolean(session?.user);
+  const { showToast } = useToast();
 
   useEffect(() => {
     // SSR không đọc được localStorage — nạp danh sách đã lưu thật sau khi mount.
@@ -47,8 +56,8 @@ export function useRandomFood({
   }, []);
 
   const filters: RandomFilters = useMemo(
-    () => ({ hungerLevel, noSpice, vegetarianOnly, under50k }),
-    [hungerLevel, noSpice, vegetarianOnly, under50k],
+    () => ({ eatingLevel, categoryIds: selectedCategoryIds, tags: selectedTags }),
+    [eatingLevel, selectedCategoryIds, selectedTags],
   );
 
   const pool = useMemo(() => filterFoods(allFoods, filters), [allFoods, filters]);
@@ -65,12 +74,6 @@ export function useRandomFood({
     setAlternatives(currentFood ? pickAlternatives(pool, currentFood.id, ALTERNATIVES_COUNT) : []);
   }, [pool, currentFood]);
 
-  useEffect(() => {
-    if (!toastMessage) return;
-    const timer = window.setTimeout(() => setToastMessage(null), TOAST_DURATION_MS);
-    return () => window.clearTimeout(timer);
-  }, [toastMessage]);
-
   const runWithTransition = useCallback((getNextFood: () => Food | null) => {
     setIsRandomizing(true);
     window.setTimeout(() => {
@@ -85,6 +88,25 @@ export function useRandomFood({
     runWithTransition(() => pickRandomFood(pool, currentFood?.id ?? null));
   }, [isRandomizing, pool, currentFood, runWithTransition]);
 
+  const toggleCategory = useCallback((value: string) => {
+    setSelectedCategoryIds((prev) =>
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value],
+    );
+  }, []);
+
+  const toggleTag = useCallback((value: string) => {
+    setSelectedTags((prev) => (prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]));
+  }, []);
+
+  /** "Random hoàn toàn": xoá hết filter đang chọn rồi random lại trên toàn bộ pool theo eatingLevel. */
+  const randomizeAll = useCallback(() => {
+    if (isRandomizing) return;
+    setSelectedCategoryIds([]);
+    setSelectedTags([]);
+    const fullPool = filterFoods(allFoods, { eatingLevel, categoryIds: [], tags: [] });
+    runWithTransition(() => pickRandomFood(fullPool, currentFood?.id ?? null));
+  }, [isRandomizing, allFoods, eatingLevel, currentFood, runWithTransition]);
+
   const selectFood = useCallback(
     (food: Food) => {
       if (isRandomizing) return;
@@ -93,67 +115,79 @@ export function useRandomFood({
     [isRandomizing, runWithTransition],
   );
 
-  /** Lưu/bỏ lưu thật — ghi vào localStorage qua savedFoodService, hiện trong /da-luu ngay. */
+  /**
+   * Lưu/bỏ lưu — theo BR-U01/U02 (guest không lưu trữ), guest bấm tim sẽ thấy
+   * modal đăng nhập thay vì lưu ẩn danh. Đã đăng nhập thì vẫn dùng cơ chế lưu
+   * local hiện có (chưa nối collection `favorites` thật — xem ghi chú ở
+   * src/app/api/favorites/route.ts).
+   */
   const toggleSaved = useCallback(() => {
     if (!currentFood) return;
+    if (!isAuthenticated) {
+      setIsLoginGateOpen(true);
+      return;
+    }
     const foodId = currentFood.id;
     setSavedIds((prev) => {
       const next = new Set(prev);
       if (next.has(foodId)) {
         next.delete(foodId);
         removeSavedFood(foodId);
-        setToastMessage("Đã bỏ lưu món ăn.");
+        showToast("Đã bỏ lưu món ăn.", "info");
       } else {
         next.add(foodId);
         addSavedFood(foodId);
-        setToastMessage("Đã lưu món vào danh sách yêu thích!");
+        showToast("Đã lưu món vào danh sách yêu thích!", "success");
       }
       return next;
     });
-  }, [currentFood]);
+  }, [currentFood, isAuthenticated, showToast]);
 
   /** Ghi nhận thật vào lịch sử — ghi vào localStorage qua historyService, hiện trong /lich-su ngay. */
   const markEaten = useCallback(() => {
     if (!currentFood) return;
+    if (!isAuthenticated) {
+      setIsLoginGateOpen(true);
+      return;
+    }
     addHistoryEntry({
       foodId: currentFood.id,
       timestamp: new Date().toISOString(),
-      hungerLevel: currentFood.hungerLevel,
+      eatingLevel: currentFood.eatingLevels[0] ?? null,
       wasEaten: true,
       isSaved: savedIds.has(currentFood.id),
     });
-    setToastMessage("Đã ghi nhận bữa ăn vào lịch sử!");
-  }, [currentFood, savedIds]);
+    showToast("Đã ghi nhận bữa ăn vào lịch sử!", "success");
+  }, [currentFood, savedIds, isAuthenticated, showToast]);
 
   const share = useCallback(() => {
     if (!currentFood) return;
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard
         .writeText(window.location.href)
-        .then(() => setToastMessage("Đã sao chép liên kết gợi ý món ăn!"))
-        .catch(() => setToastMessage("Không thể sao chép liên kết."));
+        .then(() => showToast("Đã sao chép liên kết gợi ý món ăn!", "success"))
+        .catch(() => showToast("Không thể sao chép liên kết.", "error"));
     }
-  }, [currentFood]);
+  }, [currentFood, showToast]);
 
   return {
-    hungerLevel,
+    eatingLevel,
     currentFood,
     alternatives,
     isRandomizing,
     poolSize: pool.length,
     isSaved: currentFood ? savedIds.has(currentFood.id) : false,
-    noSpice,
-    setNoSpice,
-    vegetarianOnly,
-    setVegetarianOnly,
-    under50k,
-    setUnder50k,
+    isLoginGateOpen,
+    closeLoginGate: () => setIsLoginGateOpen(false),
+    selectedCategoryIds,
+    selectedTags,
+    toggleCategory,
+    toggleTag,
     randomize,
+    randomizeAll,
     selectFood,
     toggleSaved,
     markEaten,
     share,
-    toastMessage,
-    dismissToast: () => setToastMessage(null),
   };
 }

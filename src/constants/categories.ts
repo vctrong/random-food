@@ -1,17 +1,8 @@
-import {
-  Cookie,
-  Utensils,
-  Flame,
-  Users,
-  Zap,
-  Salad,
-  Soup,
-  Wheat,
-} from "lucide-react";
-import type { FoodCategory, HungerLevel, MealTime, SpiceLevel } from "@/types/food";
+import { Cookie, Utensils, Flame, Users } from "lucide-react";
+import type { EatingLevel } from "@/types/food";
 
-export interface HungerLevelConfig {
-  id: HungerLevel;
+export interface EatingLevelConfig {
+  id: EatingLevel;
   label: string;
   tagline: string;
   description: string;
@@ -21,20 +12,25 @@ export interface HungerLevelConfig {
   imageSeed: string;
 }
 
-export const HUNGER_LEVELS: HungerLevelConfig[] = [
+/**
+ * 4 mức độ ăn chính thức của app (docs/BR_UC.md mục 2.1 — không phải role,
+ * không thay thế Category). Nhãn/mô tả lấy nguyên văn từ tài liệu nghiệp vụ,
+ * không tự bịa thêm nội dung marketing.
+ */
+export const EATING_LEVELS: EatingLevelConfig[] = [
   {
-    id: "an-vat",
+    id: "snack",
     label: "Ăn vặt",
     tagline: "Nhẹ bụng, vui miệng.",
     description:
       "Bánh tráng trộn, chè, trà sữa, ốc luộc, nem chua rán... nhâm nhi lúc xế chiều.",
-    badge: "30+ món lề đường",
+    badge: "Ăn vặt nhẹ nhàng",
     kcalRange: "~150-350 kcal",
     icon: Cookie,
     imageSeed: "an-vat-can-tho",
   },
   {
-    id: "an-binh-thuong",
+    id: "normal",
     label: "Ăn bình thường",
     tagline: "Bữa ăn quen thuộc, vừa đủ.",
     description:
@@ -45,7 +41,7 @@ export const HUNGER_LEVELS: HungerLevelConfig[] = [
     imageSeed: "com-tam-can-tho",
   },
   {
-    id: "an-vua-vua",
+    id: "hearty",
     label: "Ăn vừa vừa",
     tagline: "Khi muốn ngon và no hơn chút.",
     description:
@@ -56,7 +52,7 @@ export const HUNGER_LEVELS: HungerLevelConfig[] = [
     imageSeed: "bun-dau-can-tho",
   },
   {
-    id: "an-lon",
+    id: "full",
     label: "Ăn lớn",
     tagline: "Khi hôm nay thực sự rất đói.",
     description:
@@ -68,46 +64,18 @@ export const HUNGER_LEVELS: HungerLevelConfig[] = [
   },
 ];
 
-const HUNGER_LEVEL_IDS = new Set(HUNGER_LEVELS.map((level) => level.id));
+const EATING_LEVEL_IDS = new Set(EATING_LEVELS.map((level) => level.id));
 
-export function isHungerLevel(value: string): value is HungerLevel {
-  return HUNGER_LEVEL_IDS.has(value as HungerLevel);
+export function isEatingLevel(value: string): value is EatingLevel {
+  return EATING_LEVEL_IDS.has(value as EatingLevel);
 }
 
-export interface QuickFilterConfig {
-  id: string;
-  label: string;
-  icon: typeof Cookie;
-}
+export const EATING_LEVEL_LABELS: Record<EatingLevel, string> = Object.fromEntries(
+  EATING_LEVELS.map((level) => [level.id, level.label]),
+) as Record<EatingLevel, string>;
 
-export const CATEGORY_LABELS: Record<FoodCategory, string> = {
-  com: "Cơm",
-  "bun-pho-hu-tieu": "Bún / Phở / Hủ tiếu",
-  "an-vat": "Ăn vặt",
-  "mon-nuoc": "Món nước",
-  chay: "Chay",
-  "banh-mi": "Bánh mì",
-  "do-uong": "Đồ uống",
-};
+export const EATING_LEVEL_ICONS: Record<EatingLevel, typeof Cookie> = Object.fromEntries(
+  EATING_LEVELS.map((level) => [level.id, level.icon]),
+) as Record<EatingLevel, typeof Cookie>;
 
-export const SPICE_LABELS: Record<SpiceLevel, string> = {
-  "khong-cay": "Không cay",
-  "cay-nhe": "Cay nhẹ",
-  "cay-vua": "Cay vừa",
-  "sieu-cay": "Siêu cay",
-};
-
-export const MEAL_TIME_LABELS: Record<MealTime, string> = {
-  sang: "Sáng",
-  trua: "Trưa",
-  xe: "Xế",
-  toi: "Tối",
-};
-
-export const QUICK_FILTERS: QuickFilterConfig[] = [
-  { id: "quyet-dinh-3-giay", label: "Quyết định 3 giây", icon: Zap },
-  { id: "lanh-manh", label: "Lành mạnh", icon: Salad },
-  { id: "an-cay", label: "Ăn cay", icon: Flame },
-  { id: "mon-nuoc", label: "Món nước", icon: Soup },
-  { id: "mon-com", label: "Món cơm", icon: Wheat },
-];
+export const EATING_LEVEL_ORDER: EatingLevel[] = EATING_LEVELS.map((level) => level.id);

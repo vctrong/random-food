@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Food, HungerLevel } from "@/types/food";
+import type { EatingLevel, Food } from "@/types/food";
 import type { HistoryEntry } from "@/types/history";
 import {
   getAllHistory,
@@ -11,7 +11,7 @@ import {
 } from "@/services/historyService";
 import { addSavedFood, removeSavedFood } from "@/services/savedFoodService";
 import {
-  computeHungerBreakdown,
+  computeEatingLevelBreakdown,
   computeStats,
   computeTopMealTimeInsight,
   filterAndSortHistory,
@@ -31,7 +31,7 @@ export function useHistoryLog({ initialEntries, allFoods, totalFoodsInMenu }: Us
   const [rawEntries, setRawEntries] = useState<HistoryEntry[]>(initialEntries);
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
-  const [hungerLevel, setHungerLevel] = useState<HungerLevel | "all">("all");
+  const [eatingLevel, setEatingLevel] = useState<EatingLevel | "all">("all");
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
 
@@ -53,13 +53,13 @@ export function useHistoryLog({ initialEntries, allFoods, totalFoodsInMenu }: Us
   );
 
   const filteredEntries = useMemo(
-    () => filterAndSortHistory(entries, { search, hungerLevel, quickFilter, sortOrder }),
-    [entries, search, hungerLevel, quickFilter, sortOrder],
+    () => filterAndSortHistory(entries, { search, eatingLevel, quickFilter, sortOrder }),
+    [entries, search, eatingLevel, quickFilter, sortOrder],
   );
 
   const groups = useMemo(() => groupByDate(filteredEntries), [filteredEntries]);
   const stats = useMemo(() => computeStats(entries, totalFoodsInMenu), [entries, totalFoodsInMenu]);
-  const hungerBreakdown = useMemo(() => computeHungerBreakdown(entries), [entries]);
+  const eatingLevelBreakdown = useMemo(() => computeEatingLevelBreakdown(entries), [entries]);
   const topMealTimeInsight = useMemo(() => computeTopMealTimeInsight(entries), [entries]);
 
   /** Xoá thật — ghi vào localStorage qua historyService, không chỉ ẩn trên UI. */
@@ -96,14 +96,14 @@ export function useHistoryLog({ initialEntries, allFoods, totalFoodsInMenu }: Us
     entries,
     groups,
     stats,
-    hungerBreakdown,
+    eatingLevelBreakdown,
     topMealTimeInsight,
     counts,
     removingIds,
     search,
     setSearch,
-    hungerLevel,
-    setHungerLevel,
+    eatingLevel,
+    setEatingLevel,
     quickFilter,
     setQuickFilter,
     sortOrder,

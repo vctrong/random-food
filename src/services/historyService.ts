@@ -1,13 +1,11 @@
-import { MOCK_HISTORY } from "@/data/history";
 import type { HistoryEntry } from "@/types/history";
 
 /**
- * Lớp duy nhất "biết" data lịch sử đến từ đâu.
- * Hiện tại: seed từ mock, nhưng các thay đổi thật (thêm/xoá/sửa) được lưu vào
- * localStorage của trình duyệt để không bị mất khi chuyển trang hay tải lại.
- * Trên server (SSR) không có localStorage nên luôn trả về seed mock gốc — component
- * client sẽ tự đồng bộ lại dữ liệu thật ngay sau khi mount.
- * Sẽ được thay bằng gọi API thật khi có backend, không cần sửa component.
+ * Lớp duy nhất "biết" data lịch sử đến từ đâu. Các thay đổi thật (thêm/xoá/sửa)
+ * được lưu vào localStorage của trình duyệt (chưa nối với collection
+ * `experiences`/`logs` thật). Trên server (SSR) không có localStorage nên luôn
+ * trả về mảng rỗng — component client tự đồng bộ lại dữ liệu thật ngay sau khi
+ * mount.
  */
 
 const STORAGE_KEY = "homnayangi:history";
@@ -31,12 +29,12 @@ function writeStorage(entries: HistoryEntry[]): void {
   }
 }
 
-function readEntriesOrSeed(): HistoryEntry[] {
-  return readStorage() ?? MOCK_HISTORY;
+function readEntries(): HistoryEntry[] {
+  return readStorage() ?? [];
 }
 
 export function getAllHistory(): HistoryEntry[] {
-  return [...readEntriesOrSeed()].sort(
+  return [...readEntries()].sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
   );
 }
@@ -50,18 +48,16 @@ export function addHistoryEntry(entry: Omit<HistoryEntry, "id">): HistoryEntry {
     ...entry,
     id: `hist-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   };
-  writeStorage([newEntry, ...readEntriesOrSeed()]);
+  writeStorage([newEntry, ...readEntries()]);
   return newEntry;
 }
 
 export function updateHistoryEntry(id: string, patch: Partial<Omit<HistoryEntry, "id">>): void {
-  writeStorage(
-    readEntriesOrSeed().map((entry) => (entry.id === id ? { ...entry, ...patch } : entry)),
-  );
+  writeStorage(readEntries().map((entry) => (entry.id === id ? { ...entry, ...patch } : entry)));
 }
 
 export function removeHistoryEntry(id: string): void {
-  writeStorage(readEntriesOrSeed().filter((entry) => entry.id !== id));
+  writeStorage(readEntries().filter((entry) => entry.id !== id));
 }
 
 export function clearAllHistory(): void {

@@ -1,11 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Heart } from "lucide-react";
-import type { HungerLevelConfig } from "@/constants/categories";
+import type { EatingLevelConfig } from "@/constants/categories";
 import { cn } from "@/lib/utils";
 
 interface HungerLevelCardProps {
-  config: HungerLevelConfig;
+  config: EatingLevelConfig;
   highlighted?: boolean;
   priority?: boolean;
 }

@@ -1,7 +1,7 @@
 import { MapPin, RefreshCw } from "lucide-react";
 import type { Food } from "@/types/food";
 import type { HistoryEntry } from "@/types/history";
-import { HUNGER_LEVELS } from "@/constants/categories";
+import { EATING_LEVEL_LABELS } from "@/constants/categories";
 import { formatClockTime, formatPriceRange } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 
@@ -11,7 +11,7 @@ interface HistoryLogCardProps {
 }
 
 export function HistoryLogCard({ entry, food }: HistoryLogCardProps) {
-  const hungerConfig = HUNGER_LEVELS.find((level) => level.id === entry.hungerLevel);
+  const eatingLevelLabel = entry.eatingLevel ? EATING_LEVEL_LABELS[entry.eatingLevel] : null;
   const isToday = new Date(entry.timestamp).toDateString() === new Date().toDateString();
 
   return (
@@ -32,21 +32,23 @@ export function HistoryLogCard({ entry, food }: HistoryLogCardProps) {
         </div>
         <h4 className="font-semibold text-text-primary">{food.name}</h4>
         <div className="flex items-center gap-2 mt-2 flex-wrap">
-          {hungerConfig && <Badge variant="blue">{hungerConfig.label}</Badge>}
+          {eatingLevelLabel && <Badge variant="blue">{eatingLevelLabel}</Badge>}
           <span className="text-sm font-semibold text-primary-blue">
-            {formatPriceRange(food.priceMin, food.priceMax)}
+            {food.priceMin !== null && food.priceMax !== null
+              ? formatPriceRange(food.priceMin, food.priceMax)
+              : "Chưa cập nhật giá"}
           </span>
         </div>
       </div>
       <div className="pt-4 mt-2 flex items-center justify-between">
-        <span className="text-sm text-text-secondary flex items-center gap-1">
-          <MapPin className="size-3.5" aria-hidden />
-          {food.area}
+        <span className="text-sm text-text-secondary flex items-center gap-1 truncate">
+          <MapPin className="size-3.5 shrink-0" aria-hidden />
+          {food.restaurant?.address ?? "Chưa rõ địa chỉ"}
         </span>
         <button
           type="button"
           aria-label="Random lại món này"
-          className="w-7 h-7 rounded-full bg-soft-blue flex items-center justify-center text-text-secondary hover:text-primary-blue transition-colors"
+          className="w-7 h-7 rounded-full bg-soft-blue flex items-center justify-center text-text-secondary hover:text-primary-blue transition-colors shrink-0"
         >
           <RefreshCw className="size-3.5" aria-hidden />
         </button>

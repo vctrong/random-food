@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -7,62 +8,93 @@ import {
   ArrowRight,
   Banknote,
   CheckCircle2,
-  Clock,
+  Dices,
   Flame,
   Heart,
-  Leaf,
   Lightbulb,
+  MapPin,
   RefreshCw,
-  Salad,
   Share2,
   Soup,
   Sparkles,
-  Utensils,
+  Star,
+  Tag,
+  UtensilsCrossed,
 } from "lucide-react";
-import type { Food, HungerLevel } from "@/types/food";
+import type { EatingLevel, Food } from "@/types/food";
 import { useRandomFood } from "@/features/random-food/useRandomFood";
-import { CATEGORY_LABELS, HUNGER_LEVELS, MEAL_TIME_LABELS, SPICE_LABELS } from "@/constants/categories";
-import { formatCalories, formatPriceRange } from "@/lib/utils";
+import { EATING_LEVEL_LABELS } from "@/constants/categories";
+import { formatPriceRange } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
-import { Toast } from "@/components/ui/Toast";
+import { LoginGateModal } from "@/components/auth/LoginGateModal";
+import { MultiSelectFilterBar } from "@/components/filters/MultiSelectFilterBar";
+import { RestaurantMap } from "@/components/map/RestaurantMap";
 import { AlternativeFoodItem } from "./AlternativeFoodItem";
 import { RandomLoadingSkeleton } from "./RandomLoadingSkeleton";
 
 interface RandomFoodResultProps {
   allFoods: Food[];
-  hungerLevel: HungerLevel | null;
+  eatingLevel: EatingLevel | null;
+  categoryId: string | null;
   initialFood: Food | null;
   initialAlternatives: Food[];
 }
 
+function formatCaloriesRange(min: number | null, max: number | null): string {
+  if (min === null && max === null) return "Chưa cập nhật";
+  if (min !== null && max !== null && min !== max) return `~${min}-${max} kcal`;
+  return `~${min ?? max} kcal`;
+}
+
 export function RandomFoodResult({
   allFoods,
-  hungerLevel: initialHungerLevel,
+  eatingLevel: initialEatingLevel,
+  categoryId: initialCategoryId,
   initialFood,
   initialAlternatives,
 }: RandomFoodResultProps) {
   const {
-    hungerLevel,
+    eatingLevel,
     currentFood,
     alternatives,
     isRandomizing,
     poolSize,
     isSaved,
-    noSpice,
-    setNoSpice,
-    vegetarianOnly,
-    setVegetarianOnly,
-    under50k,
-    setUnder50k,
+    selectedCategoryIds,
+    selectedTags,
+    toggleCategory,
+    toggleTag,
     randomize,
+    randomizeAll,
     selectFood,
     toggleSaved,
     markEaten,
     share,
-    toastMessage,
-  } = useRandomFood({ allFoods, initialHungerLevel, initialFood, initialAlternatives });
+    isLoginGateOpen,
+    closeLoginGate,
+  } = useRandomFood({
+    allFoods,
+    initialEatingLevel,
+    initialCategoryId,
+    initialFood,
+    initialAlternatives,
+  });
 
-  const hungerConfig = HUNGER_LEVELS.find((level) => level.id === hungerLevel);
+  const eatingLevelConfig = eatingLevel ? EATING_LEVEL_LABELS[eatingLevel] : null;
+
+  const categoryFilterOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const food of allFoods) {
+      for (const category of food.categories) map.set(category.id, category.name);
+    }
+    return [...map.entries()].map(([id, label]) => ({ id, label }));
+  }, [allFoods]);
+
+  const tagFilterOptions = useMemo(() => {
+    const tags = new Set<string>();
+    for (const food of allFoods) for (const tag of food.tags) tags.add(tag);
+    return [...tags].sort((a, b) => a.localeCompare(b, "vi")).map((tag) => ({ id: tag, label: tag }));
+  }, [allFoods]);
 
   return (
     <div className="relative w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pt-6 pb-16">
@@ -82,11 +114,20 @@ export function RandomFoodResult({
             <span>Quay lại chọn chế độ</span>
           </Link>
           <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-soft-blue text-primary-blue text-sm font-medium">
-            <Utensils className="size-3.5" aria-hidden />
-            <span>
-              Chế độ: {hungerConfig ? `${hungerConfig.label} (${hungerConfig.tagline})` : "Ngẫu nhiên tất cả món"}
-            </span>
+            <UtensilsCrossed className="size-3.5" aria-hidden />
+            <span>Chế độ: {eatingLevelConfig ?? "Ngẫu nhiên tất cả món"}</span>
           </div>
+          {selectedCategoryIds.length > 0 && (
+            <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-soft-pink text-primary-pink text-sm font-medium">
+              <Soup className="size-3.5" aria-hidden />
+              <span>
+                Danh mục:{" "}
+                {selectedCategoryIds
+                  .map((id) => categoryFilterOptions.find((c) => c.id === id)?.label ?? id)
+                  .join(", ")}
+              </span>
+            </div>
+          )}
         </div>
         {currentFood && !isRandomizing && (
           <div className="inline-flex items-center gap-2 self-start lg:self-auto px-4 py-1.5 rounded-full bg-white shadow-sm">
@@ -99,22 +140,47 @@ export function RandomFoodResult({
         )}
       </div>
 
-      {/* Quick filters */}
-      <div className="flex flex-wrap items-center gap-2 mb-6">
-        <span className="text-xs text-text-secondary mr-1 uppercase tracking-wider">Lọc nhanh:</span>
-        <QuickFilterChip active={noSpice} onClick={() => setNoSpice(!noSpice)} icon={Flame}>
-          Không ăn cay
-        </QuickFilterChip>
-        <QuickFilterChip active={vegetarianOnly} onClick={() => setVegetarianOnly(!vegetarianOnly)} icon={Leaf}>
-          Món chay
-        </QuickFilterChip>
-        <QuickFilterChip active={under50k} onClick={() => setUnder50k(!under50k)} icon={Banknote}>
-          Dưới 50k
-        </QuickFilterChip>
-        <div className="ml-auto hidden md:flex items-center gap-1.5 text-sm text-text-secondary">
-          <CheckCircle2 className="size-4 text-primary-blue" aria-hidden />
-          <span>Đang lọc từ {poolSize} món phù hợp</span>
+      {/* Bộ lọc đa chọn */}
+      <div className="bg-white rounded-2xl p-4 shadow-sm mb-6 flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 text-xs text-text-secondary uppercase tracking-wider">
+            <CheckCircle2 className="size-4 text-primary-blue" aria-hidden />
+            <span>Đang lọc từ {poolSize} món phù hợp</span>
+          </div>
+          <button
+            type="button"
+            onClick={randomizeAll}
+            disabled={isRandomizing}
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-soft-pink text-primary-pink text-sm font-semibold shadow-sm transition-all active:scale-95 disabled:opacity-60"
+          >
+            <Dices className="size-4" aria-hidden />
+            Random hoàn toàn
+          </button>
         </div>
+
+        {categoryFilterOptions.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <span className="inline-flex items-center gap-1.5 text-xs text-text-secondary">
+              <Soup className="size-3.5" aria-hidden />
+              Danh mục
+            </span>
+            <MultiSelectFilterBar
+              options={categoryFilterOptions}
+              values={selectedCategoryIds}
+              onToggle={toggleCategory}
+            />
+          </div>
+        )}
+
+        {tagFilterOptions.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <span className="inline-flex items-center gap-1.5 text-xs text-text-secondary">
+              <Tag className="size-3.5" aria-hidden />
+              Đặc điểm
+            </span>
+            <MultiSelectFilterBar options={tagFilterOptions} values={selectedTags} onToggle={toggleTag} />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -125,15 +191,21 @@ export function RandomFoodResult({
               <RandomLoadingSkeleton />
             ) : (
               <div key={currentFood.id} className="animate-fade-slide-up">
-                <div className="relative w-full h-72 sm:h-96 md:h-[420px] rounded-xl overflow-hidden mb-6 group">
-                  <Image
-                    src={`https://picsum.photos/seed/${currentFood.imageSeed}/960/720`}
-                    alt={`Ảnh minh hoạ món ${currentFood.name}`}
-                    fill
-                    sizes="(min-width: 1024px) 60vw, 100vw"
-                    priority
-                    className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                  />
+                <div className="relative w-full h-72 sm:h-96 md:h-[420px] rounded-xl overflow-hidden mb-6 group bg-soft-blue">
+                  {currentFood.images[0] ? (
+                    <Image
+                      src={currentFood.images[0]}
+                      alt={`Ảnh minh hoạ món ${currentFood.name}`}
+                      fill
+                      sizes="(min-width: 1024px) 60vw, 100vw"
+                      priority
+                      className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-primary-blue">
+                      <UtensilsCrossed className="size-16" aria-hidden />
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
                   <div className="absolute top-4 left-4 flex flex-wrap gap-2">
                     <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-md text-primary-blue text-sm font-semibold shadow-md">
@@ -150,9 +222,11 @@ export function RandomFoodResult({
                         {currentFood.name}
                       </h1>
                     </div>
-                    <span className="hidden sm:inline-flex px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-white text-sm shrink-0">
-                      {currentFood.restaurantName}
-                    </span>
+                    {currentFood.restaurant && (
+                      <span className="hidden sm:inline-flex px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-white text-sm shrink-0">
+                        {currentFood.restaurant.name}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -160,22 +234,52 @@ export function RandomFoodResult({
                   <StatCard
                     icon={Banknote}
                     label="Giá tham khảo"
-                    value={formatPriceRange(currentFood.priceMin, currentFood.priceMax)}
+                    value={
+                      currentFood.priceMin !== null && currentFood.priceMax !== null
+                        ? formatPriceRange(currentFood.priceMin, currentFood.priceMax)
+                        : "Chưa cập nhật"
+                    }
                     hint="Phổ thông, hợp túi tiền"
                   />
                   <StatCard
-                    icon={Soup}
+                    icon={Flame}
                     label="Năng lượng"
-                    value={formatCalories(currentFood.calories)}
-                    hint={CATEGORY_LABELS[currentFood.category]}
+                    value={formatCaloriesRange(currentFood.caloriesMin, currentFood.caloriesMax)}
+                    hint={currentFood.categories[0]?.name ?? "Chưa phân loại"}
                   />
                   <StatCard
-                    icon={Clock}
-                    label="Khung giờ hợp"
-                    value={currentFood.mealTimes.map((t) => MEAL_TIME_LABELS[t]).join(" & ")}
-                    hint={currentFood.area}
+                    icon={Star}
+                    label="Đánh giá"
+                    value={
+                      currentFood.ratingCount > 0 ? `${currentFood.avgRating.toFixed(1)} / 5` : "Chưa có"
+                    }
+                    hint={
+                      currentFood.ratingCount > 0 ? `${currentFood.ratingCount} lượt đánh giá` : "Món mới"
+                    }
                   />
                 </div>
+
+                {currentFood.restaurant && (
+                  <div className="rounded-xl overflow-hidden mb-6">
+                    <div className="h-56">
+                      <RestaurantMap
+                        location={currentFood.restaurant.location}
+                        name={currentFood.restaurant.name}
+                        address={currentFood.restaurant.address}
+                        className="w-full h-full"
+                      />
+                    </div>
+                    <div className="bg-soft-blue/60 px-4 py-2.5 flex items-center gap-1.5 text-sm text-text-secondary">
+                      <MapPin className="size-4 text-primary-blue shrink-0" aria-hidden />
+                      <span className="truncate">
+                        <span className="font-medium text-text-primary">
+                          {currentFood.restaurant.name}
+                        </span>{" "}
+                        · {currentFood.restaurant.address}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="bg-soft-blue/70 rounded-xl p-4 flex items-start gap-3">
                   <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary-blue text-white shrink-0 mt-0.5 shadow-sm">
@@ -184,11 +288,14 @@ export function RandomFoodResult({
                   <div className="flex flex-col gap-0.5">
                     <span className="font-semibold text-text-primary">Gợi ý từ trợ lý ẩm thực:</span>
                     <p className="text-sm text-text-secondary leading-relaxed">
-                      {currentFood.name} khoảng {formatCalories(currentFood.calories)}, giá{" "}
-                      {formatPriceRange(currentFood.priceMin, currentFood.priceMax)}, hợp ăn vào buổi{" "}
-                      {currentFood.mealTimes.map((t) => MEAL_TIME_LABELS[t].toLowerCase()).join(", ")}.{" "}
-                      {currentFood.isVegetarian && "Món chay, nhẹ bụng. "}
-                      Có thể tìm ở quán {currentFood.restaurantName}, khu vực {currentFood.area}.
+                      {currentFood.name}
+                      {currentFood.priceMin !== null && currentFood.priceMax !== null
+                        ? `, giá ${formatPriceRange(currentFood.priceMin, currentFood.priceMax)}`
+                        : ""}
+                      .{" "}
+                      {currentFood.restaurant
+                        ? `Có thể tìm ở quán ${currentFood.restaurant.name}, ${currentFood.restaurant.address}.`
+                        : ""}
                     </p>
                   </div>
                 </div>
@@ -252,15 +359,21 @@ export function RandomFoodResult({
             </span>
             {currentFood && !isRandomizing ? (
               <div className="flex flex-wrap gap-2 mt-3">
-                <Badge variant="blue">{CATEGORY_LABELS[currentFood.category]}</Badge>
-                <Badge variant="pink">
-                  <Flame className="size-3" aria-hidden />
-                  {SPICE_LABELS[currentFood.spiceLevel]}
-                </Badge>
-                <Badge variant={currentFood.isVegetarian ? "success" : "neutral"}>
-                  <Salad className="size-3" aria-hidden />
-                  {currentFood.isVegetarian ? "Món chay" : "Món mặn"}
-                </Badge>
+                {currentFood.categories.map((category) => (
+                  <Badge key={category.id} variant="blue">
+                    {category.name}
+                  </Badge>
+                ))}
+                {currentFood.eatingLevels.map((level) => (
+                  <Badge key={level} variant="pink">
+                    {EATING_LEVEL_LABELS[level]}
+                  </Badge>
+                ))}
+                {currentFood.tags.map((tag) => (
+                  <Badge key={tag} variant="neutral">
+                    {tag}
+                  </Badge>
+                ))}
               </div>
             ) : (
               <div className="flex gap-2 mt-3">
@@ -313,36 +426,8 @@ export function RandomFoodResult({
         </div>
       </div>
 
-      <Toast message={toastMessage} />
+      <LoginGateModal isOpen={isLoginGateOpen} onClose={closeLoginGate} />
     </div>
-  );
-}
-
-function QuickFilterChip({
-  active,
-  onClick,
-  icon: Icon,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: typeof Flame;
-  children: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={
-        active
-          ? "inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary-blue text-white text-sm font-medium transition-all shadow-sm active:scale-95"
-          : "inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white text-text-secondary hover:text-text-primary text-sm font-medium transition-all shadow-sm active:scale-95"
-      }
-    >
-      <Icon className="size-3.5" aria-hidden />
-      {children}
-    </button>
   );
 }
 

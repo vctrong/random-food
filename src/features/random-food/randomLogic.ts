@@ -1,19 +1,26 @@
-import type { Food, HungerLevel } from "@/types/food";
+import type { EatingLevel, Food } from "@/types/food";
 
 export interface RandomFilters {
-  hungerLevel: HungerLevel | null;
-  noSpice: boolean;
-  vegetarianOnly: boolean;
-  under50k: boolean;
+  eatingLevel: EatingLevel | null;
+  categoryIds: string[];
+  tags: string[];
 }
 
-/** Lọc pool món ăn theo bộ lọc hiện tại. Hàm thuần, không side effect. */
+/**
+ * Lọc pool món ăn theo bộ lọc hiện tại. Hàm thuần, không side effect.
+ * Các nhóm filter đa chọn (categoryIds/tags) khớp kiểu OR trong cùng nhóm,
+ * AND giữa các nhóm khác nhau — nhóm rỗng nghĩa là không lọc theo nhóm đó.
+ */
 export function filterFoods(foods: Food[], filters: RandomFilters): Food[] {
   return foods.filter((food) => {
-    if (filters.hungerLevel && food.hungerLevel !== filters.hungerLevel) return false;
-    if (filters.noSpice && food.spiceLevel !== "khong-cay") return false;
-    if (filters.vegetarianOnly && !food.isVegetarian) return false;
-    if (filters.under50k && food.priceMax > 50000) return false;
+    if (filters.eatingLevel && !food.eatingLevels.includes(filters.eatingLevel)) return false;
+    if (
+      filters.categoryIds.length > 0 &&
+      !food.categories.some((category) => filters.categoryIds.includes(category.id))
+    ) {
+      return false;
+    }
+    if (filters.tags.length > 0 && !filters.tags.some((tag) => food.tags.includes(tag))) return false;
     return true;
   });
 }
