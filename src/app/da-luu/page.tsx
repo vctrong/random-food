@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { Heart } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { getAllFoods } from "@/services/foodService";
-import { getSavedFoodRecords } from "@/services/savedFoodService";
+import { listFavoritesForUser } from "@/lib/favorites";
 import { SavedFoodsPageContent } from "@/components/food/SavedFoodsPageContent";
 import { RequireLoginState } from "@/components/auth/RequireLoginState";
 
@@ -20,8 +20,10 @@ export default async function SavedFoodsPage() {
     );
   }
 
+  const userId = (session.user as { id: string }).id;
   const allFoods = await getAllFoods();
-  const initialRecords = getSavedFoodRecords();
+  const favorites = await listFavoritesForUser(userId);
+  const initialRecords = favorites.map((favorite) => ({ foodId: favorite.foodId, savedAt: favorite.createdAt }));
 
   return <SavedFoodsPageContent initialRecords={initialRecords} allFoods={allFoods} />;
 }

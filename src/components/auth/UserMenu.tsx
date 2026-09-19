@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { Bookmark, ChevronDown, History, LogOut, Settings, User as UserIcon } from "lucide-react";
+import { Bookmark, ChevronDown, ClipboardCheck, History, LogOut, Settings, ShieldCheck, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -45,6 +45,9 @@ export function UserMenu() {
   }
 
   const { name, email, image } = session.user;
+  const role = (session.user as { role?: string }).role;
+  const isReviewer = role === "foodreviewer" || role === "admin";
+  const isAdmin = role === "admin";
   const initial = (name ?? email ?? "?").charAt(0).toUpperCase();
 
   return (
@@ -87,6 +90,28 @@ export function UserMenu() {
             <p className="text-sm font-semibold text-text-primary truncate">{name}</p>
             <p className="text-xs text-text-secondary truncate">{email}</p>
           </div>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              role="menuitem"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-primary-pink font-medium hover:bg-soft-pink transition-colors border-b border-border"
+            >
+              <ShieldCheck className="size-4" aria-hidden />
+              Quản trị hệ thống
+            </Link>
+          )}
+          {isReviewer && (
+            <Link
+              href="/reviewer"
+              role="menuitem"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-primary-blue font-medium hover:bg-soft-blue transition-colors border-b border-border"
+            >
+              <ClipboardCheck className="size-4" aria-hidden />
+              Không gian thẩm định
+            </Link>
+          )}
           <Link
             href="/ho-so"
             role="menuitem"

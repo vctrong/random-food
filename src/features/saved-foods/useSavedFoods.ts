@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { Food } from "@/types/food";
 import {
   computeSavedStats,
@@ -9,7 +9,7 @@ import {
   pickRandomSavedFood,
   type SavedSortOrder,
 } from "./savedFoodsLogic";
-import { getSavedFoodRecords, removeSavedFood, type SavedFoodRecord } from "@/services/savedFoodService";
+import { removeSavedFood, type SavedFoodRecord } from "@/services/savedFoodService";
 import { addHistoryEntry } from "@/services/historyService";
 import { readSoundPreference } from "@/features/settings/settingsLogic";
 import { playRandomizeChime } from "@/lib/sound";
@@ -38,12 +38,6 @@ export function useSavedFoods({
   const [isRerolling, setIsRerolling] = useState(false);
   const { showToast } = useToast();
 
-  useEffect(() => {
-    // SSR không đọc được localStorage — đồng bộ lại dữ liệu thật ngay sau khi mount.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setRecords(getSavedFoodRecords());
-  }, []);
-
   const saved = useMemo(() => joinSavedWithFood(records, allFoods), [records, allFoods]);
 
   const categoryCounts = useMemo(() => {
@@ -68,10 +62,15 @@ export function useSavedFoods({
     [saved, totalCategoriesAvailable],
   );
 
-  /** Bỏ lưu thật — ghi vào localStorage qua savedFoodService. */
-  const unsave = (foodId: string) => {
-    removeSavedFood(foodId);
+  /** Bỏ lưu thật qua API — rollback nếu lỗi. */
+  const unsave = async (foodId: string) => {
+    const snapshot = records;
     setRecords((prev) => prev.filter((r) => r.foodId !== foodId));
+    const ok = await removeSavedFood(foodId);
+    if (!ok) {
+      setRecords(snapshot);
+      showToast("Không thể bỏ lưu món này, vui lòng thử lại.", "error");
+    }
   };
 
   const openModalWithFood = (food: Food) => {
@@ -95,18 +94,19 @@ export function useSavedFoods({
     }, MODAL_TRANSITION_MS);
   };
 
-  /** Chốt ăn cũng ghi thật vào lịch sử, không chỉ hiện toast rồi biến mất. */
-  const confirmModal = () => {
+  /** Chốt ăn cũng ghi thật vào lịch sử qua API, không chỉ hiện toast rồi biến mất. */
+  const confirmModal = async () => {
     if (!modalFood) return;
-    addHistoryEntry({
-      foodId: modalFood.id,
-      timestamp: new Date().toISOString(),
-      eatingLevel: modalFood.eatingLevels[0] ?? null,
-      wasEaten: true,
-      isSaved: true,
-    });
-    showToast(`Đã chốt ăn "${modalFood.name}" — đã ghi vào lịch sử!`, "success");
-    setIsModalOpen(false);
+    if (!modalFood.restaurant) {
+      showToast("Món này chưa gắn quán, không thể ghi nhận lịch sử.", "error");
+      return;
+    }
+    const ok = await addHistoryEntry({ foodId: modalFood.id, restaurantId: modalFood.restaurant.id });
+    showToast(
+      ok ? `Đã chốt ăn "${modalFood.name}" — đã ghi vào lịch sử!` : "Không thể ghi nhận lịch sử, vui lòng thử lại.",
+      ok ? "success" : "error",
+    );
+    if (ok) setIsModalOpen(false);
   };
 
   const closeModal = () => setIsModalOpen(false);

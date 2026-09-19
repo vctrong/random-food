@@ -1,15 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { EatingLevel, Food } from "@/types/food";
 import type { HistoryEntry } from "@/types/history";
-import {
-  getAllHistory,
-  removeHistoryEntry,
-  clearAllHistory,
-  updateHistoryEntry,
-} from "@/services/historyService";
+import { removeHistoryEntry, clearAllHistory, submitReview, deleteMyReview } from "@/services/historyService";
 import { addSavedFood, removeSavedFood } from "@/services/savedFoodService";
+import { useToast } from "@/components/ui/ToastProvider";
 import {
   computeEatingLevelBreakdown,
   computeStats,
@@ -34,12 +30,7 @@ export function useHistoryLog({ initialEntries, allFoods, totalFoodsInMenu }: Us
   const [eatingLevel, setEatingLevel] = useState<EatingLevel | "all">("all");
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
-
-  useEffect(() => {
-    // SSR không đọc được localStorage — đồng bộ lại dữ liệu thật ngay sau khi mount.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setRawEntries(getAllHistory());
-  }, []);
+  const { showToast } = useToast();
 
   const entries = useMemo(() => joinHistoryWithFood(rawEntries, allFoods), [rawEntries, allFoods]);
 
@@ -62,34 +53,86 @@ export function useHistoryLog({ initialEntries, allFoods, totalFoodsInMenu }: Us
   const eatingLevelBreakdown = useMemo(() => computeEatingLevelBreakdown(entries), [entries]);
   const topMealTimeInsight = useMemo(() => computeTopMealTimeInsight(entries), [entries]);
 
-  /** Xoá thật — ghi vào localStorage qua historyService, không chỉ ẩn trên UI. */
-  const removeEntry = (id: string) => {
+  /** Xoá thật qua API — rollback nếu lỗi. */
+  const removeEntry = async (id: string) => {
     setRemovingIds((prev) => new Set(prev).add(id));
-    window.setTimeout(() => {
-      removeHistoryEntry(id);
+    const snapshot = rawEntries;
+    window.setTimeout(async () => {
       setRawEntries((prev) => prev.filter((e) => e.id !== id));
       setRemovingIds((prev) => {
         const next = new Set(prev);
         next.delete(id);
         return next;
       });
+      const ok = await removeHistoryEntry(id);
+      if (!ok) {
+        setRawEntries(snapshot);
+        showToast("Không thể xoá mục lịch sử này, vui lòng thử lại.", "error");
+      }
     }, 250);
   };
 
-  const clearAll = () => {
-    clearAllHistory();
+  const clearAll = async () => {
+    const snapshot = rawEntries;
     setRawEntries([]);
+    try {
+      await clearAllHistory(snapshot.map((e) => e.id));
+    } catch {
+      setRawEntries(snapshot);
+      showToast("Không thể xoá toàn bộ lịch sử, vui lòng thử lại.", "error");
+    }
   };
 
-  /** Bookmark từ Lịch sử cũng đồng bộ ngược vào danh sách Đã lưu. */
-  const toggleSaved = (id: string) => {
+  /** Bookmark từ Lịch sử — cập nhật mọi entry cùng foodId (isSaved thật ra là thuộc tính của món, không của từng lần check-in). */
+  const toggleSaved = async (id: string) => {
     const entry = rawEntries.find((e) => e.id === id);
     if (!entry) return;
     const nextSaved = !entry.isSaved;
-    updateHistoryEntry(id, { isSaved: nextSaved });
-    if (nextSaved) addSavedFood(entry.foodId);
-    else removeSavedFood(entry.foodId);
-    setRawEntries((prev) => prev.map((e) => (e.id === id ? { ...e, isSaved: nextSaved } : e)));
+    const snapshot = rawEntries;
+
+    setRawEntries((prev) => prev.map((e) => (e.foodId === entry.foodId ? { ...e, isSaved: nextSaved } : e)));
+
+    const ok = nextSaved ? await addSavedFood(entry.foodId) : await removeSavedFood(entry.foodId);
+    if (!ok) {
+      setRawEntries(snapshot);
+      showToast("Không thể cập nhật trạng thái đã lưu, vui lòng thử lại.", "error");
+    }
+  };
+
+  /** Gửi đánh giá — cập nhật review cho mọi entry cùng foodId (1 review/món, không phải/lần check-in). */
+  const submitEntryReview = async (entryId: string, rating: number, comment: string) => {
+    const entry = rawEntries.find((e) => e.id === entryId);
+    if (!entry) return false;
+
+    const result = await submitReview(entryId, rating, comment);
+    if (!result.ok || !result.id) {
+      showToast(result.error ?? "Không thể gửi đánh giá.", "error");
+      return false;
+    }
+
+    setRawEntries((prev) =>
+      prev.map((e) =>
+        e.foodId === entry.foodId ? { ...e, review: { id: result.id!, rating, comment: comment.trim() || null } } : e,
+      ),
+    );
+    showToast("Đã gửi đánh giá của bạn!", "success");
+    return true;
+  };
+
+  /** Xoá đánh giá — bỏ review khỏi mọi entry cùng foodId. */
+  const removeEntryReview = async (entryId: string) => {
+    const entry = rawEntries.find((e) => e.id === entryId);
+    if (!entry?.review) return;
+    const reviewId = entry.review.id;
+    const snapshot = rawEntries;
+
+    setRawEntries((prev) => prev.map((e) => (e.foodId === entry.foodId ? { ...e, review: null } : e)));
+
+    const ok = await deleteMyReview(reviewId);
+    if (!ok) {
+      setRawEntries(snapshot);
+      showToast("Không thể xoá đánh giá, vui lòng thử lại.", "error");
+    }
   };
 
   return {
@@ -111,6 +154,8 @@ export function useHistoryLog({ initialEntries, allFoods, totalFoodsInMenu }: Us
     removeEntry,
     clearAll,
     toggleSaved,
+    submitEntryReview,
+    removeEntryReview,
     isEmpty: entries.length === 0,
     hasNoFilterMatch: entries.length > 0 && filteredEntries.length === 0,
   };

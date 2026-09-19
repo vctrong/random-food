@@ -38,10 +38,44 @@ export function formatClockTime(isoTimestamp: string): string {
   return new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit" }).format(date);
 }
 
+export function formatDateTime(isoTimestamp: string): string {
+  const date = new Date(isoTimestamp);
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+export function formatDurationMinutes(totalMinutes: number): string {
+  if (totalMinutes < 60) return `${totalMinutes} phút`;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes > 0 ? `${hours}h${minutes}p` : `${hours}h`;
+}
+
 /**
  * Link mở thẳng vị trí trên Google Maps (không cần API key — chỉ là URL điều hướng
  * công khai). Ưu tiên toạ độ chính xác nếu có, fallback về tìm theo địa chỉ text.
  */
+const ALLOWED_IMAGE_HOSTS = new Set(["picsum.photos", "lh3.googleusercontent.com", "res.cloudinary.com"]);
+
+/**
+ * next/image chỉ cho phép host đã khai báo trong next.config.ts (remotePatterns) —
+ * ảnh từ host khác (vd dữ liệu test/legacy) sẽ làm crash cả trang. Dùng để lọc
+ * trước khi render <Image>, fallback về avatar chữ cái đầu nếu host lạ.
+ */
+export function isAllowedImageHost(url: string | null | undefined): boolean {
+  if (!url) return false;
+  try {
+    return ALLOWED_IMAGE_HOSTS.has(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
 export function getGoogleMapsUrl(
   location: { lat: number; lng: number } | null | undefined,
   address: string,

@@ -7,8 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
     "seed:categories": "node --env-file=.env.local scripts/seedCategories.mjs",
     "seed:admin": "node --env-file=.env.local scripts/seedAdmin.mjs",
+    "seed:reviewer": "node --env-file=.env.local scripts/seedReviewer.mjs",
     "seed:foods": "node --env-file=.env.local scripts/seedFoods.mjs"
   },
   "dependencies": {
@@ -22,7 +24,8 @@
     "next": "16.3.5",
     "next-auth": "^4.24.15",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -33,6 +36,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }

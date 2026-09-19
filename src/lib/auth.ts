@@ -98,14 +98,26 @@ export const authOptions: NextAuthOptions = {
           .lean()) as { sessionVersion?: number } | null;
         if (dbUser) token.sessionVersion = dbUser.sessionVersion ?? 0;
       }
+      // Đồng bộ role vào JWT ở MỌI lần token được xử lý (không chỉ sign-in) để
+      // proxy.ts đọc được qua getToken() mà không cần query DB (proxy chạy trước
+      // route render, không có Node/DB context nhẹ). Đây CHỈ là lớp lọc thô ở
+      // proxy — role trong JWT có thể trễ tối đa tới lần getServerSession() kế
+      // tiếp; callback session() bên dưới (chạy mỗi request qua getServerSession)
+      // luôn truy vấn role/ban/idle mới nhất từ DB làm nguồn xác thực cuối cùng,
+      // nên demote/ban vẫn có hiệu lực ngay ở lớp đó dù JWT tạm thời còn cũ.
+      if (token.id) {
+        await connectDB();
+        const dbUser = (await User.findById(token.id as string).select("role").lean()) as { role?: string } | null;
+        token.role = dbUser?.role ?? "user";
+      }
       return token;
     },
     async session({ session, token }) {
       const userId = token.id as string;
       await connectDB();
       const dbUser = (await User.findById(userId)
-        .select("sessionVersion accountStatus lastActiveAt")
-        .lean()) as { sessionVersion?: number; accountStatus?: string; lastActiveAt?: Date } | null;
+        .select("sessionVersion accountStatus lastActiveAt role")
+        .lean()) as { sessionVersion?: number; accountStatus?: string; lastActiveAt?: Date; role?: string } | null;
 
       const now = Date.now();
       const tokenSessionVersion = (token.sessionVersion as number) ?? 0;
@@ -128,7 +140,8 @@ export const authOptions: NextAuthOptions = {
       }
 
       if (session.user) {
-        (session.user as typeof session.user & { id?: string }).id = userId;
+        (session.user as typeof session.user & { id?: string; role?: string }).id = userId;
+        (session.user as typeof session.user & { id?: string; role?: string }).role = dbUser?.role ?? "user";
       }
       return session;
     },

@@ -1,9 +1,8 @@
 /**
- * Lớp duy nhất "biết" data món đã lưu đến từ đâu. Lưu/bỏ lưu được ghi vào
- * localStorage của trình duyệt (chưa nối với collection `favorites` thật —
- * xem ghi chú ở src/app/api/favorites/route.ts). Trên server (SSR) không có
- * localStorage nên luôn trả về mảng rỗng — component client tự đồng bộ lại
- * dữ liệu thật ngay sau khi mount.
+ * Lớp duy nhất "biết" data món đã lưu đến từ đâu — gọi qua API route
+ * `/api/favorites` (dữ liệu thật từ MongoDB, gắn theo tài khoản), không còn
+ * dùng localStorage. Chỉ dùng ở phía client ("use client" hooks/component) —
+ * fetch tương đối hoạt động nhờ cùng origin trong trình duyệt.
  */
 
 export interface SavedFoodRecord {
@@ -12,45 +11,41 @@ export interface SavedFoodRecord {
   savedAt: string;
 }
 
-const STORAGE_KEY = "homnayangi:saved-foods";
+interface FavoriteApiRecord {
+  id: string;
+  foodId: string;
+  createdAt: string;
+}
 
-function readStorage(): SavedFoodRecord[] | null {
-  if (typeof window === "undefined") return null;
+export async function getSavedFoodRecords(): Promise<SavedFoodRecord[]> {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as SavedFoodRecord[]) : null;
+    const response = await fetch("/api/favorites", { cache: "no-store" });
+    if (!response.ok) return [];
+    const favorites = (await response.json()) as FavoriteApiRecord[];
+    return favorites.map((favorite) => ({ foodId: favorite.foodId, savedAt: favorite.createdAt }));
   } catch {
-    return null;
+    return [];
   }
 }
 
-function writeStorage(records: SavedFoodRecord[]): void {
-  if (typeof window === "undefined") return;
+export async function addSavedFood(foodId: string): Promise<boolean> {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    const response = await fetch("/api/favorites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ foodId }),
+    });
+    return response.ok;
   } catch {
-    // Bỏ qua nếu trình duyệt chặn localStorage (vd: chế độ riêng tư).
+    return false;
   }
 }
 
-function readRecords(): SavedFoodRecord[] {
-  return readStorage() ?? [];
-}
-
-export function getSavedFoodRecords(): SavedFoodRecord[] {
-  return readRecords();
-}
-
-export function isFoodSaved(foodId: string): boolean {
-  return readRecords().some((record) => record.foodId === foodId);
-}
-
-export function addSavedFood(foodId: string): void {
-  const current = readRecords();
-  if (current.some((record) => record.foodId === foodId)) return;
-  writeStorage([{ foodId, savedAt: new Date().toISOString() }, ...current]);
-}
-
-export function removeSavedFood(foodId: string): void {
-  writeStorage(readRecords().filter((record) => record.foodId !== foodId));
+export async function removeSavedFood(foodId: string): Promise<boolean> {
+  try {
+    const response = await fetch(`/api/favorites/${encodeURIComponent(foodId)}`, { method: "DELETE" });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }

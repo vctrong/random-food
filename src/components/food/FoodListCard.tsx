@@ -1,19 +1,15 @@
-"use client";
-
-import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ExternalLink, Info, MapPin, Star, UtensilsCrossed } from "lucide-react";
 import type { Food } from "@/types/food";
 import { EATING_LEVEL_LABELS } from "@/constants/categories";
 import { cn, formatPriceRange, getGoogleMapsUrl } from "@/lib/utils";
-import { FoodDetailModal } from "./FoodDetailModal";
 
 interface FoodListCardProps {
   food: Food;
 }
 
 export function FoodListCard({ food }: FoodListCardProps) {
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const coverImage = food.images[0] ?? null;
   const priceLabel =
     food.priceMin !== null && food.priceMax !== null
@@ -94,14 +90,13 @@ export function FoodListCard({ food }: FoodListCardProps) {
         )}
 
         <div className="mt-auto flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setIsDetailOpen(true)}
+          <Link
+            href={`/mon-an/${food.id}`}
             className="flex-1 h-10 rounded-xl bg-soft-blue text-primary-blue hover:bg-primary-blue hover:text-white text-sm font-medium flex items-center justify-center gap-1.5 transition-colors"
           >
             <Info className="size-4" aria-hidden />
             <span>Xem chi tiết</span>
-          </button>
+          </Link>
           {food.restaurant && (
             <a
               href={getGoogleMapsUrl(food.restaurant.location, food.restaurant.address)}
@@ -116,8 +111,6 @@ export function FoodListCard({ food }: FoodListCardProps) {
           )}
         </div>
       </div>
-
-      <FoodDetailModal isOpen={isDetailOpen} onClose={() => setIsDetailOpen(false)} food={food} />
     </article>
   );
 }

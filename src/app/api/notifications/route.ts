@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { isValidObjectId } from "mongoose";
 import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
 import { Notification } from "@/lib/models/Notification";
@@ -43,8 +44,8 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ success: true });
   }
 
-  if (!id) {
-    return NextResponse.json({ error: "Thiếu id thông báo." }, { status: 400 });
+  if (!id || !isValidObjectId(id)) {
+    return NextResponse.json({ error: "Thiếu hoặc sai id thông báo." }, { status: 400 });
   }
 
   await Notification.updateOne({ _id: id, userId }, { $set: { isRead: true } });
