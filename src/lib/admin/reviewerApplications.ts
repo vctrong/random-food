@@ -29,14 +29,34 @@ export async function getReviewerApplications(): Promise<AdminReviewerApplicatio
     .sort({ createdAt: -1 })
     .populate("userId", "name email avatarUrl")
     .populate("reviewedBy", "name")
+    .populate("expertiseCategoryIds", "name")
     .lean();
 
   return applications.map((app) => {
     const reviewedBy = app.reviewedBy as unknown as { _id?: unknown; name?: string } | null;
+    const expertise = (app.expertiseCategoryIds ?? []) as unknown as { name?: string }[];
+    // Đơn tạo trước form ứng tuyển không có hồ sơ chi tiết.
+    const hasProfile = Boolean(app.fullName || app.motivation || app.scenarioAnswer);
     return {
       id: String(app._id),
-      status: app.status as "pending" | "approved" | "rejected",
-      reason: app.reason ?? null,
+      status: app.status as AdminReviewerApplicationRow["status"],
+      // `reason` là tên cũ của reviewNote — đọc dự phòng cho tới khi chạy migration.
+      reviewNote: app.reviewNote ?? (app as { reason?: string }).reason ?? null,
+      profile: hasProfile
+        ? {
+            fullName: app.fullName ?? "",
+            motivation: app.motivation ?? "",
+            expertise: expertise.map((category) => category.name ?? "").filter(Boolean),
+            activeAreas: app.activeAreas ?? [],
+            socialLinks: (app.socialLinks ?? []).map((link: { platform: string; url: string }) => ({
+              platform: link.platform,
+              url: link.url,
+            })),
+            portfolioImages: app.portfolioImages ?? [],
+            scenarioAnswer: app.scenarioAnswer ?? "",
+            agreedAt: app.agreedAt ? new Date(app.agreedAt).toISOString() : null,
+          }
+        : null,
       applicant: toUserRef(app.userId),
       reviewedBy: reviewedBy?._id ? { id: String(reviewedBy._id), name: reviewedBy.name ?? "" } : null,
       reviewedAt: app.reviewedAt ? app.reviewedAt.toISOString() : null,
@@ -66,9 +86,10 @@ export async function decideReviewerApplication({
   if (application.status !== "pending") return { error: "NOT_PENDING" };
 
   application.status = decision;
-  application.reason = reason.trim() || undefined;
+  application.reviewNote = reason.trim() || undefined;
   application.reviewedBy = adminId as unknown as typeof application.reviewedBy;
   application.reviewedAt = new Date();
+  application.updatedAt = new Date();
   await application.save();
 
   if (decision === "approved") {

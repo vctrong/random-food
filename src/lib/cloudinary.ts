@@ -13,4 +13,10 @@ cloudinary.config({
   secure: true,
 });
 
+export async function uploadImageFile(file: File, folder: string): Promise<string> {
+  const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
+  const result = await cloudinary.uploader.upload(`data:${file.type};base64,${base64}`, { folder });
+  return result.secure_url;
+}
+
 export { cloudinary };

@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { Bookmark, ChevronDown, ClipboardCheck, History, LogOut, Settings, ShieldCheck, User as UserIcon } from "lucide-react";
+import { BadgeCheck, Bookmark, ChefHat, ChevronDown, ClipboardCheck, History, LogOut, Settings, ShieldCheck, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -130,6 +130,26 @@ export function UserMenu() {
             <History className="size-4 text-text-secondary" aria-hidden />
             Lịch sử
           </Link>
+          <Link
+            href="/dong-gop"
+            role="menuitem"
+            onClick={() => setIsOpen(false)}
+            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-primary hover:bg-soft-blue transition-colors"
+          >
+            <ChefHat className="size-4 text-text-secondary" aria-hidden />
+            Món đã đóng góp
+          </Link>
+          {!isReviewer && (
+            <Link
+              href="/ung-tuyen-reviewer"
+              role="menuitem"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-primary hover:bg-soft-blue transition-colors"
+            >
+              <BadgeCheck className="size-4 text-text-secondary" aria-hidden />
+              Ứng tuyển FoodReviewer
+            </Link>
+          )}
           <Link
             href="/da-luu"
             role="menuitem"

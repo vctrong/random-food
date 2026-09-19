@@ -49,6 +49,16 @@ export function formatDateTime(isoTimestamp: string): string {
   }).format(date);
 }
 
+/** Ngày theo múi giờ Việt Nam cố định — tránh lệch giữa SSR (server UTC) và trình duyệt khi hydrate. */
+export function formatDate(isoTimestamp: string): string {
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(new Date(isoTimestamp));
+}
+
 export function formatDurationMinutes(totalMinutes: number): string {
   if (totalMinutes < 60) return `${totalMinutes} phút`;
   const hours = Math.floor(totalMinutes / 60);

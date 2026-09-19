@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-tertiary-fixed-variant": "#254871",
+          "surface-dim": "#d0dbed",
+          "on-secondary-fixed": "#3e001d",
+          "on-surface-variant": "#414751",
+          "inverse-primary": "#a1c9ff",
+          "surface-container-highest": "#d9e3f6",
+          "surface-container-low": "#eff4ff",
+          "surface-tint": "#0060a8",
+          "on-secondary": "#ffffff",
+          "inverse-on-surface": "#eaf1ff",
+          "on-tertiary": "#ffffff",
+          "surface-bright": "#f8f9ff",
+          "on-tertiary-container": "#0b345c",
+          "on-tertiary-fixed": "#001c39",
+          "on-surface": "#121c2a",
+          "surface-variant": "#d9e3f6",
+          "on-primary-fixed": "#001c38",
+          "tertiary-container": "#7c9dcb",
+          "primary-fixed-dim": "#a1c9ff",
+          "secondary-fixed": "#ffd9e2",
+          "primary-fixed": "#d3e4ff",
+          "tertiary-fixed-dim": "#a8c9f9",
+          "error": "#ba1a1a",
+          "secondary-container": "#fd8ab0",
+          "surface-container": "#e6eeff",
+          "on-primary": "#ffffff",
+          "inverse-surface": "#27313f",
+          "secondary-fixed-dim": "#ffb1c7",
+          "on-error": "#ffffff",
+          "tertiary-fixed": "#d3e3ff",
+          "primary": "#0060a8",
+          "on-secondary-fixed-variant": "#7f2449",
+          "on-primary-container": "#00345f",
+          "primary-container": "#5b9eeb",
+          "error-container": "#ffdad6",
+          "on-secondary-container": "#781f43",
+          "on-primary-fixed-variant": "#004880",
+          "surface-container-lowest": "#ffffff",
+          "tertiary": "#3f608a",
+          "on-background": "#121c2a",
+          "surface": "#f8f9ff",
+          "outline": "#717782",
+          "surface-container-high": "#dee9fc",
+          "on-error-container": "#93000a",
+          "outline-variant": "#c1c7d3",
+          "background": "#f8f9ff",
+          "secondary": "#9d3c60"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "margin-lg": "3rem",
+          "space-xl": "2.5rem",
+          "gutter": "1rem",
+          "gutter-md": "1.5rem",
+          "gutter-lg": "2rem",
+          "margin": "1rem",
+          "margin-md": "1.5rem",
+          "space-sm": "0.5rem",
+          "space-md": "1rem",
+          "space-xs": "0.25rem",
+          "space-lg": "1.5rem"
+        },
+        "fontFamily": {
+          "sans": ["Plus Jakarta Sans", "system-ui", "sans-serif"]
+        }
+      }
+    }
+  }
+</script>
+<style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+    }
+    .scrollbar-none::-webkit-scrollbar { display: none; }
+    .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+<meta content="web_standard" name="shell-type"/></head>
+<body class="bg-[#FFFDFB] font-sans text-on-surface antialiased selection:bg-primary-container/20 selection:text-primary">
+<!-- TOP HEADER -->
+<header class="fixed top-0 left-0 right-0 w-full z-50 bg-[#FFFDFB]/90 backdrop-blur-xl border-b border-outline-variant/50 shadow-[0_1px_12px_rgba(35,70,111,0.03)] transition-all">
+<div class="h-16 max-w-7xl mx-auto px-margin sm:px-margin-md lg:px-margin-lg flex items-center justify-between gap-space-md">
+<!-- Brand Logo -->
+<a class="flex items-center gap-space-sm shrink-0 group" data-path="trang-chu" href="#">
+<img alt="Hôm Nay Ăn Gì Logo" class="h-9 w-auto object-contain transition-transform group-hover:scale-105" src="https://lh3.googleusercontent.com/aida/AEtjO1VliUwHHZz9mWzKWnu4U5vknU2Qn0tyWQJU1zHqw7uk9DJhC41vxLNOXLQFvl9Y7UlL5bhYDt7WERs7pH0fP9WnsCRZ_mgrr_Gg8GEYLEv7SFvaeh2NAOHZP4ZBKQKpGdeYVNqd5c6j_HF7ZQXhrbPabf_EXEmOxghkl4u8vL8HPCX-Rbf_smovbfJyHe0RiE75l88ukN4FgSPDCyqChUPxX6Dg_v9XSDTThdwv3GYC1l3ld4O-KYyo-Z8"/>
+</a>
+<!-- Central Navigation -->
+<nav class="hidden lg:flex items-center gap-space-xs p-1.5 rounded-full bg-surface-container-lowest border border-outline-variant/60 shadow-sm" data-active-classes="text-primary font-bold bg-surface-container-low">
+<a class="px-space-md py-1.5 rounded-full text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-all" data-path="trang-chu" href="#">Trang chủ</a>
+<a class="px-space-md py-1.5 rounded-full text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-all" data-path="danh-muc-mon" href="#">Danh mục món</a>
+<a class="px-space-md py-1.5 rounded-full text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-all" data-path="vong-quay" href="#">Vòng quay</a>
+<a aria-current="page" class="px-space-md py-1.5 rounded-full transition-all text-primary font-bold bg-surface-container-low" data-path="ung-tuyen-reviewer" href="#">Ứng tuyển Reviewer</a>
+<a class="px-space-md py-1.5 rounded-full text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-all" data-path="mon-da-luu" href="#">Món đã lưu</a>
+</nav>
+<!-- Header CTAs & User Profile -->
+<div class="flex items-center gap-space-sm">
+<a class="inline-flex items-center gap-1.5 h-10 px-space-md rounded-full bg-primary hover:bg-primary-container text-on-primary font-semibold text-sm shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-300" data-path="vong-quay" href="#">
+<span class="material-symbols-outlined text-lg leading-none">casino</span>
+<span class="hidden sm:inline">Random ngay</span>
+</a>
+<button aria-label="Thông báo" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-lowest bg-surface-container-low border border-outline-variant/60 transition-all" type="button">
+<span class="material-symbols-outlined text-xl">notifications</span>
+</button>
+<div class="flex items-center gap-1.5 pl-1 cursor-pointer group">
+<img alt="Avatar" class="w-9 h-9 rounded-full object-cover ring-2 ring-white shadow-sm border border-outline-variant/70 group-hover:ring-primary-container transition-all" src="https://lh3.googleusercontent.com/aida/AEtjO1VmXV8wQSz813SEU3h-5flqSQB9mCpswzWPlrgW_i3qd0esKelu-u26BO-znzMI_HIS3jbGkL4nQxOmzbGP4DHIftBR_1YD_BYIWw844kBLLjGPC8s8a95cqWK8R-uN2Gr01Mfnl-hr7P2lk0sYsNNmkJdBGMU0krDysBuvAR3Cbf19UbCs0-z8vBCvfQzQKvyI8FmrPoSo7uufJfQkbK8F0TwnV3xW24PHp-YJuvRknb8Tr8_GXQQl0qU"/>
+<span class="material-symbols-outlined text-sm text-outline group-hover:text-on-surface transition-colors">expand_more</span>
+</div>
+</div>
+</div>
+</header>
+<!-- MAIN CONTENT CONTAINER -->
+<main class="w-full pt-16 bg-[#FFFDFB] overflow-x-hidden"><div class="flex flex-col w-full">
+<!-- Subtle Ambient Glow Orbs behind editorial section -->
+<div class="relative w-full max-w-7xl mx-auto px-margin sm:px-margin-md lg:px-margin-lg pt-6 pb-20 overflow-hidden">
+<div class="absolute top-12 left-1/4 w-96 h-96 bg-primary-container/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
+<div class="absolute top-48 right-10 w-80 h-80 bg-secondary-fixed/30 rounded-full blur-3xl pointer-events-none -z-10"></div>
+<!-- 1. HERO HEADER & EDITORIAL VALUE PROPOSITION -->
+<section class="flex flex-col items-center text-center max-w-4xl mx-auto space-y-space-md pt-4 pb-space-lg">
+<!-- High-End Guild Badge -->
+<div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface-container-low shadow-sm">
+<span class="text-xs">✨</span>
+<span class="font-label-md text-label-md text-primary tracking-wide uppercase">NayAnGi Culinary Guild</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-label-md text-label-md text-on-surface-variant">Chương Trình Đại Sứ Ẩm Thực Độc Lập</span>
+</div>
+<!-- Headline -->
+<h1 class="font-display-lg text-display-lg text-on-surface tracking-tight max-w-3xl">
+        Trở Thành FoodReviewer Độc Lập – Người Định Vị Chuẩn Vị Ẩm Thực Việt
+      </h1>
+<!-- Tagline -->
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">
+        Cùng chúng tôi kiến tạo bản đồ ẩm thực trung thực, nói không với booking thương mại giấu mặt. Tôn vinh nghệ thuật ẩm thực từ gánh hàng rong đường phố đến phong vị fine dining đương đại.
+      </p>
+<!-- 4 Pillars Benefits Matrix (Frosted Modern Cards) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md w-full pt-space-md text-left">
+<!-- Benefit 1 -->
+<div class="group p-5 rounded-2xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all duration-300">
+<div class="w-10 h-10 rounded-xl bg-primary-fixed flex items-center justify-center text-primary mb-3.5 group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface mb-1.5">Tích Xanh &amp; Hồ Sơ Độc Quyền</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+            Chứng chỉ Thẩm định viên chính thức, huy hiệu bảo chứng độ tin cậy được cộng đồng 1.2M foodie tin cậy.
+          </p>
+</div>
+<!-- Benefit 2 -->
+<div class="group p-5 rounded-2xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all duration-300">
+<div class="w-10 h-10 rounded-xl bg-secondary-fixed flex items-center justify-center text-secondary mb-3.5 group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">ramen_dining</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface mb-1.5">Đặc Quyền Thử Món 0đ</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+            Vé mời nếm thực đơn ẩn từ hơn 2,500+ đối tác ẩm thực chất lượng cao trước ngày công bố đại chúng.
+          </p>
+</div>
+<!-- Benefit 3 -->
+<div class="group p-5 rounded-2xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all duration-300">
+<div class="w-10 h-10 rounded-xl bg-tertiary-fixed flex items-center justify-center text-tertiary mb-3.5 group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">diamond</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface mb-1.5">Thù Lao &amp; Điểm Danh Vọng</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+            Nhận nhuận bút thẩm định minh bạch theo từng bài viết &amp; reel đạt tiêu chuẩn Hội đồng Tuyển chọn.
+          </p>
+</div>
+<!-- Benefit 4 -->
+<div class="group p-5 rounded-2xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all duration-300">
+<div class="w-10 h-10 rounded-xl bg-surface-container-highest flex items-center justify-center text-on-tertiary-container mb-3.5 group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">balance</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface mb-1.5">Quyền Biểu Quyết Trọng Lượng</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+            Mỗi lượt đánh giá được tính hệ số x3 trên thuật toán vòng quay món và bảng xếp hạng 'Chuẩn Vị Hà Thành/Sài Gòn'.
+          </p>
+</div>
+</div>
+</section>
+<!-- 2. APPLICATION WORKFLOW & BESPOKE SIDEBAR -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start pt-4">
+<!-- MAIN APPLICATION FORM CONTAINER (8 cols) -->
+<div class="lg:col-span-8 flex flex-col space-y-space-lg">
+<!-- Stepper Progress Indicator -->
+<div class="bg-surface-container-lowest p-5 rounded-2xl shadow-sm">
+<div class="flex items-center justify-between relative">
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-surface-container-high z-0"></div>
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-2/3 h-1 bg-primary z-0 transition-all duration-500"></div>
+<!-- Step 1 -->
+<div class="relative z-10 flex flex-col items-center group cursor-pointer">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary font-label-sm text-label-sm flex items-center justify-center shadow-md">
+<span class="material-symbols-outlined text-sm">check</span>
+</div>
+<span class="hidden sm:block font-label-sm text-label-sm text-on-surface font-semibold mt-2">Hồ sơ cá nhân</span>
+</div>
+<!-- Step 2 -->
+<div class="relative z-10 flex flex-col items-center group cursor-pointer">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary font-label-sm text-label-sm flex items-center justify-center shadow-md">
+<span class="material-symbols-outlined text-sm">check</span>
+</div>
+<span class="hidden sm:block font-label-sm text-label-sm text-on-surface font-semibold mt-2">Kênh Review</span>
+</div>
+<!-- Step 3 (Active) -->
+<div class="relative z-10 flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-surface-container-lowest text-primary font-label-sm text-label-sm flex items-center justify-center shadow-md ring-2 ring-primary">
+                3
+              </div>
+<span class="hidden sm:block font-label-sm text-label-sm text-primary font-bold mt-2">Test Cảm Quan</span>
+</div>
+<!-- Step 4 -->
+<div class="relative z-10 flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-surface-container-high text-outline font-label-sm text-label-sm flex items-center justify-center">
+                4
+              </div>
+<span class="hidden sm:block font-label-sm text-label-sm text-outline mt-2">Đạo đức &amp; Ký số</span>
+</div>
+</div>
+</div>
+<!-- FORM SECTIONS -->
+<form class="space-y-space-lg" onsubmit="event.preventDefault();">
+<!-- GROUP 1: Thông tin người thẩm định -->
+<div class="bg-surface-container-lowest p-6 sm:p-8 rounded-3xl shadow-sm space-y-space-md">
+<div class="flex items-center justify-between pb-2">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-primary font-bold">1</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Hồ Sơ Người Thẩm Định</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Thông tin xác thực danh tính và phong cách ẩm thực đặc trưng của bạn.</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm">Bắt buộc</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md pt-2">
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-1.5">Họ và Tên thật</label>
+<input class="w-full h-12 px-4 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Nguyễn Hoàng Phương Linh" type="text" value="Nguyễn Hoàng Phương Linh"/>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-1.5">Nghệ danh Reviewer / Social Handle</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-outline font-medium">@</span>
+<input class="w-full h-12 pl-9 pr-4 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="phuonglinh.fooddiaries" type="text" value="linh.gourmet"/>
+</div>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-1.5">Email liên hệ chính thức</label>
+<div class="relative flex items-center">
+<input class="w-full h-12 px-4 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="linh.nguyen@foodcritics.vn" type="email" value="linh.nguyen@foodguild.vn"/>
+<span class="absolute right-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-xs">verified</span> OTP Verified
+                  </span>
+</div>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-1.5">Khu vực thẩm định hoạt động</label>
+<select class="w-full h-12 px-4 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 outline-none transition-all cursor-pointer">
+<option selected="">TP. Hồ Chí Minh (Quận 1, 3, Bình Thạnh, Thảo Điền)</option>
+<option>Hà Nội (Hoàn Kiếm, Ba Đình, Tây Hồ, Cầu Giấy)</option>
+<option>Đà Nẵng &amp; Hội An</option>
+<option>Cần Thơ &amp; Miền Tây Nam Bộ</option>
+<option>Hải Phòng &amp; Duyên hải Bắc Bộ</option>
+</select>
+</div>
+</div>
+<!-- Cuisine Affinity Multi-select Pills -->
+<div class="pt-2">
+<label class="block font-label-md text-label-md text-on-surface mb-2">
+                Trường phái khẩu vị sở trường (Chọn 2 - 4 danh mục bạn sành sỏi nhất)
+              </label>
+<div class="flex flex-wrap gap-2">
+<button class="px-4 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md shadow-sm flex items-center gap-1.5 cursor-pointer transition-all" type="button">
+<span>Món Bắc &amp; Nước dùng thanh</span>
+<span class="material-symbols-outlined text-sm">check</span>
+</button>
+<button class="px-4 py-2 rounded-full bg-surface-container-low text-on-surface font-label-md text-label-md hover:bg-surface-container transition-all cursor-pointer" type="button">
+                  Ẩm thực đường phố &amp; Quán hẻm
+                </button>
+<button class="px-4 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md shadow-sm flex items-center gap-1.5 cursor-pointer transition-all" type="button">
+<span>Cơm tấm &amp; Đồ nướng than hoa</span>
+<span class="material-symbols-outlined text-sm">check</span>
+</button>
+<button class="px-4 py-2 rounded-full bg-surface-container-low text-on-surface font-label-md text-label-md hover:bg-surface-container transition-all cursor-pointer" type="button">
+                  Ẩm thực Tây Nam Bộ &amp; Mắm
+                </button>
+<button class="px-4 py-2 rounded-full bg-surface-container-low text-on-surface font-label-md text-label-md hover:bg-surface-container transition-all cursor-pointer" type="button">
+                  Đồ ngọt, Cà phê &amp; Trà bánh
+                </button>
+<button class="px-4 py-2 rounded-full bg-surface-container-low text-on-surface font-label-md text-label-md hover:bg-surface-container transition-all cursor-pointer" type="button">
+                  Healthy, Chay &amp; Eat Clean
+                </button>
+<button class="px-4 py-2 rounded-full bg-surface-container-low text-on-surface font-label-md text-label-md hover:bg-surface-container transition-all cursor-pointer" type="button">
+                  Fine Dining &amp; Fusion Á - Âu
+                </button>
+</div>
+</div>
+</div>
+<!-- GROUP 2: Nền tảng & Độ phủ truyền thông -->
+<div class="bg-surface-container-lowest p-6 sm:p-8 rounded-3xl shadow-sm space-y-space-md">
+<div class="flex items-center justify-between pb-2">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-primary font-bold">2</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Kênh Sáng Tạo &amp; Portfolio Ẩm Thực</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">NayAnGi ưu tiên tính chất lượng cảm nhận hơn số lượng người theo dõi ảo.</p>
+</div>
+</div>
+</div>
+<!-- Channels Input Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md pt-2">
+<div class="space-y-1.5">
+<div class="flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-black"></span> TikTok Kênh Ẩm Thực
+                  </span>
+<span class="font-label-sm text-label-sm text-outline">Lượt theo dõi</span>
+</div>
+<div class="flex gap-2">
+<input class="flex-1 h-12 px-4 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 outline-none" placeholder="tiktok.com/@linh.gourmet" type="text" value="https://tiktok.com/@linh.gourmet"/>
+<input class="w-28 h-12 px-3 text-center rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md outline-none" placeholder="VD: 45K" type="text" value="68.5K"/>
+</div>
+</div>
+<div class="space-y-1.5">
+<div class="flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span> Instagram / Threads
+                  </span>
+<span class="font-label-sm text-label-sm text-outline">Lượt theo dõi</span>
+</div>
+<div class="flex gap-2">
+<input class="flex-1 h-12 px-4 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 outline-none" placeholder="instagram.com/linh_foodreview" type="text" value="https://instagram.com/linh_foodreview"/>
+<input class="w-28 h-12 px-3 text-center rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md outline-none" placeholder="VD: 15K" type="text" value="22.1K"/>
+</div>
+</div>
+</div>
+<!-- Media Upload Box for Taste Portfolio -->
+<div class="pt-2">
+<label class="block font-label-md text-label-md text-on-surface mb-2">Hình ảnh hoặc bài review tiêu biểu (Đính kèm tối thiểu 2 tác phẩm)</label>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md">
+<!-- Upload Slot 1: Active uploaded dish -->
+<div class="relative group rounded-2xl overflow-hidden shadow-sm bg-surface-container-low aspect-video sm:aspect-square">
+<img alt="Bún đậu mắm tôm thập cẩm được chụp thẩm định" class="w-full h-full object-cover transition-transform group-hover:scale-105" data-alt="Close up culinary photography of authentic Vietnamese bun dau mam tom platter with crispy fried tofu, boiled pork belly slices, green rice patties, fresh Vietnamese herbs in woven bamboo tray, warm ambient daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvPdoZW5F-XpeJ0feu3dVvNd-WHB83rYGcJ0gbSNhPG3eK7-gYr6Plz1585oOjkMjwf0ksKjNmPUauh5Ziwt_EU_8h3mHQPfJdFoCIfkLpYzX1ar37sOd4iF5-oUd2QSn1ppd9zY3DBeha5UOE83NmYyG2kBk3OXr9k0FSdw_2Ko-yiJLXlB6LPgU0q0dJ1WXIO9PRFPmFg92cvEBPtKf782pAFp3GawFnueBPwy8"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-3 text-white">
+<span class="font-label-sm text-label-sm text-white/90">Bài thẩm định Bún Đậu</span>
+<span class="font-body-sm text-body-sm text-xs text-white/70">1,420 lượt lưu</span>
+</div>
+<button class="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors" type="button">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+<!-- Upload Slot 2: Active uploaded dish -->
+<div class="relative group rounded-2xl overflow-hidden shadow-sm bg-surface-container-low aspect-video sm:aspect-square">
+<img alt="Cơm tấm sườn bì chả trứng ốp la chuẩn vị Sài Gòn" class="w-full h-full object-cover transition-transform group-hover:scale-105" data-alt="Appetizing top-angle view of Saigon broken rice com tam suon bi cha with charred grilled pork chop glazed with scallion oil, steamed egg meatloaf, pickled carrots, lime slice, warm restaurant lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8rzsu2VITYKJHmNecJyFbSCcO9uojpl3BxeNAzEvgdUyvW_elEGsFaNrlSZAjLdEGuTTI7v74dykN5CAioA1ljMDY_tSQI3gTSJPyw-FLxjBEXMldz8Ya9wXM2lx6e2LMD8Jf3pov57j8zUFVq4g304bObZB0w8B0qSsLFHHWu2w6VUQPP9rZlECvMJQYjY6JPC2cS5eH-YRYA0L1B935uuyiw2cBMSr4PDyrGAg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-3 text-white">
+<span class="font-label-sm text-label-sm text-white/90">Review Cơm Tấm Sườn Cây</span>
+<span class="font-body-sm text-body-sm text-xs text-white/70">Top Trending 2025</span>
+</div>
+<button class="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors" type="button">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+<!-- Dropzone Placeholder -->
+<div class="flex flex-col items-center justify-center p-4 rounded-2xl bg-surface-container-low/70 hover:bg-surface-container-low transition-colors cursor-pointer text-center aspect-video sm:aspect-square">
+<div class="w-10 h-10 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary shadow-sm mb-2">
+<span class="material-symbols-outlined text-xl">cloud_upload</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold">Tải thêm ảnh/clip</span>
+<span class="font-body-sm text-body-sm text-outline text-xs mt-0.5">JPG, PNG, MP4 tối đa 50MB</span>
+</div>
+</div>
+</div>
+</div>
+<!-- GROUP 3: Thử thách Thẩm định Cảm quan (Sensory Evaluation Test) -->
+<div class="bg-surface-container-lowest p-6 sm:p-8 rounded-3xl shadow-sm space-y-space-md">
+<div class="flex items-center justify-between pb-2">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-primary font-bold">3</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Thử Thách Thẩm Định Cảm Quan</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Tình huống thực địa thẩm định bản lĩnh &amp; tính trung thực của ứng viên.</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm">Quan trọng nhất</span>
+</div>
+<!-- Scenario Card -->
+<div class="p-4 rounded-2xl bg-surface-container-low space-y-2">
+<div class="flex items-center gap-2 text-primary font-label-md text-label-md">
+<span class="material-symbols-outlined text-lg">psychology_alt</span>
+                Tình huống giả định từ Hội Đồng Giám Khảo:
+              </div>
+<p class="font-body-md text-body-md text-on-surface leading-relaxed">
+                “Một quán Phở Bò gia truyền 30 năm gần đây mở rộng chuỗi và bị thực khách phàn nàn nước dùng ngọt lợ bột ngọt thay vì ngọt xương hầm, thịt nạm thái mỏng mất độ ngọt tự nhiên. Khi được giao nhiệm vụ thẩm định độc lập, bạn sẽ phân tích và đưa ra phản hồi bài viết như thế nào để vừa khách quan bảo vệ thực khách, vừa có chiều sâu văn hóa ẩm thực?”
+              </p>
+</div>
+<!-- Mini Rich Editor Frame -->
+<div class="space-y-2">
+<div class="flex items-center justify-between">
+<label class="font-label-md text-label-md text-on-surface">Bài thẩm định mẫu của bạn (150 – 400 từ)</label>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-outline">
+<span>Tiêu chuẩn: Hương • Vị • Sắc • Vệ sinh</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="text-primary font-bold">218 / 400 từ</span>
+</div>
+</div>
+<!-- Editor Tools Bar -->
+<div class="rounded-2xl bg-surface-container-low overflow-hidden">
+<div class="flex items-center gap-1 px-3 py-2 bg-surface-container-highest/60 text-on-surface-variant">
+<button class="w-7 h-7 rounded hover:bg-surface-container text-xs font-bold" type="button">B</button>
+<button class="w-7 h-7 rounded hover:bg-surface-container text-xs italic" type="button">I</button>
+<button class="w-7 h-7 rounded hover:bg-surface-container text-xs underline" type="button">U</button>
+<span class="w-px h-4 bg-outline-variant mx-1"></span>
+<button class="px-2 py-1 rounded text-xs hover:bg-surface-container flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-sm">format_quote</span> Trích dẫn
+                  </button>
+<button class="px-2 py-1 rounded text-xs hover:bg-surface-container flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-sm">restaurant</span> Tag nguyên liệu
+                  </button>
+</div>
+<textarea class="w-full h-44 p-4 bg-transparent text-on-surface font-body-md text-body-md outline-none resize-none leading-relaxed" placeholder="Bắt đầu phân tích nước dùng, độ trong, váng mỡ, lát thịt và cảm quan hậu vị...">Bát phở bưng ra vẫn giữ được sắc ngả vàng óng nhẹ và hương hồi quế thân quen, tuy nhiên lớp mỡ màng đã mất đi độ sánh ngậy tự nhiên của tủy bò ninh qua đêm. 
+
+Nhấp muỗng nước đầu tiên, vị ngọt ập vào quá gắt ở đầu lưỡi nhưng lại thiếu hẳn độ sâu &amp; hậu vị đằm nơi cuống họng – dấu hiệu điển hình của việc tăng cường phụ gia điều vị nhằm rút ngắn thời gian chuẩn bị khi nhân rộng chi nhánh. Lát nạm bò chín tới thơm mềm nhưng thớ thịt hơi khô, thiếu lớp màng gân giòn giữ ẩm. 
+
+Một di sản ẩm thực lâu đời xứng đáng được đối đãi với sự kiên nhẫn nguyên bản hơn là sự vội vã của quy mô hóa.</textarea>
+</div>
+</div>
+<!-- Visual Taste Rating Sliders (Sample) -->
+<div class="pt-2 space-y-3">
+<span class="font-label-md text-label-md text-on-surface block">Thang điểm cảm quan mô phỏng cho tình huống trên:</span>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-surface-container-low/60 p-4 rounded-2xl">
+<!-- Metric 1 -->
+<div class="space-y-1">
+<div class="flex justify-between text-xs font-semibold text-on-surface">
+<span>Độ sâu nước dùng (Hương vị)</span>
+<span class="text-secondary font-bold">6.0 / 10</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 60%"></div>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="space-y-1">
+<div class="flex justify-between text-xs font-semibold text-on-surface">
+<span>Chất lượng thịt &amp; Bánh phở</span>
+<span class="text-primary font-bold">7.5 / 10</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 75%"></div>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="space-y-1">
+<div class="flex justify-between text-xs font-semibold text-on-surface">
+<span>Vệ sinh &amp; Trình bày</span>
+<span class="text-primary font-bold">8.5 / 10</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 85%"></div>
+</div>
+</div>
+<!-- Metric 4 -->
+<div class="space-y-1">
+<div class="flex justify-between text-xs font-semibold text-on-surface">
+<span>Giá trị tương xứng (P/P)</span>
+<span class="text-outline font-bold">6.5 / 10</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-outline h-full rounded-full" style="width: 65%"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- GROUP 4: Bộ Quy Tắc Đạo Đức & Ký Số Cam Kết -->
+<div class="bg-surface-container-lowest p-6 sm:p-8 rounded-3xl shadow-sm space-y-space-md">
+<div class="flex items-center gap-3 pb-2">
+<div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-primary font-bold">4</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Lời Thề Liêm Chính &amp; Cam Kết Ẩm Thực</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Bộ chuẩn mực đạo đức tối thượng của thành viên NayAnGi Guild.</p>
+</div>
+</div>
+<div class="space-y-3">
+<label class="flex items-start gap-3 p-3.5 rounded-2xl bg-surface-container-low cursor-pointer hover:bg-surface-container transition-colors">
+<input checked="" class="w-5 h-5 rounded mt-0.5 text-primary focus:ring-primary/20 cursor-pointer" type="checkbox"/>
+<div class="text-xs sm:text-sm text-on-surface leading-snug">
+<strong class="font-semibold text-on-surface">Tuyệt đối không nhận hối lộ hoặc PR tẩy trắng:</strong> Tôi cam kết không nhận phong bì, quà tặng riêng tư từ chủ cơ sở kinh doanh để tâng bốc sai lệch chất lượng món ăn.
+                </div>
+</label>
+<label class="flex items-start gap-3 p-3.5 rounded-2xl bg-surface-container-low cursor-pointer hover:bg-surface-container transition-colors">
+<input checked="" class="w-5 h-5 rounded mt-0.5 text-primary focus:ring-primary/20 cursor-pointer" type="checkbox"/>
+<div class="text-xs sm:text-sm text-on-surface leading-snug">
+<strong class="font-semibold text-on-surface">Minh bạch trải nghiệm:</strong> Mọi trải nghiệm có tài trợ (Invited / Hosted) bắt buộc phải được gắn nhãn minh bạch theo quy định ứng dụng.
+                </div>
+</label>
+<label class="flex items-start gap-3 p-3.5 rounded-2xl bg-surface-container-low cursor-pointer hover:bg-surface-container transition-colors">
+<input checked="" class="w-5 h-5 rounded mt-0.5 text-primary focus:ring-primary/20 cursor-pointer" type="checkbox"/>
+<div class="text-xs sm:text-sm text-on-surface leading-snug">
+<strong class="font-semibold text-on-surface">Bản quyền nội dung &amp; Trách nhiệm phát ngôn:</strong> Cam kết các hình ảnh, tư liệu đánh giá hoàn toàn do cá nhân tôi thực hiện và chịu trách nhiệm pháp lý.
+                </div>
+</label>
+</div>
+<!-- Digital Signature Row -->
+<div class="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-surface-container-low/40">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-2xl text-primary">draw</span>
+<div>
+<span class="font-label-md text-label-md text-on-surface block">Chữ ký điện tử xác nhận</span>
+<span class="font-body-sm text-body-sm text-outline text-xs">Mã hóa SHA-256 kèm dấu thời gian nộp</span>
+</div>
+</div>
+<div class="font-mono text-sm px-4 py-2 rounded-xl bg-surface-container-lowest text-primary font-bold shadow-sm tracking-wider">
+                NPLINH-GUILD-2026-OK
+              </div>
+</div>
+</div>
+<!-- Bottom Action Buttons for Mobile -->
+<div class="flex lg:hidden items-center gap-3 pt-2">
+<button class="w-full h-12 rounded-full bg-primary text-on-primary font-label-md text-label-md font-bold shadow-md flex items-center justify-center gap-2" type="submit">
+<span>Nộp Đơn Ứng Tuyển Reviewer</span>
+<span class="material-symbols-outlined text-lg">arrow_forward</span>
+</button>
+</div>
+</form>
+</div>
+<!-- BESPOKE SIDEBAR / REVIEWER AUTHORITY HUB (4 cols) -->
+<div class="lg:col-span-4 flex flex-col space-y-space-md lg:sticky lg:top-24">
+<!-- 1. Floating Action Card -->
+<div class="p-6 rounded-3xl bg-surface-container-lowest shadow-md space-y-4">
+<div class="flex items-center justify-between pb-1">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Trạng thái hồ sơ</span>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary-fixed text-primary font-label-sm text-label-sm font-semibold">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span> Sẵn sàng nộp
+            </span>
+</div>
+<div class="space-y-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Hoàn Tất Ứng Tuyển</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Hồ sơ sẽ được chuyển thẳng đến Hội đồng Thẩm định Ẩm thực NayAnGi khu vực miền Nam.
+            </p>
+</div>
+<div class="pt-2 space-y-2.5">
+<button class="w-full h-12 rounded-full bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md font-bold shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2" type="button">
+<span>Nộp Hồ Sơ Ứng Tuyển</span>
+<span class="material-symbols-outlined text-lg">arrow_forward</span>
+</button>
+<button class="w-full h-11 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface-variant font-label-md text-label-md transition-colors" type="button">
+              Lưu bản nháp tiếp tục sau
+            </button>
+</div>
+<div class="pt-2 flex items-center justify-center gap-2 text-outline text-xs">
+<span class="material-symbols-outlined text-sm">lock</span>
+<span>Bảo mật thông tin người nộp đơn 100%</span>
+</div>
+</div>
+<!-- 2. Approval Standards & Live Stats Box -->
+<div class="p-6 rounded-3xl bg-surface-container-lowest shadow-sm space-y-4">
+<h3 class="font-title-md text-title-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl">analytics</span>
+            Chỉ Số Tuyển Chọn Tháng 4/2026
+          </h3>
+<div class="grid grid-cols-2 gap-3">
+<div class="p-3 rounded-2xl bg-surface-container-low">
+<span class="font-label-sm text-label-sm text-outline block">Tỷ lệ phê duyệt</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">18.5%</span>
+<span class="font-body-sm text-body-sm text-xs text-on-surface-variant block mt-0.5">Tiêu chuẩn khắt khe</span>
+</div>
+<div class="p-3 rounded-2xl bg-surface-container-low">
+<span class="font-label-sm text-label-sm text-outline block">Thời gian phản hồi</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">48 Giờ</span>
+<span class="font-body-sm text-body-sm text-xs text-on-surface-variant block mt-0.5">Qua Email xác thực</span>
+</div>
+</div>
+<!-- Criteria Checklist -->
+<div class="space-y-2 pt-1">
+<span class="font-label-sm text-label-sm text-on-surface font-semibold block">Tiêu chí ưu tiên hàng đầu:</span>
+<ul class="space-y-2 font-body-sm text-body-sm text-on-surface-variant">
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-base text-primary">check_circle</span>
+<span>Khả năng miêu tả chi tiết vị giác &amp; cảm nhận kết cấu món.</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-base text-primary">check_circle</span>
+<span>Hình ảnh chụp món tự nhiên, chuẩn màu, không lạm dụng filter giả.</span>
+</li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-base text-primary">check_circle</span>
+<span>Thái độ tôn trọng nguồn cội văn hóa ẩm thực địa phương.</span>
+</li>
+</ul>
+</div>
+</div>
+<!-- 3. Featured Reviewer Quote Card with User Avatar -->
+<div class="p-6 rounded-3xl bg-surface-container-low shadow-sm space-y-3 relative overflow-hidden">
+<div class="absolute -right-4 -bottom-4 w-28 h-28 bg-primary-container/10 rounded-full blur-xl pointer-events-none"></div>
+<div class="flex items-center gap-3">
+<img alt="Minh Quân - Thẩm định viên ẩm thực hạng Vàng" class="w-12 h-12 rounded-full object-cover shadow-sm ring-2 ring-white" src="https://lh3.googleusercontent.com/aida/AEtjO1XIIK5gSfFlNGo_twbwz1mZC3AIU_tIZ4JUMbzJ1qyPCvXIvWcj-6q9KHEreyUHiK48rPJ29E29x6Rj8zOcGMttc7hCK8cbQoks7G7dL-5b6YPGw2IxBsBmI4gGf77ZMxgp-XXznxg5_ae83Y-0FqO8mwh-X8lMwHizA7U2se0mQ7bnC2GM-ugbijz5w700dCwMFfQGdQmiK66BTHcB1w5ST-YooLn1H4XceDmU4yDLyN-8VMjTiBWzAYM"/>
+<div>
+<div class="flex items-center gap-1">
+<span class="font-title-md text-title-md text-on-surface">Minh Quân</span>
+<span class="material-symbols-outlined text-sm text-primary" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Thẩm định viên Hạng Vàng • 140+ Quán</span>
+</div>
+</div>
+<blockquote class="font-body-sm text-body-sm text-on-surface-variant italic leading-relaxed pt-1">
+            “Thẩm định món ăn không chỉ đơn thuần là khen hay chê một hương vị. Đó là sự truyền tải cái tâm của người đầu bếp, giọt mồ hôi của người đứng bếp than đến vị giác của thực khách sành sỏi.”
+          </blockquote>
+<div class="pt-1 flex items-center justify-between text-xs text-outline font-medium">
+<span>Gia nhập NayAnGi từ 2024</span>
+<span class="text-secondary font-semibold">Level: Master Taster</span>
+</div>
+</div>
+<!-- 4. Need Help / Guild Support -->
+<div class="p-4 rounded-2xl bg-surface-container-lowest text-center space-y-1">
+<span class="font-body-sm text-body-sm text-on-surface-variant text-xs">Bạn có câu hỏi về quy chế Reviewer?</span>
+<div>
+<a class="font-label-sm text-label-sm text-primary hover:underline font-bold inline-flex items-center gap-1" href="#">
+              Liên hệ Trưởng Ban Thẩm Định <span class="material-symbols-outlined text-sm">open_in_new</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div></main>
+<!-- LUXURIOUS FOOTER -->
+<footer class="w-full bg-surface-container-lowest border-t border-outline-variant/60">
+<div class="max-w-7xl mx-auto px-margin sm:px-margin-md lg:px-margin-lg py-margin-lg">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-space-lg lg:gap-gutter-lg pb-space-lg border-b border-outline-variant/60">
+<div class="lg:col-span-2 space-y-space-md">
+<a class="flex items-center gap-space-sm" data-path="trang-chu" href="#">
+<img alt="Hôm Nay Ăn Gì Logo" class="h-9 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VliUwHHZz9mWzKWnu4U5vknU2Qn0tyWQJU1zHqw7uk9DJhC41vxLNOXLQFvl9Y7UlL5bhYDt7WERs7pH0fP9WnsCRZ_mgrr_Gg8GEYLEv7SFvaeh2NAOHZP4ZBKQKpGdeYVNqd5c6j_HF7ZQXhrbPabf_EXEmOxghkl4u8vL8HPCX-Rbf_smovbfJyHe0RiE75l88ukN4FgSPDCyqChUPxX6Dg_v9XSDTThdwv3GYC1l3ld4O-KYyo-Z8"/>
+</a>
+<p class="text-sm text-on-surface-variant max-w-sm leading-relaxed">
+            Không còn băn khoăn mỗi bữa ăn. Trợ lý gợi ý món ăn thông minh, chuẩn vị và nhanh chóng cho người sành ăn.
+          </p>
+<div class="flex items-center gap-space-sm pt-space-xs">
+<a aria-label="Website" class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface border border-outline-variant/70 transition-colors" href="#">
+<span class="material-symbols-outlined text-lg">public</span>
+</a>
+<a aria-label="Chia sẻ" class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface border border-outline-variant/70 transition-colors" href="#">
+<span class="material-symbols-outlined text-lg">share</span>
+</a>
+<a aria-label="Liên hệ email" class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface border border-outline-variant/70 transition-colors" href="#">
+<span class="material-symbols-outlined text-lg">alternate_email</span>
+</a>
+</div>
+</div>
+<div>
+<h3 class="text-sm font-bold text-on-surface uppercase tracking-wider mb-space-md">Khám phá</h3>
+<ul class="space-y-space-sm">
+<li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" data-path="vong-quay" href="#">Vòng quay món</a></li>
+<li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" data-path="danh-muc-mon" href="#">Danh mục ẩm thực</a></li>
+<li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Ăn trưa công sở</a></li>
+<li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Món ngon cuối tuần</a></li>
+</ul>
+</div>
+<div>
+<h3 class="text-sm font-bold text-on-surface uppercase tracking-wider mb-space-md">Cộng tác viên</h3>
+<ul class="space-y-space-sm">
+<li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" data-path="ung-tuyen-reviewer" href="#">Ứng tuyển Reviewer</a></li>
+<li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Chính sách Reviewer</a></li>
+<li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Bảng xếp hạng Top Foodie</a></li>
+<li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Quyền lợi &amp; Thưởng</a></li>
+</ul>
+</div>
+<div>
+<h3 class="text-sm font-bold text-on-surface uppercase tracking-wider mb-space-md">Cá nhân &amp; Tiện ích</h3>
+<ul class="space-y-space-sm">
+<li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" data-path="mon-da-luu" href="#">Món đã lưu</a></li>
+<li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Lịch sử gợi ý</a></li>
+<li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Điều khoản sử dụng</a></li>
+<li><a class="text-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Chính sách bảo mật</a></li>
+</ul>
+</div>
+</div>
+<div class="pt-space-lg text-center text-xs text-outline font-medium">
+        © 2026 Hôm Nay Ăn Gì? - Tất cả quyền được bảo lưu. Thiết kế dành cho người sành ăn.
+      </div>
+</div>
+</footer>
+</body></html>

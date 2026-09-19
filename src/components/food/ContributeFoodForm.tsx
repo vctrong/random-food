@@ -189,7 +189,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
       }
 
       showToast("Đã gửi món ăn! Đội kiểm duyệt sẽ xem xét trước khi công khai.", "success");
-      router.push("/mon-an");
+      router.push("/dong-gop");
       router.refresh();
     } catch {
       setIsSubmitting(false);
