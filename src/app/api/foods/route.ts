@@ -5,7 +5,7 @@ import { connectDB } from "@/lib/mongodb";
 import { Food } from "@/lib/models/Food";
 import { Restaurant } from "@/lib/models/Restaurant";
 import { Category } from "@/lib/models/Category";
-import { cloudinary } from "@/lib/cloudinary";
+import { uploadImageFile } from "@/lib/cloudinary";
 
 export async function GET() {
   await connectDB();
@@ -66,14 +66,6 @@ export async function GET() {
 }
 
 const EATING_LEVEL_VALUES = new Set(["snack", "normal", "hearty", "full"]);
-
-async function uploadImage(file: File, folder: string) {
-  const arrayBuffer = await file.arrayBuffer();
-  const base64 = Buffer.from(arrayBuffer).toString("base64");
-  const dataUri = `data:${file.type};base64,${base64}`;
-  const result = await cloudinary.uploader.upload(dataUri, { folder });
-  return result.secure_url;
-}
 
 /**
  * User đóng góp Food mới (UC-U10, BR-C01→C07). Food + (nếu quán chưa tồn tại)
@@ -171,7 +163,7 @@ export async function POST(request: Request) {
     finalRestaurantId = String(newRestaurant._id);
   }
 
-  const imageUrls = await Promise.all(images.map((file) => uploadImage(file, "nayangi/foods")));
+  const imageUrls = await Promise.all(images.map((file) => uploadImageFile(file, "nayangi/foods")));
 
   const food = await Food.create({
     restaurantId: finalRestaurantId,

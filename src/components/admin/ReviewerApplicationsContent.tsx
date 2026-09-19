@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Badge as BadgeIcon, CheckCircle2, Search, XCircle } from "lucide-react";
+import { Badge as BadgeIcon, CheckCircle2, ExternalLink, MapPin, Search, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -16,19 +16,23 @@ interface ReviewerApplicationsContentProps {
   initialApplications: AdminReviewerApplicationRow[];
 }
 
-type StatusFilter = "pending" | "approved" | "rejected" | "all";
+type StatusFilter = "pending" | "approved" | "rejected" | "withdrawn" | "all";
 
 const STATUS_VARIANT = {
   pending: "warning",
   approved: "success",
   rejected: "pink",
+  withdrawn: "neutral",
 } as const;
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Chờ duyệt",
   approved: "Đã duyệt",
   rejected: "Đã từ chối",
+  withdrawn: "Đã rút đơn",
 };
+
+const PLATFORM_LABEL: Record<string, string> = { tiktok: "TikTok", instagram: "Instagram / Threads" };
 
 export function ReviewerApplicationsContent({ initialApplications }: ReviewerApplicationsContentProps) {
   const router = useRouter();
@@ -72,7 +76,7 @@ export function ReviewerApplicationsContent({ initialApplications }: ReviewerApp
         return;
       }
       setApplications((prev) =>
-        prev.map((a) => (a.id === selected.id ? { ...a, status: decision, reason, reviewedAt: new Date().toISOString() } : a)),
+        prev.map((a) => (a.id === selected.id ? { ...a, status: decision, reviewNote: reason.trim() || null, reviewedAt: new Date().toISOString() } : a)),
       );
       showToast(decision === "approved" ? "Đã duyệt đơn ứng tuyển." : "Đã từ chối đơn ứng tuyển.", "success");
       setReason("");
@@ -97,7 +101,7 @@ export function ReviewerApplicationsContent({ initialApplications }: ReviewerApp
         <EmptyState
           icon={BadgeIcon}
           title="Chưa có đơn ứng tuyển nào"
-          description="Khi có tính năng nộp đơn ứng tuyển FoodReviewer ở phía người dùng, đơn sẽ hiện tại đây để Admin duyệt."
+          description="Khi người dùng nộp đơn ứng tuyển FoodReviewer, đơn sẽ hiện tại đây để Admin duyệt."
         />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-4 items-start">
@@ -120,6 +124,7 @@ export function ReviewerApplicationsContent({ initialApplications }: ReviewerApp
                 <option value="pending">Chờ duyệt</option>
                 <option value="approved">Đã duyệt</option>
                 <option value="rejected">Đã từ chối</option>
+                <option value="withdrawn">Đã rút đơn</option>
                 <option value="all">Tất cả</option>
               </select>
             </div>
@@ -171,9 +176,11 @@ export function ReviewerApplicationsContent({ initialApplications }: ReviewerApp
               {selected.reviewedAt && (
                 <p className="text-xs text-text-secondary">
                   Đã xử lý {formatDateTime(selected.reviewedAt)}
-                  {selected.reason ? ` — Lý do: ${selected.reason}` : ""}
+                  {selected.reviewNote ? ` — Ghi chú: ${selected.reviewNote}` : ""}
                 </p>
               )}
+
+              <ApplicationProfile profile={selected.profile} />
 
               {selected.status === "pending" && (
                 <div className="space-y-3 pt-2 border-t border-border">
@@ -210,6 +217,85 @@ export function ReviewerApplicationsContent({ initialApplications }: ReviewerApp
             <EmptyState icon={BadgeIcon} title="Chọn một đơn để xem chi tiết" description="Danh sách bên trái." />
           )}
         </div>
+      )}
+    </div>
+  );
+}
+
+function ProfileBlock({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary">{title}</span>
+      <div className="text-sm text-text-primary leading-relaxed">{children}</div>
+    </div>
+  );
+}
+
+/** Hồ sơ ứng viên khai trong form — đơn cũ (trước khi có form) không có nên hiện thông báo thay thế. */
+function ApplicationProfile({ profile }: { profile: AdminReviewerApplicationRow["profile"] }) {
+  if (!profile) {
+    return (
+      <p className="text-sm text-text-secondary p-3 rounded-xl bg-cream">
+        Đơn này được tạo trước khi có form ứng tuyển nên không có hồ sơ chi tiết.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-4 pt-3 border-t border-border">
+      <ProfileBlock title="Họ tên thật">{profile.fullName || "—"}</ProfileBlock>
+      <ProfileBlock title="Lý do ứng tuyển">
+        <p className="whitespace-pre-line">{profile.motivation || "—"}</p>
+      </ProfileBlock>
+      <ProfileBlock title="Khẩu vị sở trường">
+        <div className="flex flex-wrap gap-1.5">
+          {profile.expertise.map((name) => (
+            <Badge key={name} variant="pink">
+              {name}
+            </Badge>
+          ))}
+        </div>
+      </ProfileBlock>
+      <ProfileBlock title="Khu vực xác minh thực địa">
+        <div className="flex flex-wrap gap-1.5">
+          {profile.activeAreas.map((area) => (
+            <span key={area} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-soft-blue text-primary-blue text-xs font-medium">
+              <MapPin className="size-3" aria-hidden />
+              {area}
+            </span>
+          ))}
+        </div>
+      </ProfileBlock>
+      {profile.socialLinks.length > 0 && (
+        <ProfileBlock title="Kênh review">
+          <ul className="space-y-1">
+            {profile.socialLinks.map((link) => (
+              <li key={link.url}>
+                <a href={link.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary-blue hover:underline">
+                  {PLATFORM_LABEL[link.platform] ?? link.platform}
+                  <ExternalLink className="size-3" aria-hidden />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </ProfileBlock>
+      )}
+      <ProfileBlock title={`Ảnh tiêu biểu (${profile.portfolioImages.length})`}>
+        <div className="flex flex-wrap gap-2">
+          {profile.portfolioImages.map((url) =>
+            isAllowedImageHost(url) ? (
+              <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="relative size-20 rounded-xl overflow-hidden border border-border">
+                <Image src={url} alt="Ảnh tiêu biểu của ứng viên" fill sizes="80px" className="object-cover" />
+              </a>
+            ) : null,
+          )}
+        </div>
+      </ProfileBlock>
+      <ProfileBlock title="Bài trả lời tình huống">
+        <p className="whitespace-pre-line p-3 rounded-xl bg-cream">{profile.scenarioAnswer || "—"}</p>
+      </ProfileBlock>
+      {profile.agreedAt && (
+        <p className="text-xs text-text-secondary">Đã đồng ý cam kết đạo đức lúc {formatDateTime(profile.agreedAt)}.</p>
       )}
     </div>
   );

@@ -9,6 +9,7 @@ import { User } from "@/lib/models/User";
 // model đã register trước, dù không dùng trực tiếp import này).
 import "@/lib/models/Category";
 import { createNotification } from "@/lib/notify";
+import { getContributionOverview } from "@/lib/achievements";
 import type {
   ModerationDecision,
   ModerationTargetType,
@@ -247,6 +248,11 @@ export async function applyModerationDecision({
     message: `${label} "${item.name}" ${decisionMessage}`,
     relatedId: targetId,
   });
+
+  if (decision === "approved") {
+    // Trao thành tựu ngay khi duyệt; lỗi ở bước phụ này không được làm hỏng quyết định đã ghi.
+    await getContributionOverview(String(item.createdBy)).catch(() => undefined);
+  }
 
   return { error: null };
 }

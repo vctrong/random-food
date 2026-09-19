@@ -38,10 +38,24 @@ export interface AdminUserRow {
   createdAt: string;
 }
 
+/** Hồ sơ ứng viên khai trong form; null với đơn cũ tạo trước khi có form ứng tuyển. */
+export interface AdminReviewerApplicationProfile {
+  fullName: string;
+  motivation: string;
+  expertise: string[];
+  activeAreas: string[];
+  socialLinks: { platform: string; url: string }[];
+  portfolioImages: string[];
+  scenarioAnswer: string;
+  agreedAt: string | null;
+}
+
 export interface AdminReviewerApplicationRow {
   id: string;
-  status: "pending" | "approved" | "rejected";
-  reason: string | null;
+  status: "pending" | "approved" | "rejected" | "withdrawn";
+  /** Ghi chú duyệt/từ chối của Admin. */
+  reviewNote: string | null;
+  profile: AdminReviewerApplicationProfile | null;
   applicant: { id: string; name: string; email: string; avatarUrl: string | null };
   reviewedBy: { id: string; name: string } | null;
   reviewedAt: string | null;

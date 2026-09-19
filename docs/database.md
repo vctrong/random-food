@@ -268,15 +268,31 @@ erDiagram
 {
   _id: ObjectId,
   userId: ObjectId,                 // ref users, required
-  status: "pending",                // "pending" | "approved" | "rejected"
-  reason: "Muốn đóng góp kiểm duyệt món ăn khu vực Ninh Kiều",
+  status: "pending",                // "pending" | "approved" | "rejected" | "withdrawn" (withdrawn = user tự rút đơn)
+  // --- Hồ sơ ứng viên (form /ung-tuyen-reviewer) — optional ở schema vì đơn cũ không có, bắt buộc kiểm ở API ---
+  fullName: "Nguyễn Văn A",
+  motivation: "Muốn góp phần giữ thông tin món ăn khu vực Ninh Kiều chính xác",  // lý do ứng tuyển do ứng viên viết
+  expertiseCategoryIds: [ObjectId], // ref categories, chọn 2–4
+  activeAreas: ["Ninh Kiều"],       // khu vực có thể xác minh thực địa, tối đa 5, chữ tự do
+  socialLinks: [{ platform: "tiktok", url: "https://..." }],   // platform: "tiktok" | "instagram", tuỳ chọn
+  portfolioImages: ["https://res.cloudinary.com/.../a.jpg"],   // 2–6 ảnh (Cloudinary)
+  scenarioAnswer: "...",            // bài trả lời tình huống xác minh, 150–400 từ
+  agreedAt: ISODate,                // thời điểm đồng ý cam kết đạo đức (= lúc nộp)
+  commitmentVersion: "2026-09-v1",  // phiên bản văn bản cam kết đã đồng ý
+  // --- Phía Admin ---
+  reviewNote: "Hồ sơ phù hợp",      // ghi chú duyệt/từ chối của Admin (TÊN CŨ: `reason` — xem migration bên dưới)
   reviewedBy: ObjectId,
   reviewedAt: ISODate,
-  createdAt: ISODate
+  createdAt: ISODate,
+  updatedAt: ISODate
 }
 ```
 
-**Index:** `{ userId: 1, status: 1 }`
+**Index:** `{ userId: 1, status: 1 }` · `{ userId: 1 }` **unique một phần** (`partialFilterExpression: { status: "pending" }`, tên `userId_pending_unique`) — mỗi user chỉ có 1 đơn đang chờ duyệt.
+
+**Quy tắc nộp đơn (logic ở `features/reviewer-application/applicationLogic.ts`):** chỉ role `user` (không phải `foodreviewer`/`admin`), tài khoản `active`; đang có đơn `pending` thì không nộp thêm; bị `rejected` phải chờ 30 ngày kể từ `reviewedAt`; `withdrawn` thì nộp lại ngay. Nháp form chỉ lưu ở trình duyệt (localStorage), không vào DB.
+
+> **Migration:** field `reason` đã đổi tên thành `reviewNote` (vì `reason` từng là ghi chú Admin nhưng tài liệu cũ lại mô tả là lý do của ứng viên — nay lý do của ứng viên là `motivation`). Script `scripts/migrateReviewerApplicationReviewNote.mjs` (mặc định dry-run, thêm `--apply` để chạy thật). Code admin đọc `reviewNote ?? reason` nên vẫn đúng trước khi chạy migration.
 
 ---
 
@@ -382,6 +398,23 @@ erDiagram
 **Không có index ngoài `_id` và unique trên `slug`.** Không có field liên kết User (`createdBy`) — hiện chưa có luồng CMS cho Admin, nội dung được tạo trực tiếp trong DB. Phục vụ trang `/tin-tuc` qua `GET /api/articles` (chỉ trả về, không lọc theo trạng thái vì không có field trạng thái).
 
 > Nếu sau này cần Admin quản lý tin tức qua UI (CRUD, trạng thái draft/published, gắn tác giả), đây là thay đổi cấu trúc — cần hỏi và xác nhận trước khi thêm field theo đúng mục 7.4 CLAUDE.md.
+
+---
+
+## 14b. `userAchievements` (`src/lib/models/UserAchievement.ts`)
+
+```js
+{
+  _id: ObjectId,
+  userId: ObjectId,                 // ref users, required
+  achievementId: "first_approved",  // required — khớp AchievementId trong src/constants/contribution.ts
+  unlockedAt: ISODate               // default: Date.now
+}
+```
+
+**Index:** `{ userId: 1, achievementId: 1 }` unique
+
+> Chỉ lưu thành tựu **đã mở khoá** (giữ vĩnh viễn, có ngày đạt). Điều kiện mở khoá nằm ở code (`contributionLogic.ts`), được đồng bộ idempotent bởi `syncAchievements()` (`src/lib/achievements.ts`) khi user mở `/dong-gop` và khi FoodReviewer duyệt món. **Cấp độ đóng góp không lưu DB** — luôn tính động từ số món `approved` của user.
 
 ---
 
