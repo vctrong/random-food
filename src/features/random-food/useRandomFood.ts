@@ -50,10 +50,17 @@ export function useRandomFood({
   const { showToast } = useToast();
 
   useEffect(() => {
-    // SSR không đọc được localStorage — nạp danh sách đã lưu thật sau khi mount.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSavedIds(new Set(getSavedFoodRecords().map((record) => record.foodId)));
-  }, []);
+    // Trang random không có SSR initial favorites — nạp danh sách đã lưu thật
+    // (từ DB qua API) sau khi mount, chỉ khi đã đăng nhập (guest luôn rỗng).
+    if (!isAuthenticated) return;
+    let cancelled = false;
+    getSavedFoodRecords().then((records) => {
+      if (!cancelled) setSavedIds(new Set(records.map((record) => record.foodId)));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
 
   const filters: RandomFilters = useMemo(
     () => ({ eatingLevel, categoryIds: selectedCategoryIds, tags: selectedTags }),
@@ -121,44 +128,51 @@ export function useRandomFood({
    * local hiện có (chưa nối collection `favorites` thật — xem ghi chú ở
    * src/app/api/favorites/route.ts).
    */
-  const toggleSaved = useCallback(() => {
+  const toggleSaved = useCallback(async () => {
     if (!currentFood) return;
     if (!isAuthenticated) {
       setIsLoginGateOpen(true);
       return;
     }
     const foodId = currentFood.id;
+    const wasSaved = savedIds.has(foodId);
     setSavedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(foodId)) {
-        next.delete(foodId);
-        removeSavedFood(foodId);
-        showToast("Đã bỏ lưu món ăn.", "info");
-      } else {
-        next.add(foodId);
-        addSavedFood(foodId);
-        showToast("Đã lưu món vào danh sách yêu thích!", "success");
-      }
+      if (wasSaved) next.delete(foodId);
+      else next.add(foodId);
       return next;
     });
-  }, [currentFood, isAuthenticated, showToast]);
+    const ok = wasSaved ? await removeSavedFood(foodId) : await addSavedFood(foodId);
+    if (!ok) {
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        if (wasSaved) next.add(foodId);
+        else next.delete(foodId);
+        return next;
+      });
+      showToast("Không thể cập nhật món đã lưu, vui lòng thử lại.", "error");
+      return;
+    }
+    showToast(wasSaved ? "Đã bỏ lưu món ăn." : "Đã lưu món vào danh sách yêu thích!", wasSaved ? "info" : "success");
+  }, [currentFood, isAuthenticated, savedIds, showToast]);
 
-  /** Ghi nhận thật vào lịch sử — ghi vào localStorage qua historyService, hiện trong /lich-su ngay. */
-  const markEaten = useCallback(() => {
+  /** Ghi nhận thật vào lịch sử qua API — hiện trong /lich-su ngay. */
+  const markEaten = useCallback(async () => {
     if (!currentFood) return;
     if (!isAuthenticated) {
       setIsLoginGateOpen(true);
       return;
     }
-    addHistoryEntry({
-      foodId: currentFood.id,
-      timestamp: new Date().toISOString(),
-      eatingLevel: currentFood.eatingLevels[0] ?? null,
-      wasEaten: true,
-      isSaved: savedIds.has(currentFood.id),
-    });
-    showToast("Đã ghi nhận bữa ăn vào lịch sử!", "success");
-  }, [currentFood, savedIds, isAuthenticated, showToast]);
+    if (!currentFood.restaurant) {
+      showToast("Món này chưa gắn quán, không thể ghi nhận lịch sử.", "error");
+      return;
+    }
+    const ok = await addHistoryEntry({ foodId: currentFood.id, restaurantId: currentFood.restaurant.id });
+    showToast(
+      ok ? "Đã ghi nhận bữa ăn vào lịch sử!" : "Không thể ghi nhận vào lịch sử, vui lòng thử lại.",
+      ok ? "success" : "error",
+    );
+  }, [currentFood, isAuthenticated, showToast]);
 
   const share = useCallback(() => {
     if (!currentFood) return;

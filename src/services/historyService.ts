@@ -1,65 +1,107 @@
-import type { HistoryEntry } from "@/types/history";
+import type { HistoryEntry, HistoryReviewSummary } from "@/types/history";
+import type { Food } from "@/types/food";
+import { mapExperiencesToHistoryEntries } from "@/features/history-log/historyLogic";
 
 /**
- * Lớp duy nhất "biết" data lịch sử đến từ đâu. Các thay đổi thật (thêm/xoá/sửa)
- * được lưu vào localStorage của trình duyệt (chưa nối với collection
- * `experiences`/`logs` thật). Trên server (SSR) không có localStorage nên luôn
- * trả về mảng rỗng — component client tự đồng bộ lại dữ liệu thật ngay sau khi
- * mount.
+ * Lớp duy nhất "biết" data lịch sử đến từ đâu — gọi qua API route
+ * `/api/experiences` (+ `/api/favorites`, `/api/reviews/mine` để ghép
+ * isSaved/review thật) thay vì localStorage. Chỉ dùng ở phía client
+ * ("use client" hooks/component).
  */
 
-const STORAGE_KEY = "homnayangi:history";
+interface ExperienceApiRecord {
+  id: string;
+  foodId: string | null;
+  restaurantId: string;
+  createdAt: string;
+}
 
-function readStorage(): HistoryEntry[] | null {
-  if (typeof window === "undefined") return null;
+interface FavoriteApiRecord {
+  foodId: string;
+}
+
+interface MyReviewApiRecord {
+  id: string;
+  foodId: string;
+  rating: number;
+  comment: string | null;
+}
+
+export async function getAllHistory(allFoods: Food[]): Promise<HistoryEntry[]> {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as HistoryEntry[]) : null;
+    const [experiencesRes, favoritesRes, reviewsRes] = await Promise.all([
+      fetch("/api/experiences", { cache: "no-store" }),
+      fetch("/api/favorites", { cache: "no-store" }),
+      fetch("/api/reviews/mine", { cache: "no-store" }),
+    ]);
+
+    const experiences = experiencesRes.ok ? ((await experiencesRes.json()) as ExperienceApiRecord[]) : [];
+    const favorites = favoritesRes.ok ? ((await favoritesRes.json()) as FavoriteApiRecord[]) : [];
+    const myReviews = reviewsRes.ok ? ((await reviewsRes.json()) as MyReviewApiRecord[]) : [];
+    const favoriteFoodIds = new Set(favorites.map((favorite) => favorite.foodId));
+    const reviewsByFoodId = new Map<string, HistoryReviewSummary>(
+      myReviews.map((review) => [review.foodId, { id: review.id, rating: review.rating, comment: review.comment }]),
+    );
+
+    return mapExperiencesToHistoryEntries(experiences, favoriteFoodIds, allFoods, reviewsByFoodId);
   } catch {
-    return null;
+    return [];
   }
 }
 
-function writeStorage(entries: HistoryEntry[]): void {
-  if (typeof window === "undefined") return;
+/** Ghi 1 lượt "chốt ăn" — cần restaurantId của món (Experience gắn với quán). */
+export async function addHistoryEntry(input: { foodId: string; restaurantId: string }): Promise<boolean> {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    const response = await fetch("/api/experiences", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ foodId: input.foodId, restaurantId: input.restaurantId }),
+    });
+    return response.ok;
   } catch {
-    // Bỏ qua nếu trình duyệt chặn localStorage (vd: chế độ riêng tư).
+    return false;
   }
 }
 
-function readEntries(): HistoryEntry[] {
-  return readStorage() ?? [];
+export async function removeHistoryEntry(id: string): Promise<boolean> {
+  try {
+    const response = await fetch(`/api/experiences/${encodeURIComponent(id)}`, { method: "DELETE" });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
-export function getAllHistory(): HistoryEntry[] {
-  return [...readEntries()].sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-  );
+/** Không có endpoint xoá hàng loạt riêng — xoá từng entry qua DELETE (đã idempotent). */
+export async function clearAllHistory(ids: string[]): Promise<void> {
+  await Promise.all(ids.map((id) => removeHistoryEntry(id)));
 }
 
-export function getRecentHistory(limit: number): HistoryEntry[] {
-  return getAllHistory().slice(0, limit);
+/** Gửi đánh giá cho 1 lượt check-in (experienceId) — chỉ khả dụng khi đã "đã ăn món này". */
+export async function submitReview(
+  experienceId: string,
+  rating: number,
+  comment: string,
+): Promise<{ ok: boolean; error?: string; id?: string }> {
+  try {
+    const response = await fetch("/api/reviews", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ experienceId, rating, ...(comment.trim() && { comment: comment.trim() }) }),
+    });
+    const body = (await response.json().catch(() => ({}))) as { id?: string; error?: string };
+    if (!response.ok) return { ok: false, error: body.error ?? "Không thể gửi đánh giá." };
+    return { ok: true, id: body.id };
+  } catch {
+    return { ok: false, error: "Không thể gửi đánh giá, vui lòng thử lại." };
+  }
 }
 
-export function addHistoryEntry(entry: Omit<HistoryEntry, "id">): HistoryEntry {
-  const newEntry: HistoryEntry = {
-    ...entry,
-    id: `hist-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-  };
-  writeStorage([newEntry, ...readEntries()]);
-  return newEntry;
-}
-
-export function updateHistoryEntry(id: string, patch: Partial<Omit<HistoryEntry, "id">>): void {
-  writeStorage(readEntries().map((entry) => (entry.id === id ? { ...entry, ...patch } : entry)));
-}
-
-export function removeHistoryEntry(id: string): void {
-  writeStorage(readEntries().filter((entry) => entry.id !== id));
-}
-
-export function clearAllHistory(): void {
-  writeStorage([]);
+export async function deleteMyReview(reviewId: string): Promise<boolean> {
+  try {
+    const response = await fetch(`/api/reviews/${encodeURIComponent(reviewId)}`, { method: "DELETE" });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }

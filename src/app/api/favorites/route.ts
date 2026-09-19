@@ -1,34 +1,34 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { connectDB } from "@/lib/mongodb";
-import { Favorite } from "@/lib/models/Favorite";
+import { z } from "zod";
+import { requireAuth } from "@/lib/requireAuth";
+import { addFavorite, listFavoritesForUser } from "@/lib/favorites";
 
-/**
- * Danh sách món yêu thích thật của user (join với `foods`). Hiện tại collection
- * `foods` chưa có dữ liệu thật (Random feature vẫn chạy trên mock data —
- * xem CLAUDE.md mục 1 + docs/database.md mục 7.3, chưa có toạ độ thật cho
- * Restaurant nên chưa seed được). Route này sẵn sàng trả dữ liệu thật ngay khi
- * `foods` có nội dung được duyệt qua luồng đóng góp (BR-C07).
- */
+const ERROR_MESSAGES: Record<string, string> = {
+  INVALID_FOOD: "Món ăn không hợp lệ hoặc chưa được duyệt.",
+  LIMIT_REACHED: "Bạn đã lưu tối đa số món yêu thích cho phép.",
+};
+
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (!auth.ok) return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401 });
 
-  await connectDB();
-  const userId = (session.user as { id: string }).id;
-  const favorites = await Favorite.find({ userId })
-    .sort({ createdAt: -1 })
-    .populate("foodId")
-    .lean();
+  const favorites = await listFavoritesForUser(auth.id);
+  return NextResponse.json(favorites);
+}
 
-  return NextResponse.json(
-    favorites.map((favorite) => ({
-      id: String(favorite._id),
-      foodId: String(favorite.foodId),
-      createdAt: favorite.createdAt.toISOString(),
-    })),
-  );
+const postSchema = z.object({ foodId: z.string().min(1) }).strict();
+
+/** Idempotent: gọi lại với cùng foodId không lỗi, không tạo trùng (unique index + upsert). */
+export async function POST(request: Request) {
+  const auth = await requireAuth();
+  if (!auth.ok) return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401 });
+
+  const body = await request.json().catch(() => null);
+  const parsed = postSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: "Thiếu hoặc sai foodId." }, { status: 400 });
+
+  const result = await addFavorite(auth.id, parsed.data.foodId);
+  if (result.error) return NextResponse.json({ error: ERROR_MESSAGES[result.error] }, { status: 400 });
+
+  return NextResponse.json({ success: true }, { status: 201 });
 }

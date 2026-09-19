@@ -2,7 +2,10 @@ import { getServerSession } from "next-auth";
 import { History } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { getAllFoods } from "@/services/foodService";
-import { getAllHistory } from "@/services/historyService";
+import { listExperiencesForUser } from "@/lib/experiences";
+import { listFavoritesForUser } from "@/lib/favorites";
+import { listMyReviewsByFood } from "@/lib/reviews";
+import { mapExperiencesToHistoryEntries } from "@/features/history-log/historyLogic";
 import { HistoryPageContent } from "@/components/food/HistoryPageContent";
 import { RequireLoginState } from "@/components/auth/RequireLoginState";
 
@@ -20,8 +23,19 @@ export default async function HistoryPage() {
     );
   }
 
+  const userId = (session.user as { id: string }).id;
   const allFoods = await getAllFoods();
-  const historyEntries = getAllHistory();
+  const [experiences, favorites, reviewsByFood] = await Promise.all([
+    listExperiencesForUser(userId),
+    listFavoritesForUser(userId),
+    listMyReviewsByFood(userId),
+  ]);
+  const historyEntries = mapExperiencesToHistoryEntries(
+    experiences,
+    new Set(favorites.map((favorite) => favorite.foodId)),
+    allFoods,
+    reviewsByFood,
+  );
 
   return (
     <HistoryPageContent

@@ -46,6 +46,8 @@ export function HistoryPageContent({
     removeEntry,
     clearAll,
     toggleSaved,
+    submitEntryReview,
+    removeEntryReview,
     isEmpty,
     hasNoFilterMatch,
   } = useHistoryLog({ initialEntries, allFoods, totalFoodsInMenu });
@@ -218,6 +220,8 @@ export function HistoryPageContent({
                           isRemoving={removingIds.has(entry.id)}
                           onToggleSaved={toggleSaved}
                           onRemove={removeEntry}
+                          onSubmitReview={submitEntryReview}
+                          onRemoveReview={removeEntryReview}
                         />
                       </div>
                     ))}

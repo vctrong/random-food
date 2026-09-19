@@ -1,5 +1,5 @@
 import type { EatingLevel, Food } from "@/types/food";
-import type { HistoryEntry } from "@/types/history";
+import type { HistoryEntry, HistoryReviewSummary } from "@/types/history";
 import { EATING_LEVEL_LABELS } from "@/constants/categories";
 
 export interface HistoryWithFood extends HistoryEntry {
@@ -14,6 +14,50 @@ export interface HistoryFilters {
   eatingLevel: EatingLevel | "all";
   quickFilter: QuickFilter;
   sortOrder: SortOrder;
+}
+
+export interface ExperienceRecordLike {
+  id: string;
+  foodId: string | null;
+  createdAt: string;
+}
+
+/**
+ * Ghép Experience (check-in thật từ DB) thành HistoryEntry cho UI. Experience
+ * không lưu eatingLevel/wasEaten riêng: eatingLevel suy ra từ Food.eatingLevels[0]
+ * (đúng cách app luôn gán khi tạo entry trước đây), wasEaten luôn true (1
+ * Experience tồn tại nghĩa là đã chốt ăn). isSaved ghép từ danh sách Favorites
+ * thật (không suy đoán). review ghép từ danh sách review CỦA CHÍNH user theo
+ * foodId — 1 review dùng chung cho mọi lần check-in cùng món (đúng ràng buộc
+ * unique index userId+foodId+restaurantId của Review). Dùng chung cho cả SSR
+ * (page.tsx) và client refetch (historyService.ts) để không lặp logic.
+ */
+export function mapExperiencesToHistoryEntries(
+  experiences: ExperienceRecordLike[],
+  favoriteFoodIds: Set<string>,
+  foods: Food[],
+  reviewsByFoodId: Map<string, HistoryReviewSummary> = new Map(),
+): HistoryEntry[] {
+  const foodMap = new Map(foods.map((food) => [food.id, food]));
+
+  return experiences
+    .map((experience) => {
+      if (!experience.foodId) return null;
+      const food = foodMap.get(experience.foodId);
+      if (!food) return null;
+      const entry: HistoryEntry = {
+        id: experience.id,
+        foodId: experience.foodId,
+        timestamp: experience.createdAt,
+        eatingLevel: food.eatingLevels[0] ?? null,
+        wasEaten: true,
+        isSaved: favoriteFoodIds.has(experience.foodId),
+        review: reviewsByFoodId.get(experience.foodId) ?? null,
+      };
+      return entry;
+    })
+    .filter((entry): entry is HistoryEntry => entry !== null)
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 }
 
 /** Ghép HistoryEntry với Food tương ứng, bỏ qua entry nào không còn tìm thấy món (an toàn dữ liệu). */

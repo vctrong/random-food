@@ -6,6 +6,7 @@ import { Footer } from "@/components/ui/Footer";
 import { SessionProvider } from "@/components/auth/SessionProvider";
 import { SessionErrorGuard } from "@/components/auth/SessionErrorGuard";
 import { ToastProvider } from "@/components/ui/ToastProvider";
+import { FoodQuickActionsBubble } from "@/components/food/FoodQuickActionsBubble";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <main className="flex-1 pt-16">{children}</main>
             <Footer />
             <MobileNav />
+            <FoodQuickActionsBubble />
           </ToastProvider>
         </SessionProvider>
       </body>

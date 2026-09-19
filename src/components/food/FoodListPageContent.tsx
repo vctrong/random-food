@@ -1,9 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Search, UtensilsCrossed } from "lucide-react";
+import Link from "next/link";
+import { Dices, PlusCircle, Search, Soup, UtensilsCrossed } from "lucide-react";
 import type { Food } from "@/types/food";
-import { EATING_LEVEL_LABELS, EATING_LEVEL_ORDER } from "@/constants/categories";
+import { EATING_LEVELS, EATING_LEVEL_LABELS, EATING_LEVEL_ORDER } from "@/constants/categories";
 import { useFoodList } from "@/features/food-list/useFoodList";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FoodListCard } from "./FoodListCard";
@@ -28,31 +29,90 @@ export function FoodListPageContent({ initialFoods }: FoodListPageContentProps) 
   } = useFoodList({ initialFoods });
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-10">
-      <div className="mb-8 pb-6 border-b border-border">
-        <div className="flex items-center gap-1.5 text-primary-blue text-xs font-bold uppercase tracking-wider mb-2">
-          <UtensilsCrossed className="size-4" aria-hidden />
-          <span>Kho ẩm thực Cần Thơ</span>
+    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8 md:py-10 space-y-8">
+      {/* Hero */}
+      <header className="relative rounded-3xl p-6 md:p-10 overflow-hidden bg-gradient-to-br from-white via-soft-blue/40 to-soft-pink/40 shadow-sm">
+        <div
+          aria-hidden
+          className="absolute -top-16 -right-16 w-80 h-80 rounded-full bg-primary-blue/10 blur-3xl pointer-events-none"
+        />
+        <div
+          aria-hidden
+          className="absolute -bottom-16 left-1/4 w-72 h-72 rounded-full bg-primary-pink/10 blur-3xl pointer-events-none"
+        />
+
+        <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white text-primary-blue text-xs font-bold uppercase tracking-wider shadow-sm mb-3">
+              <UtensilsCrossed className="size-3.5" aria-hidden />
+              <span>Kho ẩm thực Cần Thơ</span>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-text-primary mb-2">
+              Danh sách món ăn hệ thống
+            </h1>
+            <p className="text-text-secondary leading-relaxed">
+              {isSystemEmpty
+                ? "Hệ thống chưa có món ăn nào được duyệt công khai."
+                : `Hơn ${initialFoods.length} món ăn đang chờ được quay ngẫu nhiên hoặc ghim vào thực đơn yêu thích của bạn.`}
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white text-text-secondary shadow-sm">
+              <span className="size-2.5 rounded-full bg-primary-blue animate-pulse" aria-hidden />
+              <span className="text-sm font-semibold text-text-primary">{initialFoods.length} món sẵn sàng</span>
+            </div>
+            <Link
+              href="/random"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-primary-blue hover:bg-[#4a8ddb] text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all active:scale-95"
+            >
+              <Dices className="size-4.5" aria-hidden />
+              <span>Random ngay món ngẫu nhiên</span>
+            </Link>
+            <Link
+              href="/mon-an/dong-gop"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-white hover:bg-soft-pink text-primary-pink text-sm font-semibold shadow-sm transition-all active:scale-95"
+            >
+              <PlusCircle className="size-4.5" aria-hidden />
+              <span>Đóng góp món mới</span>
+            </Link>
+          </div>
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-text-primary">
-          Danh sách món ăn
-        </h1>
-        <p className="text-text-secondary mt-1">
-          {isSystemEmpty
-            ? "Hệ thống chưa có món ăn nào được duyệt công khai."
-            : `Hiện có ${initialFoods.length} món ăn đang được phục vụ ngẫu nhiên trong hệ thống.`}
-        </p>
-      </div>
+      </header>
+
+      {!isSystemEmpty && (
+        <section aria-label="Tổng quan số lượng món theo mức độ ăn" className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <MetricCard icon={Soup} label="Tổng kho ẩm thực" value={`${initialFoods.length} món`} tone="blue" />
+          {EATING_LEVELS.map((level) => (
+            <MetricCard
+              key={level.id}
+              icon={level.icon}
+              label={level.label}
+              value={`${eatingLevelCounts.get(level.id) ?? 0} món`}
+              tone="pink"
+            />
+          ))}
+        </section>
+      )}
 
       {isSystemEmpty ? (
         <EmptyState
           icon={UtensilsCrossed}
           title="Chưa có món ăn nào"
           description="Món ăn được cộng đồng đóng góp và kiểm duyệt sẽ xuất hiện tại đây."
+          action={
+            <Link
+              href="/mon-an/dong-gop"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-primary-blue hover:bg-[#4a8ddb] text-white text-sm font-semibold shadow-md transition-all active:scale-95"
+            >
+              <PlusCircle className="size-4.5" aria-hidden />
+              <span>Đóng góp món đầu tiên</span>
+            </Link>
+          }
         />
       ) : (
         <>
-          <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3 mb-8">
+          <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
             <div className="relative">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-text-secondary" aria-hidden />
               <input
@@ -121,6 +181,32 @@ export function FoodListPageContent({ initialFoods }: FoodListPageContentProps) 
           )}
         </>
       )}
+    </div>
+  );
+}
+
+function MetricCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: typeof Soup;
+  label: string;
+  value: string;
+  tone: "blue" | "pink";
+}) {
+  const toneClasses = tone === "blue" ? "bg-soft-blue text-primary-blue" : "bg-soft-pink text-primary-pink";
+
+  return (
+    <div className="flex items-center gap-3 p-4 rounded-2xl bg-white shadow-sm hover:shadow-md transition-shadow">
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${toneClasses}`}>
+        <Icon className="size-6" aria-hidden />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs text-text-secondary truncate">{label}</p>
+        <p className="font-heading font-semibold text-text-primary tracking-tight">{value}</p>
+      </div>
     </div>
   );
 }

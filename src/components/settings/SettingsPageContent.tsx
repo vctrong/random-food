@@ -141,8 +141,8 @@ export function SettingsPageContent({
 
             <DataStorageSection
               storageSize={computeSettingsSize(settings)}
-              onExportHistoryJson={() => {
-                const historyEntries = joinHistoryWithFood(getAllHistory(), allFoods);
+              onExportHistoryJson={async () => {
+                const historyEntries = joinHistoryWithFood(await getAllHistory(allFoods), allFoods);
                 downloadTextFile(
                   "hom-nay-an-gi-lich-su.json",
                   buildHistoryExportJson(historyEntries),
@@ -150,8 +150,8 @@ export function SettingsPageContent({
                 );
                 notify("Đã tải file JSON lịch sử!");
               }}
-              onExportHistoryCsv={() => {
-                const historyEntries = joinHistoryWithFood(getAllHistory(), allFoods);
+              onExportHistoryCsv={async () => {
+                const historyEntries = joinHistoryWithFood(await getAllHistory(allFoods), allFoods);
                 downloadTextFile(
                   "hom-nay-an-gi-lich-su.csv",
                   buildHistoryExportCsv(historyEntries),
@@ -159,8 +159,8 @@ export function SettingsPageContent({
                 );
                 notify("Đã tải file CSV lịch sử!");
               }}
-              onBackupSaved={() => {
-                const savedFoods = joinSavedWithFood(getSavedFoodRecords(), allFoods);
+              onBackupSaved={async () => {
+                const savedFoods = joinSavedWithFood(await getSavedFoodRecords(), allFoods);
                 downloadTextFile(
                   "hom-nay-an-gi-mon-da-luu.json",
                   buildSavedBackupJson(savedFoods),

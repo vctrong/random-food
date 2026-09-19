@@ -14,6 +14,8 @@ const auditLogSchema = new Schema({
       "delete_food",
       "assign_reviewer",
       "remove_reviewer",
+      "change_user_role",
+      "set_visibility",
       "approve_reviewer_application",
       "reject_reviewer_application",
       "category_create",

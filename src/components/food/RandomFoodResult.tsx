@@ -26,11 +26,13 @@ import { useRandomFood } from "@/features/random-food/useRandomFood";
 import { EATING_LEVEL_LABELS } from "@/constants/categories";
 import { formatPriceRange } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { LoginGateModal } from "@/components/auth/LoginGateModal";
 import { MultiSelectFilterBar } from "@/components/filters/MultiSelectFilterBar";
 import { RestaurantMap } from "@/components/map/RestaurantMap";
 import { AlternativeFoodItem } from "./AlternativeFoodItem";
 import { RandomLoadingSkeleton } from "./RandomLoadingSkeleton";
+import { FoodReviewsSection } from "./FoodReviewsSection";
 
 interface RandomFoodResultProps {
   allFoods: Food[];
@@ -81,6 +83,8 @@ export function RandomFoodResult({
   });
 
   const eatingLevelConfig = eatingLevel ? EATING_LEVEL_LABELS[eatingLevel] : null;
+  const hasNoData = poolSize === 0 && !isRandomizing;
+  const hasActiveFilters = selectedCategoryIds.length > 0 || selectedTags.length > 0;
 
   const categoryFilterOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -187,7 +191,28 @@ export function RandomFoodResult({
         {/* Main column */}
         <div className="lg:col-span-8 flex flex-col gap-4">
           <div className="bg-white rounded-2xl p-4 md:p-6 shadow-xl relative overflow-hidden">
-            {isRandomizing || !currentFood ? (
+            {hasNoData ? (
+              <EmptyState
+                icon={UtensilsCrossed}
+                title={hasActiveFilters ? "Không có món nào khớp bộ lọc" : "Chưa có dữ liệu món ăn"}
+                description={
+                  hasActiveFilters
+                    ? "Thử bỏ bớt danh mục hoặc đặc điểm đang chọn để mở rộng kết quả."
+                    : "Hệ thống chưa có món ăn nào được duyệt công khai, quay lại sau nhé."
+                }
+                action={
+                  hasActiveFilters ? (
+                    <button
+                      type="button"
+                      onClick={randomizeAll}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary-blue text-white text-sm font-semibold shadow-sm active:scale-95 transition-all"
+                    >
+                      Xoá bộ lọc
+                    </button>
+                  ) : undefined
+                }
+              />
+            ) : isRandomizing || !currentFood ? (
               <RandomLoadingSkeleton />
             ) : (
               <div key={currentFood.id} className="animate-fade-slide-up">
@@ -308,7 +333,7 @@ export function RandomFoodResult({
             <button
               type="button"
               onClick={randomize}
-              disabled={isRandomizing}
+              disabled={isRandomizing || hasNoData}
               className="flex-1 inline-flex items-center justify-center gap-2 h-12 px-6 rounded-full bg-primary-blue hover:bg-[#4a8ddb] text-white font-semibold shadow-md active:scale-95 transition-all disabled:opacity-70"
             >
               <RefreshCw
@@ -357,7 +382,9 @@ export function RandomFoodResult({
             <span className="text-xs text-primary-blue uppercase font-bold tracking-wider">
               Đặc điểm món
             </span>
-            {currentFood && !isRandomizing ? (
+            {hasNoData ? (
+              <p className="text-sm text-text-secondary mt-3">Chưa có món để hiển thị đặc điểm.</p>
+            ) : currentFood && !isRandomizing ? (
               <div className="flex flex-wrap gap-2 mt-3">
                 {currentFood.categories.map((category) => (
                   <Badge key={category.id} variant="blue">
@@ -425,6 +452,17 @@ export function RandomFoodResult({
           </div>
         </div>
       </div>
+
+      {currentFood && !isRandomizing && !hasNoData && (
+        <div className="mt-6">
+          <FoodReviewsSection
+            key={currentFood.id}
+            foodId={currentFood.id}
+            avgRating={currentFood.avgRating}
+            ratingCount={currentFood.ratingCount}
+          />
+        </div>
+      )}
 
       <LoginGateModal isOpen={isLoginGateOpen} onClose={closeLoginGate} />
     </div>

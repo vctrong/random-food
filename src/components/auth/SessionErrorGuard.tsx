@@ -6,7 +6,6 @@ import { signOut, useSession } from "next-auth/react";
 import { useToast } from "@/components/ui/ToastProvider";
 
 const ERROR_MESSAGES: Record<string, string> = {
-  SessionExpired: "Phiên đăng nhập đã hết hạn do không hoạt động, vui lòng đăng nhập lại.",
   SessionRevoked: "Phiên đăng nhập đã bị thu hồi (đổi mật khẩu hoặc đăng xuất từ thiết bị khác).",
 };
 
@@ -28,7 +27,8 @@ export function SessionErrorGuard() {
     hasHandled.current = true;
 
     signOut({ redirect: false }).then(() => {
-      showToast(ERROR_MESSAGES[error] ?? "Phiên đăng nhập không còn hợp lệ, vui lòng đăng nhập lại.", "warning");
+      const message = ERROR_MESSAGES[error];
+      if (message) showToast(message, "warning");
       router.push("/");
       router.refresh();
     });

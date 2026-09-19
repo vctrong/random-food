@@ -9,12 +9,14 @@ import { ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck, Soup } from "lucide-r
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
 import { getAuthErrorMessage, getNetworkErrorMessage } from "@/lib/errorMessages";
+import { sanitizeCallbackUrl } from "@/lib/safe-redirect";
 import { GoogleIcon } from "./GoogleIcon";
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  // Chống open-redirect: callbackUrl đến từ query string do client kiểm soát được.
+  const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
