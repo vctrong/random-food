@@ -44,7 +44,7 @@ export function RestaurantMap({ location, name, address, className }: Restaurant
   }
 
   return (
-    <div className={`relative ${className ?? ""}`}>
+    <div className={`relative isolate ${className ?? ""}`}>
       <LeafletMap lat={location.lat} lng={location.lng} label={name} address={address} />
       <a
         href={getGoogleMapsUrl(location, address)}
