@@ -50,12 +50,26 @@ export default function LocationPickerMap({ lat, lng, onPick }: LocationPickerMa
       delete leafletContainer._leaflet_id;
     }
 
-    const map = L.map(container, { center: [lat, lng], zoom: 15 });
+    const map = L.map(container, { center: [lat, lng], zoom: 15, maxZoom: 19 });
     mapRef.current = map;
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    const streetLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
+
+    // Ảnh vệ tinh Esri (không cần API key) — giúp nhận ra mái nhà/ngõ khi chấm tay quán chưa có trên bản đồ.
+    const satelliteLayer = L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      {
+        maxZoom: 19,
+        attribution: "Tiles &copy; Esri &mdash; Maxar, Earthstar Geographics",
+      },
+    );
+
+    L.control
+      .layers({ "Đường phố": streetLayer, "Vệ tinh": satelliteLayer }, undefined, { position: "topright" })
+      .addTo(map);
 
     const marker = L.marker([lat, lng], { icon: createPinIcon(), draggable: true }).addTo(map);
     markerRef.current = marker;
@@ -85,9 +99,9 @@ export default function LocationPickerMap({ lat, lng, onPick }: LocationPickerMa
     const current = marker.getLatLng();
     if (Math.abs(current.lat - lat) > 1e-9 || Math.abs(current.lng - lng) > 1e-9) {
       marker.setLatLng([lat, lng]);
-      map.setView([lat, lng], map.getZoom());
+      map.setView([lat, lng], Math.max(map.getZoom(), 17));
     }
   }, [lat, lng]);
 
-  return <div ref={containerRef} className="w-full h-full rounded-xl" />;
+  return <div ref={containerRef} className="w-full h-full rounded-xl isolate" />;
 }

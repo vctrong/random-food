@@ -2,8 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
-import type { ChangeEvent } from "react";
-import { Loader2, MapPin, Search } from "lucide-react";
+import type { ChangeEvent, KeyboardEvent } from "react";
+import { LocateFixed, Loader2, MapPin, Search } from "lucide-react";
 
 const LocationPickerMap = dynamic(() => import("./LocationPickerMap"), {
   ssr: false,
@@ -32,11 +32,37 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const debounceRef = useRef<number | null>(null);
+  const requestIdRef = useRef(0);
+
+  async function runSearch(searchQuery: string): Promise<GeocodeResult[]> {
+    const requestId = ++requestIdRef.current;
+    setIsSearching(true);
+    setNotFound(false);
+    try {
+      const response = await fetch(`/api/geocode?q=${encodeURIComponent(searchQuery)}`);
+      const data = await response.json();
+      const found: GeocodeResult[] = Array.isArray(data) ? data : [];
+      if (requestId === requestIdRef.current) {
+        setResults(found);
+        setNotFound(found.length === 0);
+      }
+      return found;
+    } catch {
+      if (requestId === requestIdRef.current) setResults([]);
+      return [];
+    } finally {
+      if (requestId === requestIdRef.current) setIsSearching(false);
+    }
+  }
 
   function handleQueryChange(event: ChangeEvent<HTMLInputElement>) {
     const nextQuery = event.target.value;
     setQuery(nextQuery);
+    setNotFound(false);
 
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     if (nextQuery.trim().length < 3) {
@@ -44,18 +70,43 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
       return;
     }
 
-    debounceRef.current = window.setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const response = await fetch(`/api/geocode?q=${encodeURIComponent(nextQuery)}`);
-        const data = await response.json();
-        setResults(Array.isArray(data) ? data : []);
-      } catch {
-        setResults([]);
-      } finally {
-        setIsSearching(false);
-      }
+    debounceRef.current = window.setTimeout(() => {
+      void runSearch(nextQuery);
     }, 500);
+  }
+
+  function useCurrentLocation() {
+    if (!("geolocation" in navigator)) {
+      setLocationError("Trình duyệt không hỗ trợ định vị.");
+      return;
+    }
+    setIsLocating(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setIsLocating(false);
+        onChange({ lat: position.coords.latitude, lng: position.coords.longitude });
+      },
+      (error) => {
+        setIsLocating(false);
+        setLocationError(
+          error.code === error.PERMISSION_DENIED
+            ? "Bạn chưa cho phép truy cập vị trí. Hãy bật quyền vị trí cho trang này trong trình duyệt."
+            : "Không lấy được vị trí hiện tại, vui lòng thử lại.",
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
+
+  async function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    if (query.trim().length < 3) return;
+
+    const found = results.length > 0 ? results : await runSearch(query);
+    if (found.length > 0) selectResult(found[0]);
   }
 
   function selectResult(result: GeocodeResult) {
@@ -72,6 +123,7 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
           type="text"
           value={query}
           onChange={handleQueryChange}
+          onKeyDown={handleKeyDown}
           placeholder="Tìm địa chỉ để định vị nhanh (vd: 123 Nguyễn Văn Cừ, Ninh Kiều)"
           className="w-full h-11 pl-10 pr-10 rounded-xl border border-border bg-white text-sm text-text-primary placeholder:text-text-secondary/70 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
         />
@@ -96,7 +148,25 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
         )}
       </div>
 
-      <div className="h-56 rounded-xl overflow-hidden border border-border">
+      {notFound && !isSearching && (
+        <p className="text-xs text-text-secondary">
+          Không tìm thấy địa chỉ này. Thử bỏ số nhà/hẻm hoặc nhấp trực tiếp lên bản đồ để đặt ghim.
+        </p>
+      )}
+
+      {locationError && <p className="text-xs text-primary-pink">{locationError}</p>}
+
+      <button
+        type="button"
+        onClick={useCurrentLocation}
+        disabled={isLocating}
+        className="self-start inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl border border-border bg-white text-sm font-medium text-primary-blue hover:bg-soft-blue transition-colors disabled:opacity-60"
+      >
+        {isLocating ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <LocateFixed className="size-4" aria-hidden />}
+        Dùng vị trí hiện tại của tôi
+      </button>
+
+      <div className="h-80 sm:h-96 rounded-xl overflow-hidden border border-border isolate">
         <LocationPickerMap lat={value.lat} lng={value.lng} onPick={onChange} />
       </div>
 

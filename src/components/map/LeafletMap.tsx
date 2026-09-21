@@ -69,5 +69,5 @@ export default function LeafletMap({ lat, lng, label, address }: LeafletMapProps
     };
   }, [lat, lng, label, address]);
 
-  return <div ref={containerRef} className="w-full h-full rounded-xl" />;
+  return <div ref={containerRef} className="w-full h-full rounded-xl isolate" />;
 }
