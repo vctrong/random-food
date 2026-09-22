@@ -76,7 +76,7 @@ export function HistoryPageContent({
                 clearAll();
               }
             }}
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-white hover:bg-red-50 text-red-600 text-sm font-medium shadow-sm transition-all active:scale-95 self-start md:self-auto"
+            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-surface hover:bg-red-50 text-red-600 text-sm font-medium shadow-sm transition-all active:scale-95 self-start md:self-auto"
           >
             <Trash2 className="size-4" aria-hidden />
             <span>Xoá toàn bộ lịch sử</span>
@@ -127,7 +127,7 @@ export function HistoryPageContent({
           </div>
 
           {/* Filter toolbar */}
-          <div className="p-4 rounded-xl bg-white shadow-sm mb-8 space-y-3">
+          <div className="p-4 rounded-xl bg-surface shadow-sm mb-8 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
               <div className="md:col-span-6 relative">
                 <Search
@@ -259,7 +259,7 @@ function StatCard({
   hint?: string;
 }) {
   return (
-    <div className="p-4 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
+    <div className="p-4 rounded-xl bg-surface shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-sm text-text-secondary">{label}</span>
         <div className="w-8 h-8 rounded-full bg-soft-blue flex items-center justify-center text-primary-blue">

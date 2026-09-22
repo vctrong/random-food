@@ -42,7 +42,7 @@ export function FoodQuickActionsBubble() {
               setIsFaqOpen(true);
               setIsOpen(false);
             }}
-            className="flex items-center gap-2.5 pl-4 pr-2 h-12 rounded-full bg-white shadow-lg border border-border hover:bg-soft-blue transition-colors"
+            className="flex items-center gap-2.5 pl-4 pr-2 h-12 rounded-full bg-surface shadow-lg border border-border hover:bg-soft-blue transition-colors"
           >
             <span className="text-sm font-medium text-text-primary">Hỏi đáp</span>
             <span className="size-8 rounded-full bg-soft-blue text-primary-blue flex items-center justify-center shrink-0">
@@ -53,7 +53,7 @@ export function FoodQuickActionsBubble() {
           <Link
             href="/mon-an/dong-gop"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-2.5 pl-4 pr-2 h-12 rounded-full bg-white shadow-lg border border-border hover:bg-soft-pink transition-colors"
+            className="flex items-center gap-2.5 pl-4 pr-2 h-12 rounded-full bg-surface shadow-lg border border-border hover:bg-soft-pink transition-colors"
           >
             <span className="text-sm font-medium text-text-primary">Thêm món ăn</span>
             <span className="size-8 rounded-full bg-soft-pink text-primary-pink flex items-center justify-center shrink-0">

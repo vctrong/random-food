@@ -22,7 +22,7 @@ export function TagInput({ tags, onAdd, onRemove, placeholder, tone }: TagInputP
   const tagClasses =
     tone === "blue"
       ? "bg-soft-blue text-primary-blue"
-      : "bg-red-50 text-red-600";
+      : "bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400";
 
   return (
     <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -54,7 +54,7 @@ export function TagInput({ tags, onAdd, onRemove, placeholder, tone }: TagInputP
             }
           }}
           placeholder={placeholder}
-          className="h-8 px-3 rounded-full bg-soft-blue/40 text-text-primary text-sm focus:bg-white focus:ring-2 focus:ring-primary-blue focus:outline-none placeholder:text-text-secondary w-44 transition-all"
+          className="h-8 px-3 rounded-full bg-soft-blue/40 text-text-primary text-sm focus:bg-surface focus:ring-2 focus:ring-primary-blue focus:outline-none placeholder:text-text-secondary w-44 transition-all"
         />
         <button
           type="button"

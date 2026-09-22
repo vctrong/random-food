@@ -163,7 +163,7 @@ export function ContributionsPageContent({ initialContributions, initialAchievem
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <div className="lg:col-span-8 flex flex-col gap-4">
           {/* Bộ lọc */}
-          <div className="p-4 rounded-2xl bg-white border border-border shadow-sm flex flex-col gap-3">
+          <div className="p-4 rounded-2xl bg-surface border border-border shadow-sm flex flex-col gap-3">
             <div className="flex items-center gap-1 p-1 rounded-xl bg-cream overflow-x-auto" role="tablist">
               {TABS.map((item) => (
                 <button
@@ -174,7 +174,7 @@ export function ContributionsPageContent({ initialContributions, initialAchievem
                   onClick={() => setTab(item.id)}
                   className={cn(
                     "px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all",
-                    tab === item.id ? "bg-white shadow-sm text-primary-blue" : "text-text-secondary hover:text-text-primary",
+                    tab === item.id ? "bg-surface shadow-sm text-primary-blue" : "text-text-secondary hover:text-text-primary",
                   )}
                 >
                   {item.label} ({item.count(summary)})
@@ -230,7 +230,7 @@ export function ContributionsPageContent({ initialContributions, initialAchievem
           )}
 
           {filteredCount > 0 && (
-            <div className="p-4 rounded-2xl bg-white border border-border shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="p-4 rounded-2xl bg-surface border border-border shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
               <span className="text-xs text-text-secondary">
                 Hiển thị {rangeStart} – {rangeEnd} trong tổng số {filteredCount} đóng góp
               </span>
@@ -266,10 +266,10 @@ export function ContributionsPageContent({ initialContributions, initialAchievem
         <aside className="lg:col-span-4 flex flex-col gap-4">
           <ContributorLevelCard levelProgress={levelProgress} achievements={achievements} />
 
-          <div className="bg-white rounded-2xl border border-border shadow-sm p-5 flex flex-col gap-3">
+          <div className="bg-surface rounded-2xl border border-border shadow-sm p-5 flex flex-col gap-3">
             <div className="flex items-center gap-2 text-primary-blue">
               <Lightbulb className="size-5" aria-hidden />
-              <h3 className="font-heading font-semibold text-text-primary">Bí quyết để được duyệt</h3>
+              <h3 className="font-subheading font-semibold text-text-primary">Bí quyết để được duyệt</h3>
             </div>
             <ul className="flex flex-col gap-3">
               {TIPS.map(({ icon: Icon, title, text }) => (
@@ -284,13 +284,13 @@ export function ContributionsPageContent({ initialContributions, initialAchievem
           </div>
 
           <div className="bg-deep-blue text-white rounded-2xl shadow-sm p-5 flex flex-col gap-3">
-            <h3 className="font-heading font-semibold text-lg leading-snug">Biết một quán ăn ít người biết?</h3>
+            <h3 className="font-subheading font-semibold text-lg leading-snug">Biết một quán ăn ít người biết?</h3>
             <p className="text-sm text-white/80 leading-relaxed">
               Chia sẻ để mọi người có thêm lựa chọn cho bữa ăn hôm nay.
             </p>
             <Link
               href="/mon-an/dong-gop"
-              className="h-10 rounded-full bg-white text-deep-blue text-sm font-semibold inline-flex items-center justify-center gap-1.5 hover:bg-soft-blue active:scale-95 transition-all"
+              className="h-10 rounded-full bg-surface text-deep-blue text-sm font-semibold inline-flex items-center justify-center gap-1.5 hover:bg-soft-blue active:scale-95 transition-all"
             >
               <MapPinPlus className="size-4" aria-hidden />
               Đóng góp địa điểm ngay
@@ -326,7 +326,7 @@ function StatCard({
   accent: string;
 }) {
   return (
-    <div className="p-4 rounded-2xl bg-white border border-border shadow-sm flex flex-col gap-3">
+    <div className="p-4 rounded-2xl bg-surface border border-border shadow-sm flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-text-secondary">{label}</span>
         <span className={cn("size-9 rounded-full flex items-center justify-center", accent)}>
@@ -334,7 +334,7 @@ function StatCard({
         </span>
       </div>
       <div className="flex items-baseline gap-1.5">
-        <span className="text-3xl font-heading font-bold text-text-primary">{value}</span>
+        <span className="text-3xl font-subheading font-bold text-text-primary">{value}</span>
         <span className="text-sm text-text-secondary">{unit}</span>
       </div>
       <p className="text-xs text-text-secondary">{hint}</p>

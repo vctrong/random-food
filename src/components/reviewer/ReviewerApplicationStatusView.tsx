@@ -41,7 +41,7 @@ export function ReviewerApplicationStatusView({ access, application }: ReviewerA
 
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-5">
-      <div className="bg-white rounded-2xl border border-border shadow-sm p-5 sm:p-6 flex flex-col gap-4">
+      <div className="bg-surface rounded-2xl border border-border shadow-sm p-5 sm:p-6 flex flex-col gap-4">
         {access.state === "pending" ? (
           <>
             <span className="inline-flex items-center gap-1.5 w-fit px-2.5 py-1 rounded-full bg-soft-blue text-primary-blue text-xs font-semibold">
@@ -49,7 +49,7 @@ export function ReviewerApplicationStatusView({ access, application }: ReviewerA
               Đang chờ duyệt
             </span>
             <div>
-              <h2 className="text-xl font-heading font-semibold text-text-primary">Đơn của bạn đã được gửi</h2>
+              <h2 className="text-xl font-subheading font-semibold text-text-primary">Đơn của bạn đã được gửi</h2>
               <p className="text-sm text-text-secondary mt-1">
                 Nộp lúc {formatDateTime(application.createdAt)}. Admin sẽ xem xét hồ sơ và gửi kết quả qua thông báo.
               </p>
@@ -67,7 +67,7 @@ export function ReviewerApplicationStatusView({ access, application }: ReviewerA
               Đơn bị từ chối
             </span>
             <div>
-              <h2 className="text-xl font-heading font-semibold text-text-primary">Đơn ứng tuyển chưa được duyệt</h2>
+              <h2 className="text-xl font-subheading font-semibold text-text-primary">Đơn ứng tuyển chưa được duyệt</h2>
               <p className="text-sm text-text-secondary mt-1">
                 Bạn có thể nộp đơn mới từ ngày <strong className="text-text-primary">{formatDate(access.until)}</strong>.
               </p>
@@ -83,8 +83,8 @@ export function ReviewerApplicationStatusView({ access, application }: ReviewerA
         )}
       </div>
 
-      <div className="bg-white rounded-2xl border border-border shadow-sm p-5 sm:p-6 flex flex-col gap-4">
-        <h3 className="font-heading font-semibold text-text-primary">Hồ sơ đã nộp</h3>
+      <div className="bg-surface rounded-2xl border border-border shadow-sm p-5 sm:p-6 flex flex-col gap-4">
+        <h3 className="font-subheading font-semibold text-text-primary">Hồ sơ đã nộp</h3>
         <SummaryRow label="Họ tên">{application.fullName || "—"}</SummaryRow>
         <SummaryRow label="Lý do ứng tuyển">
           <p className="whitespace-pre-line">{application.motivation || "—"}</p>
@@ -141,7 +141,7 @@ export function ReviewerApplicationStatusView({ access, application }: ReviewerA
       <Modal isOpen={isConfirmOpen} onClose={() => (isWithdrawing ? undefined : setIsConfirmOpen(false))} panelClassName="max-w-md p-6">
         <div className="flex flex-col gap-4">
           <div className="pr-8">
-            <h3 className="text-lg font-heading font-semibold text-text-primary">Rút đơn ứng tuyển?</h3>
+            <h3 className="text-lg font-subheading font-semibold text-text-primary">Rút đơn ứng tuyển?</h3>
             <p className="text-sm text-text-secondary mt-1">
               Đơn sẽ bị huỷ và không được Admin xem xét nữa. Bạn có thể nộp đơn mới ngay sau đó.
             </p>

@@ -38,7 +38,7 @@ export function SavedRandomModal({
 
           <div
             key={food.id}
-            className={`w-28 h-28 rounded-full overflow-hidden shadow-lg mb-4 border-4 border-white relative bg-soft-blue ${isRerolling ? "animate-pulse" : "animate-fade-slide-up"}`}
+            className={`w-28 h-28 rounded-full overflow-hidden shadow-lg mb-4 border-4 border-surface relative bg-soft-blue ${isRerolling ? "animate-pulse" : "animate-fade-slide-up"}`}
           >
             {food.images[0] ? (
               <Image

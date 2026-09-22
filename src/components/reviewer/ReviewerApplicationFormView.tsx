@@ -15,7 +15,7 @@ import { useReviewerApplicationForm } from "@/features/reviewer-application/useR
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
-import { TagInput } from "@/components/settings/TagInput";
+import { TagInput } from "@/components/ui/TagInput";
 import type { ApplicationSectionId } from "@/features/reviewer-application/applicationLogic";
 import type { ReviewerApplicationView } from "@/types/reviewerApplication";
 
@@ -27,7 +27,7 @@ interface ReviewerApplicationFormViewProps {
 }
 
 const INPUT_CLASS =
-  "w-full h-11 px-4 rounded-xl border border-border bg-white text-text-primary shadow-sm placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue";
+  "w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue";
 
 const SECTIONS: { id: ApplicationSectionId; label: string }[] = [
   { id: "profile", label: "Hồ sơ cá nhân" },
@@ -71,7 +71,7 @@ export function ReviewerApplicationFormView({ categories, defaultFullName, previ
         )}
 
         {/* Tiến độ 4 phần — tính từ mức hoàn thành thật của form */}
-        <nav aria-label="Tiến độ hồ sơ" className="bg-white rounded-2xl border border-border shadow-sm p-4 sm:p-5">
+        <nav aria-label="Tiến độ hồ sơ" className="bg-surface rounded-2xl border border-border shadow-sm p-4 sm:p-5">
           <ol className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {SECTIONS.map((section, index) => {
               const done = progress[section.id];
@@ -97,7 +97,7 @@ export function ReviewerApplicationFormView({ categories, defaultFullName, previ
         </nav>
 
         {/* 1. Hồ sơ */}
-        <section id="section-profile" className="bg-white rounded-2xl border border-border shadow-sm p-5 sm:p-6 flex flex-col gap-4 scroll-mt-24">
+        <section id="section-profile" className="bg-surface rounded-2xl border border-border shadow-sm p-5 sm:p-6 flex flex-col gap-4 scroll-mt-24">
           <SectionHeader index={1} title="Hồ sơ người thẩm định" description="Thông tin xác thực danh tính và khu vực bạn có thể xác minh thực địa." required />
 
           <Field label="Họ và tên thật" htmlFor="ra-fullname" error={errors.fullName} showError={values.fullName.length > 0}>
@@ -118,7 +118,7 @@ export function ReviewerApplicationFormView({ categories, defaultFullName, previ
               rows={3}
               maxLength={LIMITS.motivationMax}
               placeholder="Bạn quen thuộc khu vực nào, vì sao muốn góp phần giữ thông tin món ăn chính xác..."
-              className="w-full px-4 py-2.5 rounded-xl border border-border bg-white text-text-primary shadow-sm placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue resize-none"
+              className="w-full px-4 py-2.5 rounded-xl border border-border bg-surface text-text-primary shadow-sm placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue resize-none"
             />
           </Field>
 
@@ -145,7 +145,7 @@ export function ReviewerApplicationFormView({ categories, defaultFullName, previ
                       onClick={() => form.toggleExpertise(category.id)}
                       className={cn(
                         "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium border transition-colors disabled:opacity-40 disabled:pointer-events-none",
-                        active ? "bg-primary-blue border-primary-blue text-white shadow-sm" : "bg-white border-border text-text-secondary hover:text-text-primary",
+                        active ? "bg-primary-blue border-primary-blue text-white shadow-sm" : "bg-surface border-border text-text-secondary hover:text-text-primary",
                       )}
                     >
                       {active && <Check className="size-3.5" aria-hidden />}
@@ -167,7 +167,7 @@ export function ReviewerApplicationFormView({ categories, defaultFullName, previ
         </section>
 
         {/* 2. Kênh & portfolio */}
-        <section id="section-channels" className="bg-white rounded-2xl border border-border shadow-sm p-5 sm:p-6 flex flex-col gap-4 scroll-mt-24">
+        <section id="section-channels" className="bg-surface rounded-2xl border border-border shadow-sm p-5 sm:p-6 flex flex-col gap-4 scroll-mt-24">
           <SectionHeader
             index={2}
             title="Kênh sáng tạo & portfolio"
@@ -228,7 +228,7 @@ export function ReviewerApplicationFormView({ categories, defaultFullName, previ
         </section>
 
         {/* 3. Tình huống */}
-        <section id="section-scenario" className="bg-white rounded-2xl border border-border shadow-sm p-5 sm:p-6 flex flex-col gap-4 scroll-mt-24">
+        <section id="section-scenario" className="bg-surface rounded-2xl border border-border shadow-sm p-5 sm:p-6 flex flex-col gap-4 scroll-mt-24">
           <SectionHeader index={3} title="Tình huống xác minh" description="Cho Admin thấy cách bạn đối chiếu thông tin thực tế và giữ sự trung thực." required />
 
           <div className="p-4 rounded-xl bg-cream text-sm text-text-primary leading-relaxed">
@@ -251,14 +251,14 @@ export function ReviewerApplicationFormView({ categories, defaultFullName, previ
               onChange={(event) => form.setScenarioAnswer(event.target.value)}
               rows={9}
               placeholder="Bạn sẽ xác minh như thế nào, đối chiếu những gì, và phản hồi ra sao..."
-              className="w-full px-4 py-3 rounded-xl border border-border bg-white text-text-primary shadow-sm placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue resize-y leading-relaxed"
+              className="w-full px-4 py-3 rounded-xl border border-border bg-surface text-text-primary shadow-sm placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue resize-y leading-relaxed"
             />
             {scenarioWords > LIMITS.scenarioMaxWords && <p className="text-xs text-red-600">Bài trả lời vượt quá {LIMITS.scenarioMaxWords} từ.</p>}
           </div>
         </section>
 
         {/* 4. Cam kết */}
-        <section id="section-commitments" className="bg-white rounded-2xl border border-border shadow-sm p-5 sm:p-6 flex flex-col gap-4 scroll-mt-24">
+        <section id="section-commitments" className="bg-surface rounded-2xl border border-border shadow-sm p-5 sm:p-6 flex flex-col gap-4 scroll-mt-24">
           <SectionHeader index={4} title="Cam kết đạo đức" description="Chuẩn mực bắt buộc đối với mọi FoodReviewer." required />
           <div className="flex flex-col gap-3">
             {COMMITMENTS.map((commitment) => (
@@ -289,7 +289,7 @@ export function ReviewerApplicationFormView({ categories, defaultFullName, previ
       </div>
 
       <aside className="lg:col-span-4 flex flex-col gap-4 lg:sticky lg:top-24">
-        <div className="bg-white rounded-2xl border border-border shadow-md p-5 flex flex-col gap-4">
+        <div className="bg-surface rounded-2xl border border-border shadow-md p-5 flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary">Trạng thái hồ sơ</span>
             <span
@@ -329,8 +329,8 @@ export function ReviewerApplicationFormView({ categories, defaultFullName, previ
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-border shadow-sm p-5 flex flex-col gap-3">
-          <h3 className="font-heading font-semibold text-text-primary">Tiêu chí ưu tiên</h3>
+        <div className="bg-surface rounded-2xl border border-border shadow-sm p-5 flex flex-col gap-3">
+          <h3 className="font-subheading font-semibold text-text-primary">Tiêu chí ưu tiên</h3>
           <ul className="flex flex-col gap-2.5">
             {APPLICATION_CRITERIA.map((criterion) => (
               <li key={criterion} className="flex items-start gap-2 text-xs text-text-secondary leading-relaxed">
@@ -351,7 +351,7 @@ function SectionHeader({ index, title, description, required }: { index: number;
       <div className="flex items-start gap-3">
         <span className="size-8 rounded-lg bg-soft-blue text-primary-blue font-bold flex items-center justify-center shrink-0">{index}</span>
         <div>
-          <h2 className="font-heading font-semibold text-text-primary">{title}</h2>
+          <h2 className="font-subheading font-semibold text-text-primary">{title}</h2>
           <p className="text-sm text-text-secondary">{description}</p>
         </div>
       </div>

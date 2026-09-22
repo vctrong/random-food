@@ -22,7 +22,7 @@ export function StatCard({ icon: Icon, label, value, tone = "blue" }: StatCardPr
       </div>
       <div className="min-w-0">
         <p className="text-sm text-text-secondary leading-snug">{label}</p>
-        <p className="text-2xl font-heading font-semibold text-text-primary tracking-tight">
+        <p className="text-2xl font-subheading font-semibold text-text-primary tracking-tight">
           {new Intl.NumberFormat("vi-VN").format(value)}
         </p>
       </div>

@@ -70,7 +70,7 @@ export function ReviewerHistoryContent({ initialEntries, initialTotal, initialSu
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-1.5">
-        <h1 className="text-2xl font-heading font-bold text-text-primary">Nhật ký thẩm định cá nhân</h1>
+        <h1 className="text-2xl font-subheading font-bold text-text-primary">Nhật ký thẩm định cá nhân</h1>
         <p className="text-sm text-text-secondary max-w-2xl">
           Theo dõi minh bạch các quyết định phê duyệt/từ chối/yêu cầu sửa mà bạn đã đưa ra (BR-F09).
         </p>
@@ -79,12 +79,12 @@ export function ReviewerHistoryContent({ initialEntries, initialTotal, initialSu
       {/* Bento stats — số thật tính từ AuditLog, không có số liệu giả */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={History} label="Tổng hồ sơ đã xử lý" value={String(summary.total)} accent="text-primary-blue" />
-        <div className="p-4 rounded-2xl bg-white border border-border shadow-sm flex flex-col gap-2">
+        <div className="p-4 rounded-2xl bg-surface border border-border shadow-sm flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-text-secondary">Tỷ lệ phê duyệt</span>
             <TrendingUp className="size-5 text-primary-blue" aria-hidden />
           </div>
-          <span className="text-3xl font-heading font-bold text-text-primary">{approvalRate}%</span>
+          <span className="text-3xl font-subheading font-bold text-text-primary">{approvalRate}%</span>
           <div className="w-full h-2 rounded-full bg-cream flex overflow-hidden gap-0.5">
             {summary.total > 0 && (
               <>
@@ -105,7 +105,7 @@ export function ReviewerHistoryContent({ initialEntries, initialTotal, initialSu
       </div>
 
       {/* Toolbar */}
-      <div className="p-4 rounded-2xl bg-white border border-border shadow-sm flex flex-col gap-3">
+      <div className="p-4 rounded-2xl bg-surface border border-border shadow-sm flex flex-col gap-3">
         <div className="flex flex-col lg:flex-row gap-3 lg:items-center justify-between">
           <div className="relative flex-1 max-w-xl">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-text-secondary" aria-hidden />
@@ -130,7 +130,7 @@ export function ReviewerHistoryContent({ initialEntries, initialTotal, initialSu
                 }}
                 className={cn(
                   "px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all",
-                  status === tab.id ? "bg-white shadow-sm text-primary-blue" : "text-text-secondary hover:text-text-primary",
+                  status === tab.id ? "bg-surface shadow-sm text-primary-blue" : "text-text-secondary hover:text-text-primary",
                 )}
               >
                 {tab.label(summary)}
@@ -141,7 +141,7 @@ export function ReviewerHistoryContent({ initialEntries, initialTotal, initialSu
       </div>
 
       {/* Bảng dữ liệu */}
-      <div className="rounded-2xl bg-white border border-border shadow-sm overflow-hidden">
+      <div className="rounded-2xl bg-surface border border-border shadow-sm overflow-hidden">
         {entries.length === 0 ? (
           <EmptyState
             icon={History}
@@ -256,7 +256,7 @@ export function ReviewerHistoryContent({ initialEntries, initialTotal, initialSu
               <DecisionBadge decision={detailEntry.decision} />
               <span className="text-xs text-text-secondary">{formatDateTime(detailEntry.decidedAt)}</span>
             </div>
-            <h3 className="text-lg font-heading font-semibold text-text-primary">{detailEntry.name}</h3>
+            <h3 className="text-lg font-subheading font-semibold text-text-primary">{detailEntry.name}</h3>
             <p className="text-xs text-text-secondary">
               Người gửi: <span className="font-medium text-text-primary">{detailEntry.submitter.name}</span>
               {detailEntry.submittedAt && ` • Gửi lúc ${formatDateTime(detailEntry.submittedAt)}`}
@@ -284,12 +284,12 @@ function StatCard({
   accent: string;
 }) {
   return (
-    <div className="p-4 rounded-2xl bg-white border border-border shadow-sm flex flex-col gap-2">
+    <div className="p-4 rounded-2xl bg-surface border border-border shadow-sm flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-text-secondary">{label}</span>
         <Icon className={cn("size-5", accent)} aria-hidden />
       </div>
-      <span className="text-3xl font-heading font-bold text-text-primary">{value}</span>
+      <span className="text-3xl font-subheading font-bold text-text-primary">{value}</span>
     </div>
   );
 }

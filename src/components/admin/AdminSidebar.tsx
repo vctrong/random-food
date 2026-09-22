@@ -53,10 +53,10 @@ export function AdminSidebar({
 
   return (
     <aside className="w-full lg:w-72 lg:shrink-0 lg:sticky lg:top-24 flex flex-col gap-4">
-      <div className="rounded-2xl bg-white border border-border shadow-sm overflow-hidden">
+      <div className="rounded-2xl bg-surface border border-border shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-border">
           <p className="text-xs font-bold uppercase tracking-wider text-primary-pink">Admin Workspace</p>
-          <h2 className="text-lg font-heading font-semibold text-text-primary mt-0.5">Quản trị hệ thống</h2>
+          <h2 className="text-lg font-subheading font-semibold text-text-primary mt-0.5">Quản trị hệ thống</h2>
         </div>
 
         <nav className="flex flex-col gap-1 p-3">

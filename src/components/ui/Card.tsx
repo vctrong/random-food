@@ -9,7 +9,7 @@ export function Card({ hoverable = false, className, ...rest }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-2xl bg-white border border-border shadow-sm",
+        "rounded-2xl bg-surface border border-border shadow-sm",
         hoverable &&
           "transition-all duration-300 hover:-translate-y-1 hover:shadow-lg",
         className,

@@ -156,7 +156,7 @@ export function RegisterForm() {
           className="absolute -bottom-10 right-0 w-64 h-64 rounded-full bg-soft-blue blur-3xl pointer-events-none -z-10"
         />
 
-        <div className="relative overflow-hidden bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+        <div className="relative overflow-hidden bg-surface rounded-2xl shadow-xl p-6 sm:p-8">
           <div
             aria-hidden
             className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-primary-pink via-primary-blue to-primary-blue"
@@ -192,7 +192,7 @@ export function RegisterForm() {
                       value={name}
                       onChange={(event) => setName(event.target.value)}
                       placeholder="Nhập họ và tên"
-                      className="w-full h-12 pl-11 pr-4 rounded-xl border border-border bg-white text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+                      className="w-full h-12 pl-11 pr-4 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
                     />
                   </div>
                 </div>
@@ -211,7 +211,7 @@ export function RegisterForm() {
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
                       placeholder="Nhập email của bạn"
-                      className="w-full h-12 pl-11 pr-4 rounded-xl border border-border bg-white text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+                      className="w-full h-12 pl-11 pr-4 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
                     />
                   </div>
                 </div>
@@ -231,7 +231,7 @@ export function RegisterForm() {
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
                       placeholder="Tối thiểu 8 ký tự, có chữ, số và ký tự đặc biệt"
-                      className="w-full h-12 pl-11 pr-11 rounded-xl border border-border bg-white text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+                      className="w-full h-12 pl-11 pr-11 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
                     />
                     <button
                       type="button"
@@ -283,7 +283,7 @@ export function RegisterForm() {
                       value={confirmPassword}
                       onChange={(event) => setConfirmPassword(event.target.value)}
                       placeholder="Nhập lại mật khẩu"
-                      className="w-full h-12 pl-11 pr-11 rounded-xl border border-border bg-white text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+                      className="w-full h-12 pl-11 pr-11 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
                     />
                     {passwordsMatch && (
                       <span className="absolute right-3.5" title="Mật khẩu trùng khớp">
@@ -310,13 +310,13 @@ export function RegisterForm() {
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full h-px bg-border" />
                 </div>
-                <span className="relative bg-white px-4 text-xs text-text-secondary">hoặc đăng ký với</span>
+                <span className="relative bg-surface px-4 text-xs text-text-secondary">hoặc đăng ký với</span>
               </div>
 
               <button
                 type="button"
                 onClick={() => signIn("google", { callbackUrl })}
-                className="w-full h-12 px-4 rounded-xl border border-border bg-white hover:bg-soft-blue text-text-primary text-sm font-semibold flex items-center justify-center gap-3 shadow-sm transition-all active:scale-[0.99]"
+                className="w-full h-12 px-4 rounded-xl border border-border bg-surface hover:bg-soft-blue text-text-primary text-sm font-semibold flex items-center justify-center gap-3 shadow-sm transition-all active:scale-[0.99]"
               >
                 <GoogleIcon className="size-5" />
                 <span>Tiếp tục với Google</span>
@@ -379,7 +379,7 @@ export function RegisterForm() {
                       type="button"
                       onClick={handleRemoveAvatar}
                       aria-label="Bỏ ảnh đã chọn"
-                      className="absolute -top-1 -right-1 size-7 rounded-full bg-white border border-border text-text-secondary flex items-center justify-center shadow-md hover:text-red-600 transition-colors"
+                      className="absolute -top-1 -right-1 size-7 rounded-full bg-surface border border-border text-text-secondary flex items-center justify-center shadow-md hover:text-red-600 transition-colors"
                     >
                       <X className="size-3.5" aria-hidden />
                     </button>

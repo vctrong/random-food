@@ -67,7 +67,7 @@ export function SavedFoodsPageContent({ initialRecords, allFoods }: SavedFoodsPa
           >
             <Dices className="size-5 group-hover:rotate-180 transition-transform duration-500" aria-hidden />
             <span>Random từ danh sách đã lưu</span>
-            <span className="ml-1 px-2 py-0.5 rounded-full bg-white/20 text-xs font-semibold">
+            <span className="ml-1 px-2 py-0.5 rounded-full bg-surface/20 text-xs font-semibold">
               {saved.length}
             </span>
           </button>
@@ -101,7 +101,7 @@ export function SavedFoodsPageContent({ initialRecords, allFoods }: SavedFoodsPa
           </div>
 
           {/* Filter bar */}
-          <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3 mb-8">
+          <div className="bg-surface rounded-2xl p-4 shadow-sm space-y-3 mb-8">
             <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
               <div className="relative flex-1 min-w-[240px]">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-text-secondary" aria-hidden />
@@ -195,7 +195,7 @@ function MiniStat({
   tone: "blue" | "pink";
 }) {
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm flex items-center gap-3">
+    <div className="bg-surface rounded-xl p-4 shadow-sm flex items-center gap-3">
       <div
         className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
           tone === "pink" ? "bg-soft-pink text-primary-pink" : "bg-soft-blue text-primary-blue"

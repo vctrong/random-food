@@ -107,7 +107,7 @@ export function UsersContent({ initialUsers }: UsersContentProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <h1 className="text-2xl md:text-3xl font-heading font-semibold text-text-primary tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-subheading font-semibold text-text-primary tracking-tight">
           Quản lý người dùng &amp; phân quyền
         </h1>
         <p className="text-sm text-text-secondary">
@@ -229,7 +229,7 @@ export function UsersContent({ initialUsers }: UsersContentProps) {
       <Modal isOpen={!!banTarget} onClose={() => setBanTarget(null)} panelClassName="max-w-md p-6 space-y-4">
         <div className="flex items-center gap-2 text-primary-pink">
           <ShieldCheck className="size-5" aria-hidden />
-          <h3 className="font-heading font-semibold text-text-primary">Khoá tài khoản {banTarget?.name}</h3>
+          <h3 className="font-subheading font-semibold text-text-primary">Khoá tài khoản {banTarget?.name}</h3>
         </div>
         <p className="text-sm text-text-secondary">
           Tài khoản sẽ bị đăng xuất khỏi mọi thiết bị và không thể đăng nhập lại cho tới khi được mở khoá.

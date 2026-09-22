@@ -77,7 +77,7 @@ describe("route-policy: route công khai", () => {
     });
   }
 
-  const publicApis = ["/api/foods", "/api/categories", "/api/articles", "/api/restaurants", "/api/reviews"];
+  const publicApis = ["/api/foods", "/api/categories", "/api/articles", "/api/restaurants", "/api/reviews", "/api/logs"];
   for (const pathname of publicApis) {
     it(`${pathname} — guest → allow`, () => {
       expect(evalGet(pathname, GUEST)).toEqual({ kind: "allow" });
@@ -166,6 +166,21 @@ describe("route-policy: CSRF Origin/Host cho method thay đổi dữ liệu trê
     expect(
       evaluateRoute({ pathname: "/api/reviews", method: "POST", token: USER, origin: SAME_ORIGIN, host: HOST }),
     ).toEqual({ kind: "allow" });
+  });
+
+  it("POST /api/logs — Guest cũng được phép (khác /api/foods, /api/reviews) miễn Origin khớp Host", () => {
+    expect(
+      evaluateRoute({ pathname: "/api/logs", method: "POST", token: GUEST, origin: SAME_ORIGIN, host: HOST }),
+    ).toEqual({ kind: "allow" });
+  });
+
+  it("POST /api/logs — thiếu Origin/Origin khác Host → vẫn forbiddenOrigin dù là API public cho Guest", () => {
+    expect(evaluateRoute({ pathname: "/api/logs", method: "POST", token: GUEST, origin: null, host: HOST })).toEqual({
+      kind: "forbiddenOrigin",
+    });
+    expect(
+      evaluateRoute({ pathname: "/api/logs", method: "POST", token: GUEST, origin: CROSS_ORIGIN, host: HOST }),
+    ).toEqual({ kind: "forbiddenOrigin" });
   });
 
   it("POST /api/auth/callback/credentials — luôn allow, không áp CSRF check của route-policy (NextAuth tự lo)", () => {

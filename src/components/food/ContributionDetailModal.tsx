@@ -37,7 +37,7 @@ export function ContributionDetailModal({ contribution, onClose, onEdit }: Contr
             <span className="text-xs text-text-secondary">Gửi ngày {formatDate(contribution.createdAt)}</span>
           </div>
 
-          <h3 className="text-xl font-heading font-semibold text-text-primary -mt-2">{contribution.name}</h3>
+          <h3 className="text-xl font-subheading font-semibold text-text-primary -mt-2">{contribution.name}</h3>
 
           {contribution.images.length > 0 && (
             <div className="flex gap-2 overflow-x-auto pb-1">

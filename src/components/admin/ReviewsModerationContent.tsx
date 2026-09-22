@@ -57,7 +57,7 @@ export function ReviewsModerationContent({ initialReviews }: ReviewsModerationCo
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <h1 className="text-2xl md:text-3xl font-heading font-semibold text-text-primary tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-subheading font-semibold text-text-primary tracking-tight">
           Kiểm duyệt đánh giá &amp; bình luận
         </h1>
         <p className="text-sm text-text-secondary">{reviews.length} đánh giá trong hệ thống</p>

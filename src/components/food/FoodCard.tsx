@@ -19,7 +19,7 @@ export function FoodCard({ food, savedAt, onUnsave, onPick }: FoodCardProps) {
       : "Chưa cập nhật giá";
 
   return (
-    <article className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+    <article className="group flex flex-col bg-surface rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
       <div className="relative w-full aspect-[4/3] overflow-hidden bg-soft-blue">
         {coverImage ? (
           <Image
@@ -37,12 +37,12 @@ export function FoodCard({ food, savedAt, onUnsave, onPick }: FoodCardProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10" />
         <div className="absolute top-3 left-3 flex flex-wrap gap-1">
           {food.eatingLevels[0] && (
-            <span className="px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md text-primary-blue text-xs font-semibold">
+            <span className="px-2.5 py-1 rounded-full bg-surface/90 backdrop-blur-md text-primary-blue text-xs font-semibold">
               {EATING_LEVEL_LABELS[food.eatingLevels[0]]}
             </span>
           )}
           {food.ratingCount > 0 && (
-            <span className="px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md text-primary-pink text-xs font-semibold flex items-center gap-0.5">
+            <span className="px-2.5 py-1 rounded-full bg-surface/90 backdrop-blur-md text-primary-pink text-xs font-semibold flex items-center gap-0.5">
               <Star className="size-3" fill="currentColor" aria-hidden />
               {food.avgRating.toFixed(1)}
             </span>
@@ -54,7 +54,7 @@ export function FoodCard({ food, savedAt, onUnsave, onPick }: FoodCardProps) {
             aria-label="Bỏ lưu món này"
             title="Bỏ lưu món này"
             onClick={() => onUnsave(food.id)}
-            className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center text-primary-pink shadow-md hover:bg-primary-pink hover:text-white transition-all"
+            className="absolute top-3 right-3 w-9 h-9 rounded-full bg-surface/95 backdrop-blur-md flex items-center justify-center text-primary-pink shadow-md hover:bg-primary-pink hover:text-white transition-all"
           >
             <Heart className="size-4" fill="currentColor" aria-hidden />
           </button>

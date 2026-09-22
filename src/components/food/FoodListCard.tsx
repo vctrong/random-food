@@ -17,7 +17,7 @@ export function FoodListCard({ food }: FoodListCardProps) {
       : "Chưa cập nhật giá";
 
   return (
-    <article className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+    <article className="group flex flex-col bg-surface rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
       <div className="relative w-full aspect-[4/3] overflow-hidden bg-soft-blue">
         {coverImage ? (
           <Image
@@ -37,19 +37,19 @@ export function FoodListCard({ food }: FoodListCardProps) {
           {food.eatingLevels.slice(0, 1).map((level) => (
             <span
               key={level}
-              className="px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md text-primary-blue text-xs font-semibold"
+              className="px-2.5 py-1 rounded-full bg-surface/90 backdrop-blur-md text-primary-blue text-xs font-semibold"
             >
               {EATING_LEVEL_LABELS[level]}
             </span>
           ))}
           {food.eatingLevels.length > 1 && (
-            <span className="px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md text-text-secondary text-xs font-semibold">
+            <span className="px-2.5 py-1 rounded-full bg-surface/90 backdrop-blur-md text-text-secondary text-xs font-semibold">
               +{food.eatingLevels.length - 1}
             </span>
           )}
         </div>
         {food.ratingCount > 0 && (
-          <div className="absolute bottom-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md text-xs font-semibold text-text-primary">
+          <div className="absolute bottom-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface/90 backdrop-blur-md text-xs font-semibold text-text-primary">
             <Star className="size-3 text-warning" fill="currentColor" aria-hidden />
             {food.avgRating.toFixed(1)}
           </div>
@@ -58,7 +58,7 @@ export function FoodListCard({ food }: FoodListCardProps) {
 
       <div className="p-4 flex-1 flex flex-col">
         <div className="flex items-start justify-between gap-2 mb-1">
-          <h2 className="font-heading font-semibold text-text-primary line-clamp-1">{food.name}</h2>
+          <h2 className="font-subheading font-semibold text-text-primary line-clamp-1">{food.name}</h2>
         </div>
         <div className="text-sm font-semibold text-primary-blue mb-2">{priceLabel}</div>
         <p className="text-sm text-text-secondary line-clamp-2 mb-3">

@@ -70,11 +70,11 @@ export function FoodReviewsSection({ foodId, avgRating, ratingCount }: FoodRevie
   };
 
   return (
-    <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm">
+    <div className="bg-surface rounded-2xl p-4 md:p-6 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border mb-4">
         <div className="flex items-center gap-2">
           <MessageSquareText className="size-5 text-primary-blue" aria-hidden />
-          <h2 className="font-heading text-lg font-bold text-text-primary">Đánh giá từ thực khách</h2>
+          <h2 className="font-subheading text-lg font-bold text-text-primary">Đánh giá từ thực khách</h2>
         </div>
         {ratingCount > 0 && (
           <div className="flex items-center gap-2">
@@ -120,7 +120,7 @@ export function FoodReviewsSection({ foodId, avgRating, ratingCount }: FoodRevie
                 type="button"
                 onClick={loadMore}
                 disabled={isLoadingMore}
-                className="px-5 py-2 rounded-full border border-border bg-white hover:bg-soft-blue text-primary-blue text-sm font-semibold shadow-sm transition-all disabled:opacity-60"
+                className="px-5 py-2 rounded-full border border-border bg-surface hover:bg-soft-blue text-primary-blue text-sm font-semibold shadow-sm transition-all disabled:opacity-60"
               >
                 {isLoadingMore ? "Đang tải..." : `Xem thêm đánh giá (còn ${total - reviews.length})`}
               </button>

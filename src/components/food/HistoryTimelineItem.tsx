@@ -34,7 +34,7 @@ export function HistoryTimelineItem({
   return (
     <div
       className={cn(
-        "relative p-4 rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-250 flex flex-col gap-4",
+        "relative p-4 rounded-xl bg-surface shadow-sm hover:shadow-md transition-all duration-250 flex flex-col gap-4",
         isRemoving && "opacity-0 scale-95 pointer-events-none",
       )}
     >
@@ -240,7 +240,7 @@ function ReviewComposer({
         onChange={(e) => setComment(e.target.value.slice(0, MAX_REVIEW_COMMENT_LENGTH))}
         rows={2}
         placeholder="Chia sẻ thêm cảm nhận của bạn về món này (không bắt buộc)..."
-        className="w-full p-3 rounded-lg bg-white border border-border text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-blue resize-none"
+        className="w-full p-3 rounded-lg bg-surface border border-border text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-blue resize-none"
       />
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-text-secondary">{comment.length}/{MAX_REVIEW_COMMENT_LENGTH}</span>
@@ -249,7 +249,7 @@ function ReviewComposer({
             type="button"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="px-3 py-1.5 rounded-full text-sm text-text-secondary hover:bg-white transition-colors disabled:opacity-60"
+            className="px-3 py-1.5 rounded-full text-sm text-text-secondary hover:bg-surface transition-colors disabled:opacity-60"
           >
             Huỷ
           </button>

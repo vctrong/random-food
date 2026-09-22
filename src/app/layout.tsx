@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import { Montserrat, Open_Sans } from "next/font/google";
+import { Sedgwick_Ave, Lexend, Mulish } from "next/font/google";
+import { MotionConfig } from "framer-motion";
+import { ThemeProvider } from "@/components/ui/ThemeProvider";
+import { ThemeDbSync } from "@/components/ui/ThemeDbSync";
 import { Header } from "@/components/ui/Header";
 import { MobileNav } from "@/components/ui/MobileNav";
 import { Footer } from "@/components/ui/Footer";
@@ -9,16 +12,31 @@ import { ToastProvider } from "@/components/ui/ToastProvider";
 import { FoodQuickActionsBubble } from "@/components/food/FoodQuickActionsBubble";
 import "./globals.css";
 
-const montserrat = Montserrat({
+/**
+ * Hệ 3 font (thay hoàn toàn Montserrat/Open Sans cũ) — xem docs/design-system.md
+ * cho bảng ánh xạ "thành phần → font" đầy đủ.
+ * - Sedgwick Ave: display/hero, chỉ 1 weight (400, static) — KHÔNG dùng font-bold.
+ * - Lexend: heading phụ (H2-H4, card/modal/stat).
+ * - Mulish: body/UI mặc định toàn app.
+ * Cả 3 đều confirm hỗ trợ subset "vietnamese" qua metadata chính thức Google Fonts.
+ */
+const sedgwickAve = Sedgwick_Ave({
   variable: "--font-heading",
-  weight: ["600", "700"],
+  weight: "400",
   subsets: ["latin", "vietnamese"],
+  display: "swap",
 });
 
-const openSans = Open_Sans({
-  variable: "--font-body",
-  weight: ["400", "500", "600"],
+const lexend = Lexend({
+  variable: "--font-subheading",
   subsets: ["latin", "vietnamese"],
+  display: "swap",
+});
+
+const mulish = Mulish({
+  variable: "--font-body",
+  subsets: ["latin", "vietnamese"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -31,18 +49,27 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="vi" className={`${montserrat.variable} ${openSans.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-cream font-sans text-text-primary">
-        <SessionProvider>
-          <ToastProvider>
-            <SessionErrorGuard />
-            <Header />
-            <main className="flex-1 pt-16">{children}</main>
-            <Footer />
-            <MobileNav />
-            <FoodQuickActionsBubble />
-          </ToastProvider>
-        </SessionProvider>
+    <html
+      lang="vi"
+      suppressHydrationWarning
+      className={`${sedgwickAve.variable} ${lexend.variable} ${mulish.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col bg-cream font-body text-text-primary">
+        <ThemeProvider>
+          <MotionConfig reducedMotion="user">
+            <SessionProvider>
+              <ToastProvider>
+                <SessionErrorGuard />
+                <ThemeDbSync />
+                <Header />
+                <main className="flex-1 pt-16">{children}</main>
+                <Footer />
+                <MobileNav />
+                <FoodQuickActionsBubble />
+              </ToastProvider>
+            </SessionProvider>
+          </MotionConfig>
+        </ThemeProvider>
       </body>
     </html>
   );

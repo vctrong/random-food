@@ -34,7 +34,7 @@ export function RestaurantMap({ location, name, address, className }: Restaurant
           href={getGoogleMapsUrl(null, address)}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white shadow-sm text-xs font-semibold text-primary-blue hover:bg-primary-blue hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface shadow-sm text-xs font-semibold text-primary-blue hover:bg-primary-blue hover:text-white transition-colors"
         >
           <ExternalLink className="size-3.5" aria-hidden />
           <span>Tìm theo địa chỉ trên Google Maps</span>
@@ -51,7 +51,7 @@ export function RestaurantMap({ location, name, address, className }: Restaurant
         target="_blank"
         rel="noopener noreferrer"
         onClick={(e) => e.stopPropagation()}
-        className="absolute top-3 right-3 z-[500] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white shadow-md text-xs font-semibold text-primary-blue hover:bg-primary-blue hover:text-white transition-colors"
+        className="absolute top-3 right-3 z-[500] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface shadow-md text-xs font-semibold text-primary-blue hover:bg-primary-blue hover:text-white transition-colors"
       >
         <ExternalLink className="size-3.5" aria-hidden />
         <span>Mở Google Maps</span>

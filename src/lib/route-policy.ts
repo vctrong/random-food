@@ -63,6 +63,10 @@ const PUBLIC_APIS = new Set([
   // GET công khai (danh sách review của 1 món); POST vẫn tự 401 trong route
   // handler (lớp 2) đúng pattern /api/foods — CSRF (bước 3) vẫn áp dụng trước đó.
   "/api/reviews",
+  // Ghi log lượt random (POST) — CHỦ ĐÍCH mở cho cả Guest (không tự 401 ở route
+  // handler như /api/foods, /api/reviews) vì landing page cần đếm "lượt random"
+  // của tất cả người dùng, không riêng ai đã đăng nhập. CSRF (bước 3) vẫn áp dụng.
+  "/api/logs",
 ]);
 
 /** Path tĩnh dưới /mon-an/ KHÔNG phải id món (route riêng, có chính sách quyền khác) — không được lọt qua public detail page. */

@@ -10,7 +10,7 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
   return (
-    <div className="p-10 rounded-2xl bg-white shadow-sm text-center space-y-3">
+    <div className="p-10 rounded-2xl bg-surface shadow-sm text-center space-y-3">
       <div className="w-14 h-14 mx-auto rounded-full bg-soft-blue flex items-center justify-center text-primary-blue">
         <Icon className="size-6" aria-hidden />
       </div>

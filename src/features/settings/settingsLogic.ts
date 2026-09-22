@@ -1,20 +1,16 @@
-import type { UserSettings } from "@/types/settings";
+import type { PriceRangePreference, SpicePreference, UserSettings } from "@/types/settings";
 import type { HistoryWithFood } from "@/features/history-log/historyLogic";
 import type { SavedFood } from "@/features/saved-foods/savedFoodsLogic";
 
 export const SETTINGS_STORAGE_KEY = "homnayangi:settings";
 
 export const DEFAULT_SETTINGS: UserSettings = {
-  favoriteFoodNames: ["Cơm tấm", "Phở bò tái nạm", "Trà sữa trân châu"],
-  dislikedIngredients: ["Mắm tôm"],
-  priceRange: "30-60k",
-  spicePreference: "cay-nhe",
-  vegetarianMode: false,
-  allowRepeatWithin24h: true,
   soundEffectsEnabled: true,
+  reducedMotionOverride: false,
 };
 
-export const PRICE_RANGE_OPTIONS: { id: UserSettings["priceRange"]; label: string }[] = [
+/** Option tĩnh cho preset giá/độ cay — bản thân lựa chọn của user giờ lưu ở UserProfile (DB), không còn ở đây. */
+export const PRICE_RANGE_OPTIONS: { id: PriceRangePreference; label: string }[] = [
   { id: "duoi-30k", label: "< 30k (Tiết kiệm)" },
   { id: "30-60k", label: "30k - 60k (Phổ thông)" },
   { id: "60-120k", label: "60k - 120k (Thoải mái)" },
@@ -22,7 +18,7 @@ export const PRICE_RANGE_OPTIONS: { id: UserSettings["priceRange"]; label: strin
   { id: "tat-ca", label: "Tất cả mức giá" },
 ];
 
-export const SPICE_OPTIONS: { id: UserSettings["spicePreference"]; label: string; hint: string }[] = [
+export const SPICE_OPTIONS: { id: SpicePreference; label: string; hint: string }[] = [
   { id: "khong-cay", label: "Không cay", hint: "0 quả ớt" },
   { id: "cay-nhe", label: "Cay nhẹ", hint: "1 quả ớt" },
   { id: "cay-vua", label: "Cay vừa", hint: "2-3 quả ớt" },

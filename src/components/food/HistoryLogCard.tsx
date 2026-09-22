@@ -15,7 +15,7 @@ export function HistoryLogCard({ entry, food }: HistoryLogCardProps) {
   const isToday = new Date(entry.timestamp).toDateString() === new Date().toDateString();
 
   return (
-    <div className="p-4 rounded-xl bg-white border border-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+    <div className="p-4 rounded-xl bg-surface border border-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
       <div>
         <div className="flex items-center justify-between text-xs text-text-secondary mb-2">
           <span className="flex items-center gap-1.5">

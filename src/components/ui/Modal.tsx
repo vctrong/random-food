@@ -69,7 +69,7 @@ export function Modal({ isOpen, onClose, children, panelClassName, showCloseButt
     >
       <div
         className={cn(
-          "relative w-full bg-white rounded-3xl shadow-2xl transition-all duration-200 ease-out",
+          "relative w-full bg-surface rounded-3xl shadow-2xl transition-all duration-200 ease-out",
           visible ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-3",
           panelClassName,
         )}
@@ -80,7 +80,7 @@ export function Modal({ isOpen, onClose, children, panelClassName, showCloseButt
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/90 backdrop-blur-md text-text-secondary hover:text-text-primary flex items-center justify-center shadow-sm transition-colors"
+            className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-surface/90 backdrop-blur-md text-text-secondary hover:text-text-primary flex items-center justify-center shadow-sm transition-colors"
           >
             <X className="size-4" aria-hidden />
           </button>

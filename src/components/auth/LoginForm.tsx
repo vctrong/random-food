@@ -64,7 +64,7 @@ export function LoginForm() {
           className="absolute -bottom-10 -right-10 w-60 h-60 rounded-full bg-soft-pink blur-3xl pointer-events-none -z-10"
         />
 
-        <div className="relative overflow-hidden bg-white rounded-2xl shadow-xl p-6 md:p-8">
+        <div className="relative overflow-hidden bg-surface rounded-2xl shadow-xl p-6 md:p-8">
           <div
             aria-hidden
             className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-primary-blue via-primary-blue to-primary-pink"
@@ -98,7 +98,7 @@ export function LoginForm() {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="tenban@email.com"
-                  className="w-full h-12 pl-11 pr-4 rounded-xl border border-border bg-white text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+                  className="w-full h-12 pl-11 pr-4 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
                 />
               </div>
             </div>
@@ -117,7 +117,7 @@ export function LoginForm() {
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="••••••••"
-                  className="w-full h-12 pl-11 pr-11 rounded-xl border border-border bg-white text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+                  className="w-full h-12 pl-11 pr-11 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
                 />
                 <button
                   type="button"
@@ -163,13 +163,13 @@ export function LoginForm() {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full h-px bg-border" />
             </div>
-            <span className="relative bg-white px-4 text-xs text-text-secondary">hoặc tiếp tục với</span>
+            <span className="relative bg-surface px-4 text-xs text-text-secondary">hoặc tiếp tục với</span>
           </div>
 
           <button
             type="button"
             onClick={() => signIn("google", { callbackUrl })}
-            className="w-full h-12 px-4 rounded-xl border border-border bg-white hover:bg-soft-blue text-text-primary text-sm font-semibold flex items-center justify-center gap-3 shadow-sm transition-all active:scale-[0.99]"
+            className="w-full h-12 px-4 rounded-xl border border-border bg-surface hover:bg-soft-blue text-text-primary text-sm font-semibold flex items-center justify-center gap-3 shadow-sm transition-all active:scale-[0.99]"
           >
             <GoogleIcon className="size-5" />
             <span>Tiếp tục với Google</span>
@@ -186,7 +186,7 @@ export function LoginForm() {
         </div>
 
         <div className="mt-5 flex items-center justify-center">
-          <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white shadow-sm text-text-secondary text-xs">
+          <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-surface shadow-sm text-text-secondary text-xs">
             <ShieldCheck className="size-3.5 text-primary-blue" aria-hidden />
             <span>Bảo mật thông tin &amp; đồng bộ nhật ký ăn uống tức thì</span>
           </div>

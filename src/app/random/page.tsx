@@ -1,9 +1,7 @@
 import { getAllFoods } from "@/services/foodService";
 import { RandomFoodResult } from "@/components/food/RandomFoodResult";
-import { filterFoods, pickAlternatives, pickRandomFood } from "@/features/random-food/randomLogic";
+import { filterFoods, pickRandomFood } from "@/features/random-food/randomLogic";
 import { isEatingLevel } from "@/constants/categories";
-
-const ALTERNATIVES_COUNT = 3;
 
 export default async function RandomPage(props: PageProps<"/random">) {
   const searchParams = await props.searchParams;
@@ -25,9 +23,6 @@ export default async function RandomPage(props: PageProps<"/random">) {
     tags: [],
   });
   const initialFood = pickRandomFood(pool);
-  const initialAlternatives = initialFood
-    ? pickAlternatives(pool, initialFood.id, ALTERNATIVES_COUNT)
-    : [];
 
   return (
     <div className="w-full">
@@ -36,7 +31,6 @@ export default async function RandomPage(props: PageProps<"/random">) {
         eatingLevel={eatingLevel}
         categoryId={categoryId}
         initialFood={initialFood}
-        initialAlternatives={initialAlternatives}
       />
     </div>
   );

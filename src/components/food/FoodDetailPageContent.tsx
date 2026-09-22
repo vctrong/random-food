@@ -95,7 +95,7 @@ export function FoodDetailPageContent({ food, similarFoods }: FoodDetailPageCont
   return (
     <div className="w-full">
       {/* Breadcrumb */}
-      <div className="w-full bg-white/60">
+      <div className="w-full bg-surface/60">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-3">
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-text-secondary overflow-x-auto whitespace-nowrap">
             <Link href="/" className="hover:text-primary-blue transition-colors flex items-center gap-1">
@@ -153,7 +153,7 @@ export function FoodDetailPageContent({ food, similarFoods }: FoodDetailPageCont
           {/* Info */}
           <div className="lg:col-span-6 flex flex-col gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-heading font-bold text-text-primary tracking-tight mb-2">{food.name}</h1>
+              <h1 className="text-3xl md:text-4xl font-subheading font-bold text-text-primary tracking-tight mb-2">{food.name}</h1>
               <p className="text-text-secondary leading-relaxed">{food.description || "Chưa có mô tả cho món này."}</p>
             </div>
 
@@ -242,7 +242,7 @@ export function FoodDetailPageContent({ food, similarFoods }: FoodDetailPageCont
         {/* Similar foods */}
         {similarFoods.length > 0 && (
           <div className="mt-8">
-            <h2 className="text-xl font-heading font-bold text-text-primary mb-4">Món ăn cùng danh mục</h2>
+            <h2 className="text-xl font-subheading font-bold text-text-primary mb-4">Món ăn cùng danh mục</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {similarFoods.map((item) => (
                 <SimilarFoodCard key={item.id} food={item} />
@@ -284,7 +284,7 @@ function SimilarFoodCard({ food }: { food: Food }) {
   return (
     <Link
       href={`/mon-an/${food.id}`}
-      className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+      className="group flex flex-col bg-surface rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
     >
       <div className="relative w-full aspect-[16/10] bg-soft-blue">
         {coverImage ? (

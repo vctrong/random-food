@@ -16,9 +16,7 @@ export default async function NewsPage() {
           <Newspaper className="size-4" aria-hidden />
           <span>Tin tức ẩm thực</span>
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-text-primary">
-          Chuyện ăn uống Cần Thơ
-        </h1>
+        <h1 className="text-display-sm text-text-primary">Chuyện ăn uống Cần Thơ</h1>
         <p className="text-text-secondary mt-1">
           Những bài viết vui, thông tin ẩm thực đáng chú ý quanh Cần Thơ.
         </p>
@@ -46,7 +44,7 @@ export default async function NewsPage() {
                 </div>
               )}
               <div className="p-5">
-                <h2 className="font-heading font-semibold text-lg text-text-primary mb-1.5">
+                <h2 className="font-subheading font-semibold text-lg text-text-primary mb-1.5">
                   {article.title}
                 </h2>
                 <p className="text-sm text-text-secondary leading-relaxed">{article.excerpt}</p>

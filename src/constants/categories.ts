@@ -9,7 +9,7 @@ export interface EatingLevelConfig {
   badge: string;
   kcalRange: string;
   icon: typeof Cookie;
-  imageSeed: string;
+  imageUrl: string;
 }
 
 /**
@@ -27,7 +27,7 @@ export const EATING_LEVELS: EatingLevelConfig[] = [
     badge: "Ăn vặt nhẹ nhàng",
     kcalRange: "~150-350 kcal",
     icon: Cookie,
-    imageSeed: "an-vat-can-tho",
+    imageUrl: "/image/eating-levels/an-vat.png",
   },
   {
     id: "normal",
@@ -38,7 +38,7 @@ export const EATING_LEVELS: EatingLevelConfig[] = [
     badge: "Phổ biến nhất",
     kcalRange: "~450-650 kcal",
     icon: Utensils,
-    imageSeed: "com-tam-can-tho",
+    imageUrl: "/image/eating-levels/an-binh-thuong.png",
   },
   {
     id: "hearty",
@@ -49,7 +49,7 @@ export const EATING_LEVELS: EatingLevelConfig[] = [
     badge: "No lâu & đậm đà",
     kcalRange: "~700-900 kcal",
     icon: Flame,
-    imageSeed: "bun-dau-can-tho",
+    imageUrl: "/image/eating-levels/an-vua.png",
   },
   {
     id: "full",
@@ -60,7 +60,7 @@ export const EATING_LEVELS: EatingLevelConfig[] = [
     badge: "Tiệc tùng & no nê",
     kcalRange: ">1000 kcal",
     icon: Users,
-    imageSeed: "lau-can-tho",
+    imageUrl: "/image/eating-levels/an-lon.png",
   },
 ];
 
