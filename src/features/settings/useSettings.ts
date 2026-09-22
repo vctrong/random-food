@@ -5,6 +5,7 @@ import type { UserSettings } from "@/types/settings";
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from "./settingsLogic";
 import { useToast } from "@/components/ui/ToastProvider";
 
+/** Cài đặt giao diện thuần client (âm thanh, giảm chuyển động) — Guest cũng dùng được. */
 export function useSettings() {
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -30,88 +31,37 @@ export function useSettings() {
     } catch {
       // Bỏ qua nếu không ghi được.
     }
+    // Toggle "giảm chuyển động" áp dụng ngay lập tức toàn app qua class trên <html> —
+    // globals.css có rule y hệt @media (prefers-reduced-motion: reduce) nhưng khớp
+    // thêm class ".reduce-motion" để ép được dù OS không báo prefers-reduced-motion.
+    document.documentElement.classList.toggle("reduce-motion", settings.reducedMotionOverride);
   }, [settings, isHydrated]);
 
-  function update<K extends keyof UserSettings>(key: K, value: UserSettings[K]) {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-  }
-
-  function addFavorite(name: string) {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    setSettings((prev) =>
-      prev.favoriteFoodNames.includes(trimmed)
-        ? prev
-        : { ...prev, favoriteFoodNames: [...prev.favoriteFoodNames, trimmed] },
-    );
-    showToast(`Đã thêm "${trimmed}" vào món yêu thích!`, "success");
-  }
-
-  function removeFavorite(name: string) {
-    setSettings((prev) => ({
-      ...prev,
-      favoriteFoodNames: prev.favoriteFoodNames.filter((n) => n !== name),
-    }));
-  }
-
-  function addDisliked(name: string) {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    setSettings((prev) =>
-      prev.dislikedIngredients.includes(trimmed)
-        ? prev
-        : { ...prev, dislikedIngredients: [...prev.dislikedIngredients, trimmed] },
-    );
-    showToast(`Đã thêm "${trimmed}" vào danh sách dị ứng!`, "success");
-  }
-
-  function removeDisliked(name: string) {
-    setSettings((prev) => ({
-      ...prev,
-      dislikedIngredients: prev.dislikedIngredients.filter((n) => n !== name),
-    }));
-  }
-
-  function toggleVegetarian() {
-    setSettings((prev) => {
-      const next = !prev.vegetarianMode;
-      showToast(next ? "Đã bật chế độ ăn chay!" : "Đã tắt chế độ ăn chay", "info");
-      return { ...prev, vegetarianMode: next };
-    });
-  }
-
-  function toggleAllowRepeat() {
-    update("allowRepeatWithin24h", !settings.allowRepeatWithin24h);
-  }
-
   function toggleSound() {
-    setSettings((prev) => {
-      const next = !prev.soundEffectsEnabled;
-      showToast(next ? "Đã bật âm thanh hiệu ứng" : "Đã tắt âm thanh", "info");
-      return { ...prev, soundEffectsEnabled: next };
-    });
+    // showToast gọi setState của ToastProvider — KHÔNG được gọi bên trong updater
+    // function của setSettings (updater phải thuần, React có thể gọi lại nó bất kỳ
+    // lúc nào kể cả trong lúc render, gây lỗi "Cannot update a component while
+    // rendering a different component"). Tính next trước, showToast ở ngoài, rồi
+    // mới setSettings với giá trị thuần.
+    const next = !settings.soundEffectsEnabled;
+    showToast(next ? "Đã bật âm thanh hiệu ứng" : "Đã tắt âm thanh", "info");
+    setSettings((prev) => ({ ...prev, soundEffectsEnabled: next }));
+  }
+
+  function toggleReducedMotion() {
+    const next = !settings.reducedMotionOverride;
+    showToast(next ? "Đã giảm chuyển động trong app" : "Đã bật lại hiệu ứng chuyển động", "info");
+    setSettings((prev) => ({ ...prev, reducedMotionOverride: next }));
   }
 
   function resetAll() {
     setSettings(DEFAULT_SETTINGS);
-    showToast("Đã đặt lại toàn bộ cài đặt về mặc định!", "info");
+    showToast("Đã đặt lại cài đặt giao diện về mặc định!", "info");
   }
 
   function notify(message: string) {
     showToast(message);
   }
 
-  return {
-    settings,
-    update,
-    addFavorite,
-    removeFavorite,
-    addDisliked,
-    removeDisliked,
-    toggleVegetarian,
-    toggleAllowRepeat,
-    toggleSound,
-    resetAll,
-    notify,
-  };
+  return { settings, toggleSound, toggleReducedMotion, resetAll, notify };
 }

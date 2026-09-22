@@ -81,7 +81,7 @@ export function ReportsContent({ initialReports }: ReportsContentProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <h1 className="text-2xl md:text-3xl font-heading font-semibold text-text-primary tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-subheading font-semibold text-text-primary tracking-tight">
           Xử lý báo cáo vi phạm
         </h1>
         <p className="text-sm text-text-secondary">
@@ -150,7 +150,7 @@ export function ReportsContent({ initialReports }: ReportsContentProps) {
             <Card className="p-5 space-y-4">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <h3 className="font-heading font-semibold text-text-primary">{selected.targetLabel ?? "Nội dung đã bị xoá"}</h3>
+                  <h3 className="font-subheading font-semibold text-text-primary">{selected.targetLabel ?? "Nội dung đã bị xoá"}</h3>
                   <p className="text-sm text-text-secondary">{REPORT_TARGET_LABELS[selected.targetType]}</p>
                 </div>
                 <Badge variant={selected.status === "pending" ? "warning" : "success"}>

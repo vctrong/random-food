@@ -57,7 +57,7 @@ export function AuditLogContent({ initialEntries, initialTotal }: AuditLogConten
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <h1 className="text-2xl md:text-3xl font-heading font-semibold text-text-primary tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-subheading font-semibold text-text-primary tracking-tight">
           Nhật ký kiểm toán hệ thống
         </h1>
         <p className="text-sm text-text-secondary">

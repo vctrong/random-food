@@ -24,7 +24,7 @@ export function HistoryStatsSidebar({
   }, []);
 
   return (
-    <div className="p-4 rounded-xl bg-white shadow-sm space-y-4">
+    <div className="p-4 rounded-xl bg-surface shadow-sm space-y-4">
       <h3 className="font-semibold text-text-primary">Phân bổ theo mức độ đói</h3>
 
       {totalCount > 0 ? (

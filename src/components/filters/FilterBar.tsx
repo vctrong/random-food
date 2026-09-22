@@ -31,7 +31,7 @@ export function FilterBar({ options, value, onChange, className }: FilterBarProp
               "inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium shadow-sm transition-all active:scale-95",
               isActive
                 ? "bg-primary-blue text-white shadow-[0_4px_12px_rgba(91,158,235,0.28)]"
-                : "bg-white text-text-primary hover:shadow-md",
+                : "bg-surface text-text-primary hover:shadow-md",
             )}
             aria-pressed={isActive}
           >

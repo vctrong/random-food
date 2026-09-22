@@ -118,7 +118,7 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
       {/* Danh sách hàng chờ */}
       <section className="xl:col-span-5 flex flex-col gap-3">
-        <div className="flex flex-col gap-3 bg-white border border-border rounded-2xl p-4 shadow-sm">
+        <div className="flex flex-col gap-3 bg-surface border border-border rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
             {(
               [
@@ -167,7 +167,7 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
         {!selected ? (
           <EmptyState icon={ClipboardList} title="Chọn 1 hồ sơ" description="Chọn 1 mục ở danh sách bên trái để xem chi tiết." />
         ) : (
-          <div className="flex flex-col bg-white border border-border rounded-3xl shadow-sm overflow-hidden">
+          <div className="flex flex-col bg-surface border border-border rounded-3xl shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-5 py-3.5 bg-soft-blue/50">
               <span className="text-xs font-bold uppercase tracking-wider text-deep-blue">
                 {selected.targetType === "food" ? "Thẩm định món ăn" : "Thẩm định quán ăn mới"}
@@ -197,7 +197,7 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
 
               <div className="flex flex-col gap-2.5">
                 <div className="flex items-baseline justify-between flex-wrap gap-2">
-                  <h2 className="text-xl font-heading font-bold text-text-primary">{selected.name}</h2>
+                  <h2 className="text-xl font-subheading font-bold text-text-primary">{selected.name}</h2>
                   {selected.priceMin !== null && selected.priceMax !== null && (
                     <span className="text-lg font-bold text-primary-blue">
                       {formatPriceRange(selected.priceMin, selected.priceMax)}
@@ -234,7 +234,7 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
                   </div>
                 )}
 
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-2xl bg-white border border-border">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-2xl bg-surface border border-border">
                   <div className="size-11 rounded-full bg-soft-pink flex items-center justify-center text-primary-pink shrink-0">
                     <MapPin className="size-5" aria-hidden />
                   </div>

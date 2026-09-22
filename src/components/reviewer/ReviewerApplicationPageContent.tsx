@@ -42,11 +42,11 @@ export function ReviewerApplicationPageContent({ overview, categories, defaultFu
         {access.state === "eligible" && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {APPLICATION_BENEFITS.map(({ icon: Icon, title, text }) => (
-              <div key={title} className="p-5 rounded-2xl bg-white border border-border shadow-sm flex flex-col gap-2">
+              <div key={title} className="p-5 rounded-2xl bg-surface border border-border shadow-sm flex flex-col gap-2">
                 <span className="size-10 rounded-xl bg-soft-blue text-primary-blue flex items-center justify-center">
                   <Icon className="size-5" aria-hidden />
                 </span>
-                <h3 className="font-heading font-semibold text-text-primary">{title}</h3>
+                <h3 className="font-subheading font-semibold text-text-primary">{title}</h3>
                 <p className="text-sm text-text-secondary leading-relaxed">{text}</p>
               </div>
             ))}

@@ -34,7 +34,7 @@ const VARIANT_CLASSES: Record<Variant, string> = {
   primary:
     "bg-primary-blue text-white shadow-[0_4px_12px_rgba(91,158,235,0.28)] hover:bg-[#4a8ddb] hover:shadow-lg",
   secondary:
-    "bg-white text-text-primary shadow-sm hover:bg-soft-blue border border-border",
+    "bg-surface text-text-primary shadow-sm hover:bg-soft-blue border border-border",
   outline:
     "bg-transparent text-text-primary border border-border hover:bg-soft-blue",
   dark: "bg-text-primary text-white hover:bg-[#374151]",

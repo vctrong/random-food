@@ -184,17 +184,13 @@ Modern, professional, friendly, playful nhưng trưởng thành (playful but mat
 
 ### 4.4 Typography
 
-**Font đã chốt: Montserrat (heading) + Open Sans (body).** Cả hai đều là sans-serif hiện đại, hỗ trợ dấu tiếng Việt tốt, load qua Google Fonts. Không dùng font serif/script (Playfair Display, Lora, Lobster, Pacifico...) — clash với định hướng "modern, clean" ở mục 4.1 và dễ rơi vào vùng "sến"/cổ điển mà mục 4.2 đã liệt kê tránh.
+**Hệ 3 font đã chốt: Sedgwick Ave (display) + Lexend (subheading) + Mulish (body).** Cả 3 đều load qua `next/font/google`, subset `['latin', 'vietnamese']`, `display: 'swap'`. Chi tiết đầy đủ — bảng ánh xạ "thành phần → font", type scale, utility class, ví dụ code — nằm ở **[`docs/design-system.md`](docs/design-system.md)**, file này chỉ tóm tắt quy tắc cốt lõi:
 
-- `font-heading` (Montserrat, weight 600) — dùng cho hero heading, section heading, tên món ăn nổi bật.
-- `font-body` (Open Sans, weight 400/500) — dùng cho toàn bộ body text, label, button.
-- Phân cấp:
-  - Hero heading: lớn, phong cách editorial, Montserrat 600–700
-  - Section heading: cỡ trung, Montserrat 600
-  - Body text: dễ đọc, thoải mái, Open Sans 400
-  - Button label: rõ ràng, ngắn gọn, Open Sans 500/600
-- Chữ đậm có chủ đích, **tránh font-weight quá nặng** (không lạm dụng `font-black`/900 kể cả với Montserrat).
-- Khai báo 2 font này trong `next/font/google` ngay từ đầu, expose qua CSS variable (`--font-heading`, `--font-body`) và Tailwind theme token — không hardcode tên font rải rác.
+- `font-heading` (Sedgwick Ave, chỉ weight 400, `--font-heading`) — **CHỈ** dùng cho: H1 landing/trang public (Trang chủ, Về chúng tôi, Tin tức...), tiêu đề section lớn trên landing, tên món trong kết quả random (`/random`). **Không** dùng cho H1 của Hồ sơ/Cài đặt/Admin/Reviewer (dùng `font-subheading` để dễ đọc). **Không** kèm `font-bold` (tránh giả đậm xấu).
+- `font-subheading` (Lexend, weight 500–700, `--font-subheading`) — mặc định cho MỌI heading (`h1`-`h6` qua `@layer base`), dùng cho H2-H4, tiêu đề card/modal, tiêu đề nhóm Hồ sơ/Cài đặt, tiêu đề dashboard Admin/Reviewer, số liệu nổi bật (stats), tiêu đề bước "cách hoạt động".
+- `font-body` (Mulish, weight 400–800, `--font-body`) — mặc định `<body>`, dùng cho toàn bộ body text, nút, label, input, badge, navbar, bảng, tooltip, toast, caption.
+- Class dùng chung có sẵn (Tailwind v4 `@utility` trong `globals.css`): `.text-display`, `.text-display-sm`, `.text-h2`, `.text-h3`, `.text-h4`, `.text-stat`, `.text-caption` — ưu tiên dùng lại thay vì set font/size thủ công từng chỗ.
+- Không hardcode tên font rải rác — mọi nơi đều qua CSS variable + utility ở trên.
 
 ### 4.5 Ngôn ngữ thiết kế tổng thể
 - Border radius: 12–20px tuỳ kích cỡ component (nút nhỏ dùng radius nhỏ hơn card lớn).

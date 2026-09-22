@@ -37,7 +37,7 @@ export function ContributionCard({ contribution, onOpenDetail, onEdit }: Contrib
   const feedback = getCurrentFeedback(contribution);
 
   return (
-    <article className="bg-white rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow p-4 sm:p-5 flex flex-col gap-4">
+    <article className="bg-surface rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow p-4 sm:p-5 flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative w-full sm:w-48 h-44 sm:h-auto sm:min-h-40 rounded-xl overflow-hidden shrink-0 bg-soft-blue flex items-center justify-center">
           {isAllowedImageHost(cover) ? (
@@ -46,7 +46,7 @@ export function ContributionCard({ contribution, onOpenDetail, onEdit }: Contrib
             <UtensilsCrossed className="size-8 text-primary-blue/60" aria-hidden />
           )}
           {contribution.priceMin !== null && contribution.priceMax !== null && (
-            <span className="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md text-[11px] font-bold text-text-primary shadow-sm">
+            <span className="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-surface/90 backdrop-blur-md text-[11px] font-bold text-text-primary shadow-sm">
               {formatPriceRange(contribution.priceMin, contribution.priceMax)}
             </span>
           )}
@@ -58,7 +58,7 @@ export function ContributionCard({ contribution, onOpenDetail, onEdit }: Contrib
               <ContributionStatusBadge status={status} />
               <span className="text-xs text-text-secondary">Gửi ngày {formatDate(contribution.createdAt)}</span>
             </div>
-            <h2 className="mt-2 text-lg font-heading font-semibold text-text-primary truncate">{contribution.name}</h2>
+            <h2 className="mt-2 text-lg font-subheading font-semibold text-text-primary truncate">{contribution.name}</h2>
             {restaurant && (
               <p className="mt-0.5 text-sm text-text-secondary flex items-start gap-1.5">
                 <Store className="size-4 shrink-0 mt-0.5 text-primary-blue" aria-hidden />

@@ -95,7 +95,7 @@ export function CategoriesContent({ initialCategories, initialProposals }: Categ
   return (
     <div className="space-y-6">
       <div className="space-y-1.5">
-        <h1 className="text-2xl md:text-3xl font-heading font-semibold text-text-primary tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-subheading font-semibold text-text-primary tracking-tight">
           Danh mục hệ thống
         </h1>
         <p className="text-sm text-text-secondary">{categories.length} danh mục · {pendingProposals.length} đề xuất chờ duyệt</p>
@@ -103,7 +103,7 @@ export function CategoriesContent({ initialCategories, initialProposals }: Categ
 
       <Card className="p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-heading font-semibold text-text-primary">Danh mục chính thức</h2>
+          <h2 className="font-subheading font-semibold text-text-primary">Danh mục chính thức</h2>
           <div className="flex items-center gap-2">
             <input
               value={newName}
@@ -135,7 +135,7 @@ export function CategoriesContent({ initialCategories, initialProposals }: Categ
       </Card>
 
       <Card className="p-5 space-y-4">
-        <h2 className="font-heading font-semibold text-text-primary">Đề xuất từ cộng đồng</h2>
+        <h2 className="font-subheading font-semibold text-text-primary">Đề xuất từ cộng đồng</h2>
         {pendingProposals.length === 0 ? (
           <EmptyState
             icon={Tags}

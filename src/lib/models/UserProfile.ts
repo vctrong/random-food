@@ -6,11 +6,25 @@ const userProfileSchema = new Schema({
   avatarUrl: { type: String },
   preferences: {
     favoriteCategoryIds: [{ type: Schema.Types.ObjectId, ref: "Category" }],
+    // max để trống = không giới hạn trên (khớp preset "Tất cả mức giá" cũ).
     priceRange: {
       min: { type: Number },
       max: { type: Number },
     },
+    // Chuyển từ localStorage "Tuỳ chọn Random" cũ sang DB — xem randomLogic.ts
+    // (applyPersonalPreferences) để biết cách các field này lọc random thật.
+    favoriteFoodNames: [{ type: String }],
+    dislikedIngredients: [{ type: String }],
+    spicePreference: {
+      type: String,
+      enum: ["khong-cay", "cay-nhe", "cay-vua", "sieu-cay"],
+    },
+    vegetarianMode: { type: Boolean, default: false },
+    allowRepeatWithin24h: { type: Boolean, default: true },
   },
+  // "light" | "dark" | "system" — nguồn phụ để đồng bộ theme giữa các thiết bị;
+  // cookie/localStorage (next-themes) vẫn là nguồn nhanh chống nháy sáng lúc tải trang.
+  theme: { type: String, enum: ["light", "dark", "system"] },
   notificationPrefs: {
     food_approved: { type: Boolean, default: true },
     food_rejected: { type: Boolean, default: true },

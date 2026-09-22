@@ -21,7 +21,7 @@ export function QueueCard({ item, isActive, onSelect }: QueueCardProps) {
       onClick={onSelect}
       onKeyDown={(event) => (event.key === "Enter" || event.key === " ") && onSelect()}
       className={cn(
-        "relative flex flex-col p-4 rounded-2xl bg-white border transition-all cursor-pointer group",
+        "relative flex flex-col p-4 rounded-2xl bg-surface border transition-all cursor-pointer group",
         isActive ? "border-primary-blue shadow-md" : "border-border hover:shadow-sm",
         item.isSelfSubmitted && !isActive && "opacity-80",
       )}

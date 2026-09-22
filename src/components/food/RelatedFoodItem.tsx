@@ -4,12 +4,12 @@ import type { Food } from "@/types/food";
 import { formatPriceRange } from "@/lib/utils";
 import { EATING_LEVEL_LABELS } from "@/constants/categories";
 
-interface AlternativeFoodItemProps {
+interface RelatedFoodItemProps {
   food: Food;
   onSelect: (food: Food) => void;
 }
 
-export function AlternativeFoodItem({ food, onSelect }: AlternativeFoodItemProps) {
+export function RelatedFoodItem({ food, onSelect }: RelatedFoodItemProps) {
   const eatingLevelLabel = food.eatingLevels[0] ? EATING_LEVEL_LABELS[food.eatingLevels[0]] : null;
   const coverImage = food.images[0] ?? null;
   const priceLabel =

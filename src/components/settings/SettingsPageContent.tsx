@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { SlidersHorizontal, UserCog } from "lucide-react";
+import { Bell, Contrast, Database, Info, Settings2, ShieldAlert } from "lucide-react";
 import type { Food } from "@/types/food";
 import { joinHistoryWithFood } from "@/features/history-log/historyLogic";
 import { joinSavedWithFood } from "@/features/saved-foods/savedFoodsLogic";
@@ -15,168 +15,143 @@ import {
   computeSettingsSize,
   downloadTextFile,
 } from "@/features/settings/settingsLogic";
-import { cn } from "@/lib/utils";
-import { PreferencesSection } from "./PreferencesSection";
+import { useToast } from "@/components/ui/ToastProvider";
+import { SectionSidebar, type SectionNavItem } from "@/components/ui/SectionSidebar";
+import { NotificationsSection } from "./NotificationsSection";
 import { DataStorageSection } from "./DataStorageSection";
 import { InterfaceSection } from "./InterfaceSection";
 import { AboutSection } from "./AboutSection";
-import { SettingsNav } from "./SettingsNav";
-import { AccountSection } from "./AccountSection";
+import { PrivacySection } from "./PrivacySection";
+import { LoginPromptInline } from "./LoginPromptInline";
 
 interface SettingsPageContentProps {
   allFoods: Food[];
   totalFoodsCount: number;
   appVersion: string;
   isAuthenticated: boolean;
-  account: {
-    email: string;
-    authProvider: "local" | "google";
-    notificationPrefs: Record<string, boolean>;
-  } | null;
+  notificationPrefs: Record<string, boolean> | null;
+  hasAppliedReviewer: boolean;
 }
 
-type SettingsTab = "account" | "random";
+const NAV_ITEMS: SectionNavItem[] = [
+  { id: "giao-dien", label: "Giao diện & Âm thanh", icon: Contrast },
+  { id: "thong-bao", label: "Thông báo", icon: Bell },
+  { id: "du-lieu", label: "Quản lý dữ liệu", icon: Database },
+  { id: "quyen-rieng-tu", label: "Quyền riêng tư", icon: ShieldAlert },
+  { id: "ve-app", label: "Về NayAnGi", icon: Info },
+];
 
 export function SettingsPageContent({
   allFoods,
   totalFoodsCount,
   appVersion,
   isAuthenticated,
-  account,
+  notificationPrefs,
+  hasAppliedReviewer,
 }: SettingsPageContentProps) {
-  const [tab, setTab] = useState<SettingsTab>(isAuthenticated ? "account" : "random");
+  const { settings, toggleSound, toggleReducedMotion, resetAll, notify } = useSettings();
+  const { showToast } = useToast();
+  const [isSavingNotifications, setIsSavingNotifications] = useState(false);
 
-  const {
-    settings,
-    update,
-    addFavorite,
-    removeFavorite,
-    addDisliked,
-    removeDisliked,
-    toggleVegetarian,
-    toggleAllowRepeat,
-    toggleSound,
-    resetAll,
-    notify,
-  } = useSettings();
+  async function handleNotificationPrefsChange(next: Record<string, boolean>) {
+    setIsSavingNotifications(true);
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notificationPrefs: next }),
+      });
+      if (!response.ok) showToast("Không thể lưu tuỳ chọn thông báo, vui lòng thử lại.", "error");
+    } catch {
+      showToast("Không thể kết nối tới máy chủ.", "error");
+    } finally {
+      setIsSavingNotifications(false);
+    }
+  }
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-10">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 pb-6 border-b border-border">
-        <div>
-          <div className="flex items-center gap-1.5 text-primary-blue text-xs font-bold uppercase tracking-wider mb-2">
-            <SlidersHorizontal className="size-4" aria-hidden />
-            <span>Tài khoản & trải nghiệm ăn uống</span>
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-text-primary">
-            Cài đặt
-          </h1>
-          <p className="text-text-secondary mt-1">
-            Quản lý tài khoản và tuỳ chọn cho thuật toán random món ăn.
-          </p>
+      <div className="mb-6 pb-6 border-b border-border">
+        <div className="flex items-center gap-1.5 text-primary-blue text-xs font-bold uppercase tracking-wider mb-2">
+          <Settings2 className="size-4" aria-hidden />
+          <span>Cài đặt chung</span>
         </div>
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-text-primary">Cài đặt</h1>
+        <p className="text-text-secondary mt-1">
+          Giao diện, âm thanh và các tuỳ chọn chung — dùng được cả khi chưa đăng nhập.
+        </p>
       </div>
 
-      <div className="inline-flex items-center gap-1 p-1 rounded-full bg-white border border-border mb-8">
-        <button
-          type="button"
-          onClick={() => setTab("account")}
-          className={cn(
-            "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors",
-            tab === "account"
-              ? "bg-soft-blue text-primary-blue font-bold"
-              : "text-text-secondary hover:text-text-primary",
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <SectionSidebar items={NAV_ITEMS} />
+
+        <div className="lg:col-span-9 space-y-6">
+          <InterfaceSection
+            soundEnabled={settings.soundEffectsEnabled}
+            onToggleSound={toggleSound}
+            reducedMotionEnabled={settings.reducedMotionOverride}
+            onToggleReducedMotion={toggleReducedMotion}
+          />
+
+          {isAuthenticated && notificationPrefs ? (
+            <div className="relative">
+              {isSavingNotifications && (
+                <span className="absolute top-4 right-4 text-xs text-text-secondary">Đang lưu…</span>
+              )}
+              <NotificationsSection
+                initialPrefs={notificationPrefs}
+                hasAppliedReviewer={hasAppliedReviewer}
+                onChange={handleNotificationPrefsChange}
+              />
+            </div>
+          ) : (
+            <div id="thong-bao">
+              <LoginPromptInline
+                icon={Bell}
+                title="Đăng nhập để quản lý thông báo"
+                description="Chọn loại thông báo bạn muốn nhận về đóng góp, ứng tuyển FoodReviewer và bảo mật tài khoản."
+              />
+            </div>
           )}
-        >
-          <UserCog className="size-4" aria-hidden />
-          Tài khoản
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("random")}
-          className={cn(
-            "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors",
-            tab === "random"
-              ? "bg-soft-blue text-primary-blue font-bold"
-              : "text-text-secondary hover:text-text-primary",
-          )}
-        >
-          <SlidersHorizontal className="size-4" aria-hidden />
-          Tuỳ chọn Random
-        </button>
-      </div>
 
-      {tab === "account" ? (
-        isAuthenticated && account ? (
-          <div className="max-w-2xl">
-            <AccountSection
-              email={account.email}
-              authProvider={account.authProvider}
-              initialNotificationPrefs={account.notificationPrefs}
-            />
-          </div>
-        ) : (
-          <div className="max-w-lg mx-auto text-center bg-white rounded-2xl p-10 shadow-sm">
-            <p className="text-text-secondary">
-              Đăng nhập để quản lý thông tin tài khoản, đổi mật khẩu và thông báo.
-            </p>
-          </div>
-        )
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          <SettingsNav />
+          <DataStorageSection
+            storageSize={computeSettingsSize(settings)}
+            isAuthenticated={isAuthenticated}
+            onExportHistoryJson={async () => {
+              const historyEntries = joinHistoryWithFood(await getAllHistory(allFoods), allFoods);
+              downloadTextFile(
+                "nayangi-lich-su.json",
+                buildHistoryExportJson(historyEntries),
+                "application/json",
+              );
+              notify("Đã tải file JSON lịch sử!");
+            }}
+            onExportHistoryCsv={async () => {
+              const historyEntries = joinHistoryWithFood(await getAllHistory(allFoods), allFoods);
+              downloadTextFile(
+                "nayangi-lich-su.csv",
+                buildHistoryExportCsv(historyEntries),
+                "text/csv;charset=utf-8",
+              );
+              notify("Đã tải file CSV lịch sử!");
+            }}
+            onBackupSaved={async () => {
+              const savedFoods = joinSavedWithFood(await getSavedFoodRecords(), allFoods);
+              downloadTextFile(
+                "nayangi-mon-da-luu.json",
+                buildSavedBackupJson(savedFoods),
+                "application/json",
+              );
+              notify("Đã tạo bản sao lưu món đã lưu!");
+            }}
+            onResetAll={resetAll}
+          />
 
-          <div className="lg:col-span-9 space-y-6">
-            <PreferencesSection
-              settings={settings}
-              onAddFavorite={addFavorite}
-              onRemoveFavorite={removeFavorite}
-              onAddDisliked={addDisliked}
-              onRemoveDisliked={removeDisliked}
-              onChangePriceRange={(value) => update("priceRange", value)}
-              onChangeSpice={(value) => update("spicePreference", value)}
-              onToggleVegetarian={toggleVegetarian}
-              onToggleAllowRepeat={toggleAllowRepeat}
-            />
+          <PrivacySection />
 
-            <DataStorageSection
-              storageSize={computeSettingsSize(settings)}
-              onExportHistoryJson={async () => {
-                const historyEntries = joinHistoryWithFood(await getAllHistory(allFoods), allFoods);
-                downloadTextFile(
-                  "hom-nay-an-gi-lich-su.json",
-                  buildHistoryExportJson(historyEntries),
-                  "application/json",
-                );
-                notify("Đã tải file JSON lịch sử!");
-              }}
-              onExportHistoryCsv={async () => {
-                const historyEntries = joinHistoryWithFood(await getAllHistory(allFoods), allFoods);
-                downloadTextFile(
-                  "hom-nay-an-gi-lich-su.csv",
-                  buildHistoryExportCsv(historyEntries),
-                  "text/csv;charset=utf-8",
-                );
-                notify("Đã tải file CSV lịch sử!");
-              }}
-              onBackupSaved={async () => {
-                const savedFoods = joinSavedWithFood(await getSavedFoodRecords(), allFoods);
-                downloadTextFile(
-                  "hom-nay-an-gi-mon-da-luu.json",
-                  buildSavedBackupJson(savedFoods),
-                  "application/json",
-                );
-                notify("Đã tạo bản sao lưu món đã lưu!");
-              }}
-              onResetAll={resetAll}
-            />
-
-            <InterfaceSection soundEnabled={settings.soundEffectsEnabled} onToggleSound={toggleSound} />
-
-            <AboutSection version={appVersion} totalFoodsCount={totalFoodsCount} />
-          </div>
+          <AboutSection version={appVersion} totalFoodsCount={totalFoodsCount} />
         </div>
-      )}
+      </div>
     </div>
   );
 }

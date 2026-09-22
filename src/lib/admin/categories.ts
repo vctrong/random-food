@@ -20,7 +20,7 @@ export async function getCategories(): Promise<AdminCategoryRow[]> {
 
 type CategoryError = "SLUG_TAKEN" | "NOT_FOUND";
 
-function slugify(value: string): string {
+export function slugify(value: string): string {
   return value
     .toLowerCase()
     .normalize("NFD")

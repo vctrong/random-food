@@ -78,7 +78,7 @@ export default function AboutPage() {
           <Soup className="size-4" aria-hidden />
           <span>Về chúng tôi</span>
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-text-primary mb-3">
+        <h1 className="text-display-sm text-text-primary mb-3">
           &ldquo;Nay ăn gì?&rdquo;: câu hỏi khó nhất mỗi ngày
         </h1>
         <p className="text-text-secondary max-w-2xl mx-auto leading-relaxed">
@@ -93,7 +93,7 @@ export default function AboutPage() {
       </header>
 
       <Card className="p-6 md:p-8">
-        <h2 className="font-heading font-semibold text-xl text-text-primary mb-3">Câu chuyện của chúng tôi</h2>
+        <h2 className="font-subheading font-semibold text-xl text-text-primary mb-3">Câu chuyện của chúng tôi</h2>
         <div className="space-y-3 text-text-secondary leading-relaxed">
           <p>
             Mọi thứ bắt đầu từ một câu hỏi rất đời thường:{" "}
@@ -126,7 +126,7 @@ export default function AboutPage() {
       </Card>
 
       <section aria-labelledby="features-heading">
-        <h2 id="features-heading" className="font-heading font-semibold text-xl text-text-primary mb-4">
+        <h2 id="features-heading" className="font-subheading font-semibold text-xl text-text-primary mb-4">
           Chúng tôi làm gì
         </h2>
         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -137,7 +137,7 @@ export default function AboutPage() {
                   <Icon className="size-5" aria-hidden />
                 </span>
                 <div>
-                  <h3 className="font-heading font-semibold text-text-primary mb-1">{title}</h3>
+                  <h3 className="font-subheading font-semibold text-text-primary mb-1">{title}</h3>
                   <p className="text-sm text-text-secondary leading-relaxed">{description}</p>
                 </div>
               </Card>
@@ -148,7 +148,7 @@ export default function AboutPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="p-6 bg-soft-blue/50">
-          <h2 className="flex items-center gap-2 font-heading font-semibold text-xl text-text-primary mb-2">
+          <h2 className="flex items-center gap-2 font-subheading font-semibold text-xl text-text-primary mb-2">
             <Target className="size-5 text-primary-blue" aria-hidden />
             Sứ mệnh
           </h2>
@@ -158,7 +158,7 @@ export default function AboutPage() {
           </p>
         </Card>
         <Card className="p-6 bg-soft-pink/60">
-          <h2 className="flex items-center gap-2 font-heading font-semibold text-xl text-text-primary mb-2">
+          <h2 className="flex items-center gap-2 font-subheading font-semibold text-xl text-text-primary mb-2">
             <MapPin className="size-5 text-primary-pink" aria-hidden />
             Vì sao là Cần Thơ?
           </h2>
@@ -171,7 +171,7 @@ export default function AboutPage() {
       </div>
 
       <Card className="p-6 md:p-8">
-        <h2 className="flex items-center gap-2 font-heading font-semibold text-xl text-text-primary mb-5">
+        <h2 className="flex items-center gap-2 font-subheading font-semibold text-xl text-text-primary mb-5">
           <Users className="size-5 text-primary-blue" aria-hidden />
           Đội ngũ
         </h2>
@@ -188,7 +188,7 @@ export default function AboutPage() {
                 />
               </div>
               <div>
-                <h3 className="font-heading font-semibold text-lg text-text-primary">{member.name}</h3>
+                <h3 className="font-subheading font-semibold text-lg text-text-primary">{member.name}</h3>
                 <span
                   className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${member.accent}`}
                 >
@@ -201,7 +201,7 @@ export default function AboutPage() {
       </Card>
 
       <Card className="p-6 md:p-8 text-center bg-soft-blue/50">
-        <h2 className="font-heading font-semibold text-xl text-text-primary mb-2">Cùng xây dựng NayAnGi</h2>
+        <h2 className="font-subheading font-semibold text-xl text-text-primary mb-2">Cùng xây dựng NayAnGi</h2>
         <p className="text-text-secondary max-w-xl mx-auto leading-relaxed mb-4">
           Bạn biết một quán ngon chưa có trên app? Hãy chia sẻ với chúng tôi. Càng nhiều người đóng góp,
           mỗi lần &ldquo;nay ăn gì?&rdquo; của cả cộng đồng càng thêm nhiều lựa chọn.
@@ -215,7 +215,7 @@ export default function AboutPage() {
       </Card>
 
       <Card className="p-6 md:p-8">
-        <h2 className="font-heading font-semibold text-xl text-text-primary mb-2">Liên hệ</h2>
+        <h2 className="font-subheading font-semibold text-xl text-text-primary mb-2">Liên hệ</h2>
         <p className="text-text-secondary leading-relaxed mb-5">
           Bạn có góp ý, muốn giới thiệu quán ăn hay hợp tác cùng NayAnGi? Hãy liên hệ với chúng tôi qua
           các kênh dưới đây:

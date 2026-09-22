@@ -99,7 +99,7 @@ export function ContentModerationContent({ initialRows }: ContentModerationConte
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <h1 className="text-2xl md:text-3xl font-heading font-semibold text-text-primary tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-subheading font-semibold text-text-primary tracking-tight">
           Quản lý nội dung ẩm thực
         </h1>
         <p className="text-sm text-text-secondary">{rows.length} món ăn &amp; quán ăn trong hệ thống</p>
@@ -169,7 +169,7 @@ export function ContentModerationContent({ initialRows }: ContentModerationConte
             <Card className="p-5 space-y-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-heading font-semibold text-text-primary">{selected.name}</h3>
+                  <h3 className="font-subheading font-semibold text-text-primary">{selected.name}</h3>
                   <p className="text-sm text-text-secondary">
                     {selected.targetType === "food" ? "Món ăn" : "Quán ăn"} · bởi {selected.submitter.name}
                   </p>

@@ -2,8 +2,8 @@ import { getServerSession } from "next-auth";
 import packageJson from "../../../package.json";
 import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
-import { User } from "@/lib/models/User";
 import { UserProfile } from "@/lib/models/UserProfile";
+import { FoodReviewerApplication } from "@/lib/models/FoodReviewerApplication";
 import { getAllFoods } from "@/services/foodService";
 import { SettingsPageContent } from "@/components/settings/SettingsPageContent";
 
@@ -25,32 +25,21 @@ export default async function SettingsPage() {
   const allFoods = await getAllFoods();
   const session = await getServerSession(authOptions);
 
-  let account: {
-    email: string;
-    authProvider: "local" | "google";
-    notificationPrefs: Record<string, boolean>;
-  } | null = null;
+  let notificationPrefs: Record<string, boolean> | null = null;
+  let hasAppliedReviewer = false;
 
   if (session?.user) {
     await connectDB();
     const userId = (session.user as { id: string }).id;
-    const [user, profile] = await Promise.all([
-      User.findById(userId).lean() as Promise<{
-        email: string;
-        authProvider?: "local" | "google";
-      } | null>,
+    const [profile, application] = await Promise.all([
       UserProfile.findOne({ userId }).lean() as Promise<{
         notificationPrefs?: Record<string, boolean>;
       } | null>,
+      FoodReviewerApplication.findOne({ userId }).select("_id").lean(),
     ]);
 
-    if (user) {
-      account = {
-        email: user.email,
-        authProvider: user.authProvider ?? "local",
-        notificationPrefs: { ...DEFAULT_NOTIFICATION_PREFS, ...(profile?.notificationPrefs ?? {}) },
-      };
-    }
+    notificationPrefs = { ...DEFAULT_NOTIFICATION_PREFS, ...(profile?.notificationPrefs ?? {}) };
+    hasAppliedReviewer = Boolean(application);
   }
 
   return (
@@ -59,7 +48,8 @@ export default async function SettingsPage() {
       totalFoodsCount={allFoods.length}
       appVersion={packageJson.version}
       isAuthenticated={Boolean(session?.user)}
-      account={account}
+      notificationPrefs={notificationPrefs}
+      hasAppliedReviewer={hasAppliedReviewer}
     />
   );
 }

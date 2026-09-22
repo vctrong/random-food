@@ -125,13 +125,13 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
           onChange={handleQueryChange}
           onKeyDown={handleKeyDown}
           placeholder="Tìm địa chỉ để định vị nhanh (vd: 123 Nguyễn Văn Cừ, Ninh Kiều)"
-          className="w-full h-11 pl-10 pr-10 rounded-xl border border-border bg-white text-sm text-text-primary placeholder:text-text-secondary/70 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+          className="w-full h-11 pl-10 pr-10 rounded-xl border border-border bg-surface text-sm text-text-primary placeholder:text-text-secondary/70 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
         />
         {isSearching && (
           <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-text-secondary animate-spin" aria-hidden />
         )}
         {results.length > 0 && (
-          <ul className="absolute z-10 top-full mt-1 w-full bg-white rounded-xl shadow-lg border border-border overflow-hidden max-h-60 overflow-y-auto">
+          <ul className="absolute z-10 top-full mt-1 w-full bg-surface rounded-xl shadow-lg border border-border overflow-hidden max-h-60 overflow-y-auto">
             {results.map((result, index) => (
               <li key={`${result.lat}-${result.lng}-${index}`}>
                 <button
@@ -160,7 +160,7 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
         type="button"
         onClick={useCurrentLocation}
         disabled={isLocating}
-        className="self-start inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl border border-border bg-white text-sm font-medium text-primary-blue hover:bg-soft-blue transition-colors disabled:opacity-60"
+        className="self-start inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl border border-border bg-surface text-sm font-medium text-primary-blue hover:bg-soft-blue transition-colors disabled:opacity-60"
       >
         {isLocating ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <LocateFixed className="size-4" aria-hidden />}
         Dùng vị trí hiện tại của tôi

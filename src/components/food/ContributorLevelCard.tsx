@@ -16,14 +16,14 @@ export function ContributorLevelCard({ levelProgress, achievements }: Contributo
   const unlockedCount = achievements.filter((item) => item.unlockedAt !== null).length;
 
   return (
-    <div className="bg-white rounded-2xl border border-border shadow-sm p-5 flex flex-col gap-5">
+    <div className="bg-surface rounded-2xl border border-border shadow-sm p-5 flex flex-col gap-5">
       <div className="flex items-center gap-3">
         <div className="size-12 rounded-full bg-primary-blue text-white flex items-center justify-center shadow-sm shrink-0">
           <LevelIcon className="size-6" aria-hidden />
         </div>
         <div className="min-w-0">
           <span className="text-[11px] font-bold uppercase tracking-wider text-primary-blue">Cấp {current.level} · Đóng góp</span>
-          <h3 className="text-lg font-heading font-semibold text-text-primary leading-tight">{current.title}</h3>
+          <h3 className="text-lg font-subheading font-semibold text-text-primary leading-tight">{current.title}</h3>
           <p className="text-xs text-text-secondary mt-0.5">{current.description}</p>
         </div>
       </div>

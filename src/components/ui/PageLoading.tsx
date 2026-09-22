@@ -16,7 +16,7 @@ export function PageLoading({ message = "Đang tải...", cardCount = 6 }: PageL
       <div className="h-8 w-56 rounded-lg bg-soft-blue animate-pulse mb-6" />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {Array.from({ length: cardCount }).map((_, index) => (
-          <div key={index} className="rounded-2xl bg-white border border-border overflow-hidden">
+          <div key={index} className="rounded-2xl bg-surface border border-border overflow-hidden">
             <div className="h-44 bg-soft-blue animate-pulse" />
             <div className="p-4 space-y-3">
               <div className="h-4 w-3/4 rounded bg-soft-blue animate-pulse" />

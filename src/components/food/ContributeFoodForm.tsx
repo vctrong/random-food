@@ -10,6 +10,7 @@ import {
   MapPin,
   PlusCircle,
   Search,
+  Send,
   Sparkles,
   Store,
   X,
@@ -66,6 +67,10 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [isProposingCategory, setIsProposingCategory] = useState(false);
+  const [proposedCategoryName, setProposedCategoryName] = useState("");
+  const [isSubmittingProposal, setIsSubmittingProposal] = useState(false);
+
   const isFormValid = useMemo(() => {
     const hasRestaurant =
       restaurantMode === "existing"
@@ -115,6 +120,36 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
 
   function toggleCategory(id: string) {
     setCategoryIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
+  }
+
+  /**
+   * Đề xuất danh mục mới — gửi riêng, KHÔNG phải điều kiện bắt buộc của món đang
+   * đóng góp (danh mục mới cần Admin duyệt ở /admin/danh-muc trước khi dùng
+   * được, nên món này vẫn phải chọn trong danh mục đã duyệt sẵn ở trên).
+   */
+  async function handleProposeCategory() {
+    const trimmed = proposedCategoryName.trim();
+    if (!trimmed || isSubmittingProposal) return;
+    setIsSubmittingProposal(true);
+    try {
+      const response = await fetch("/api/categories/propose", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        showToast(getApiErrorMessage(response.status, data.error), "error");
+        return;
+      }
+      showToast("Đã gửi đề xuất danh mục! Admin sẽ xem xét sớm.", "success");
+      setProposedCategoryName("");
+      setIsProposingCategory(false);
+    } catch {
+      showToast(getNetworkErrorMessage(), "error");
+    } finally {
+      setIsSubmittingProposal(false);
+    }
   }
 
   function toggleEatingLevel(level: EatingLevel) {
@@ -202,8 +237,8 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
   return (
     <div className="flex flex-col gap-6">
       {/* Ảnh món ăn */}
-      <section className="bg-white rounded-2xl shadow-sm p-5 sm:p-6">
-        <h2 className="font-heading font-semibold text-text-primary mb-1">Ảnh món ăn</h2>
+      <section className="bg-surface rounded-2xl shadow-sm p-5 sm:p-6">
+        <h2 className="font-subheading font-semibold text-text-primary mb-1">Ảnh món ăn</h2>
         <p className="text-sm text-text-secondary mb-4">Tối đa {MAX_IMAGES} ảnh, ảnh đầu tiên sẽ là ảnh đại diện.</p>
         <div className="flex flex-wrap gap-3">
           {images.map((image, index) => (
@@ -242,8 +277,8 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
       </section>
 
       {/* Thông tin món ăn */}
-      <section className="bg-white rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
-        <h2 className="font-heading font-semibold text-text-primary">Thông tin món ăn</h2>
+      <section className="bg-surface rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
+        <h2 className="font-subheading font-semibold text-text-primary">Thông tin món ăn</h2>
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="food-name" className="text-sm font-medium text-text-primary">
@@ -254,7 +289,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="Vd: Bún bò Huế đặc biệt"
-            className="w-full h-11 px-4 rounded-xl border border-border bg-white text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+            className="w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
           />
         </div>
 
@@ -268,7 +303,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
             onChange={(event) => setDescription(event.target.value)}
             placeholder="Món ăn có gì đặc biệt, hương vị ra sao..."
             rows={3}
-            className="w-full px-4 py-2.5 rounded-xl border border-border bg-white text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue resize-none"
+            className="w-full px-4 py-2.5 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue resize-none"
           />
         </div>
 
@@ -284,7 +319,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
               value={priceMin}
               onChange={(event) => setPriceMin(event.target.value)}
               placeholder="25000"
-              className="w-full h-11 px-4 rounded-xl border border-border bg-white text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+              className="w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -298,7 +333,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
               value={priceMax}
               onChange={(event) => setPriceMax(event.target.value)}
               placeholder="45000"
-              className="w-full h-11 px-4 rounded-xl border border-border bg-white text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+              className="w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
             />
           </div>
         </div>
@@ -317,7 +352,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
                     "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium border transition-colors",
                     active
                       ? "bg-primary-blue border-primary-blue text-white shadow-sm"
-                      : "bg-white border-border text-text-secondary hover:text-text-primary",
+                      : "bg-surface border-border text-text-secondary hover:text-text-primary",
                   )}
                 >
                   {active && <Check className="size-3.5" aria-hidden />}
@@ -345,7 +380,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
                       "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium border transition-colors",
                       active
                         ? "bg-soft-pink border-primary-pink text-primary-pink"
-                        : "bg-white border-border text-text-secondary hover:text-text-primary",
+                        : "bg-surface border-border text-text-secondary hover:text-text-primary",
                     )}
                   >
                     {active && <Check className="size-3.5" aria-hidden />}
@@ -355,12 +390,62 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
               })}
             </div>
           )}
+
+          {isProposingCategory ? (
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <input
+                value={proposedCategoryName}
+                onChange={(event) => setProposedCategoryName(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    handleProposeCategory();
+                  }
+                }}
+                placeholder="Tên danh mục muốn đề xuất"
+                maxLength={40}
+                className="h-9 px-3.5 rounded-full border border-border bg-surface text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue w-56"
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleProposeCategory}
+                isLoading={isSubmittingProposal}
+                disabled={!proposedCategoryName.trim()}
+                leftIcon={<Send className="size-3.5" aria-hidden />}
+              >
+                Gửi đề xuất
+              </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsProposingCategory(false);
+                  setProposedCategoryName("");
+                }}
+                className="text-sm text-text-secondary hover:text-text-primary"
+              >
+                Huỷ
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsProposingCategory(true)}
+              className="inline-flex items-center gap-1.5 w-fit text-sm text-primary-blue font-medium hover:text-[#4a8ddb] transition-colors mt-1"
+            >
+              <PlusCircle className="size-3.5" aria-hidden />
+              Không thấy danh mục phù hợp? Đề xuất danh mục mới
+            </button>
+          )}
+          <p className="text-xs text-text-secondary">
+            Danh mục đề xuất cần Admin duyệt trước khi dùng được — món ăn này vẫn cần chọn ít nhất 1 danh mục đã có ở trên.
+          </p>
         </div>
       </section>
 
       {/* Quán ăn */}
-      <section className="bg-white rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
-        <h2 className="font-heading font-semibold text-text-primary">Quán bán món này</h2>
+      <section className="bg-surface rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
+        <h2 className="font-subheading font-semibold text-text-primary">Quán bán món này</h2>
 
         <div className="inline-flex p-1 rounded-full bg-soft-blue/50 gap-1 w-full sm:w-auto">
           <button
@@ -368,7 +453,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
             onClick={() => setRestaurantMode("existing")}
             className={cn(
               "flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors",
-              restaurantMode === "existing" ? "bg-white text-primary-blue shadow-sm" : "text-text-secondary",
+              restaurantMode === "existing" ? "bg-surface text-primary-blue shadow-sm" : "text-text-secondary",
             )}
           >
             <Search className="size-3.5" aria-hidden />
@@ -379,7 +464,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
             onClick={() => setRestaurantMode("new")}
             className={cn(
               "flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors",
-              restaurantMode === "new" ? "bg-white text-primary-blue shadow-sm" : "text-text-secondary",
+              restaurantMode === "new" ? "bg-surface text-primary-blue shadow-sm" : "text-text-secondary",
             )}
           >
             <PlusCircle className="size-3.5" aria-hidden />
@@ -395,13 +480,13 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
               value={restaurantQuery}
               onChange={handleRestaurantQueryChange}
               placeholder="Tìm theo tên quán..."
-              className="w-full h-11 pl-10 pr-10 rounded-xl border border-border bg-white text-sm text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+              className="w-full h-11 pl-10 pr-10 rounded-xl border border-border bg-surface text-sm text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
             />
             {isSearchingRestaurant && (
               <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-text-secondary animate-spin" aria-hidden />
             )}
             {restaurantResults.length > 0 && (
-              <ul className="absolute z-10 top-full mt-1 w-full bg-white rounded-xl shadow-lg border border-border overflow-hidden max-h-60 overflow-y-auto">
+              <ul className="absolute z-10 top-full mt-1 w-full bg-surface rounded-xl shadow-lg border border-border overflow-hidden max-h-60 overflow-y-auto">
                 {restaurantResults.map((restaurant) => (
                   <li key={restaurant.id}>
                     <button
@@ -434,7 +519,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
                 value={newRestaurantName}
                 onChange={(event) => setNewRestaurantName(event.target.value)}
                 placeholder="Vd: Quán Bún Bò Cô Ba"
-                className="w-full h-11 px-4 rounded-xl border border-border bg-white text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+                className="w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -446,7 +531,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
                 value={newRestaurantAddress}
                 onChange={(event) => setNewRestaurantAddress(event.target.value)}
                 placeholder="Vd: 123 Nguyễn Văn Cừ, Ninh Kiều, Cần Thơ"
-                className="w-full h-11 px-4 rounded-xl border border-border bg-white text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+                className="w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
               />
             </div>
             <div className="flex flex-col gap-1.5">

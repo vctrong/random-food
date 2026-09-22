@@ -57,7 +57,7 @@ export function UserMenu() {
         onClick={() => setIsOpen((prev) => !prev)}
         aria-expanded={isOpen}
         aria-haspopup="menu"
-        className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full bg-white border border-border hover:bg-soft-blue transition-colors"
+        className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full bg-surface border border-border hover:bg-soft-blue transition-colors"
       >
         {image ? (
           <Image
@@ -84,7 +84,7 @@ export function UserMenu() {
       {isOpen && (
         <div
           role="menu"
-          className="absolute right-0 top-full mt-2 w-56 rounded-2xl bg-white border border-border shadow-xl overflow-hidden animate-fade-slide-up"
+          className="absolute right-0 top-full mt-2 w-56 rounded-2xl bg-surface border border-border shadow-xl overflow-hidden animate-fade-slide-up"
         >
           <div className="px-4 py-3 border-b border-border">
             <p className="text-sm font-semibold text-text-primary truncate">{name}</p>

@@ -39,7 +39,7 @@ export function LoginGateModal({
         <button
           type="button"
           onClick={() => signIn("google", { callbackUrl: resolvedCallbackUrl })}
-          className="w-full h-11 px-4 rounded-full border border-border bg-white hover:bg-soft-blue text-text-primary text-sm font-semibold flex items-center justify-center gap-3 shadow-sm transition-all active:scale-95"
+          className="w-full h-11 px-4 rounded-full border border-border bg-surface hover:bg-soft-blue text-text-primary text-sm font-semibold flex items-center justify-center gap-3 shadow-sm transition-all active:scale-95"
         >
           <GoogleIcon className="size-4.5" />
           <span>Tiếp tục với Google</span>

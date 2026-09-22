@@ -89,7 +89,7 @@ export function ReviewerApplicationsContent({ initialApplications }: ReviewerApp
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <h1 className="text-2xl md:text-3xl font-heading font-semibold text-text-primary tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-subheading font-semibold text-text-primary tracking-tight">
           Đơn ứng tuyển FoodReviewer
         </h1>
         <p className="text-sm text-text-secondary">
@@ -146,7 +146,7 @@ export function ReviewerApplicationsContent({ initialApplications }: ReviewerApp
                     {isAllowedImageHost(app.applicant.avatarUrl) ? (
                       <Image src={app.applicant.avatarUrl as string} alt={app.applicant.name} width={36} height={36} className="size-9 rounded-full object-cover" />
                     ) : (
-                      <span className="size-9 rounded-full bg-white text-primary-blue font-semibold flex items-center justify-center text-sm shrink-0">
+                      <span className="size-9 rounded-full bg-surface text-primary-blue font-semibold flex items-center justify-center text-sm shrink-0">
                         {app.applicant.name.charAt(0).toUpperCase()}
                       </span>
                     )}
@@ -165,7 +165,7 @@ export function ReviewerApplicationsContent({ initialApplications }: ReviewerApp
             <Card className="p-5 space-y-4">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <h3 className="font-heading font-semibold text-text-primary">{selected.applicant.name}</h3>
+                  <h3 className="font-subheading font-semibold text-text-primary">{selected.applicant.name}</h3>
                   <p className="text-sm text-text-secondary">{selected.applicant.email}</p>
                 </div>
                 <Badge variant={STATUS_VARIANT[selected.status]}>{STATUS_LABEL[selected.status]}</Badge>

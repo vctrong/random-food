@@ -31,7 +31,7 @@ export function FoodListPageContent({ initialFoods }: FoodListPageContentProps) 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8 md:py-10 space-y-8">
       {/* Hero */}
-      <header className="relative rounded-3xl p-6 md:p-10 overflow-hidden bg-gradient-to-br from-white via-soft-blue/40 to-soft-pink/40 shadow-sm">
+      <header className="relative rounded-3xl p-6 md:p-10 overflow-hidden bg-gradient-to-br from-surface via-soft-blue/40 to-soft-pink/40 shadow-sm">
         <div
           aria-hidden
           className="absolute -top-16 -right-16 w-80 h-80 rounded-full bg-primary-blue/10 blur-3xl pointer-events-none"
@@ -43,7 +43,7 @@ export function FoodListPageContent({ initialFoods }: FoodListPageContentProps) 
 
         <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white text-primary-blue text-xs font-bold uppercase tracking-wider shadow-sm mb-3">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-surface text-primary-blue text-xs font-bold uppercase tracking-wider shadow-sm mb-3">
               <UtensilsCrossed className="size-3.5" aria-hidden />
               <span>Kho ẩm thực Cần Thơ</span>
             </div>
@@ -58,7 +58,7 @@ export function FoodListPageContent({ initialFoods }: FoodListPageContentProps) 
           </div>
 
           <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white text-text-secondary shadow-sm">
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-surface text-text-secondary shadow-sm">
               <span className="size-2.5 rounded-full bg-primary-blue animate-pulse" aria-hidden />
               <span className="text-sm font-semibold text-text-primary">{initialFoods.length} món sẵn sàng</span>
             </div>
@@ -71,7 +71,7 @@ export function FoodListPageContent({ initialFoods }: FoodListPageContentProps) 
             </Link>
             <Link
               href="/mon-an/dong-gop"
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-white hover:bg-soft-pink text-primary-pink text-sm font-semibold shadow-sm transition-all active:scale-95"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-surface hover:bg-soft-pink text-primary-pink text-sm font-semibold shadow-sm transition-all active:scale-95"
             >
               <PlusCircle className="size-4.5" aria-hidden />
               <span>Đóng góp món mới</span>
@@ -112,7 +112,7 @@ export function FoodListPageContent({ initialFoods }: FoodListPageContentProps) 
         />
       ) : (
         <>
-          <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
+          <div className="bg-surface rounded-2xl p-4 shadow-sm space-y-3">
             <div className="relative">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-text-secondary" aria-hidden />
               <input
@@ -199,13 +199,13 @@ function MetricCard({
   const toneClasses = tone === "blue" ? "bg-soft-blue text-primary-blue" : "bg-soft-pink text-primary-pink";
 
   return (
-    <div className="flex items-center gap-3 p-4 rounded-2xl bg-white shadow-sm hover:shadow-md transition-shadow">
+    <div className="flex items-center gap-3 p-4 rounded-2xl bg-surface shadow-sm hover:shadow-md transition-shadow">
       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${toneClasses}`}>
         <Icon className="size-6" aria-hidden />
       </div>
       <div className="min-w-0">
         <p className="text-xs text-text-secondary truncate">{label}</p>
-        <p className="font-heading font-semibold text-text-primary tracking-tight">{value}</p>
+        <p className="font-subheading font-semibold text-text-primary tracking-tight">{value}</p>
       </div>
     </div>
   );
