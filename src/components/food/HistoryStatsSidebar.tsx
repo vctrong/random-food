@@ -72,8 +72,8 @@ export function HistoryStatsSidebar({
       )}
 
       {topMealTimeInsight && (
-        <div className="p-3 rounded-lg bg-soft-blue text-text-secondary text-sm flex items-start gap-2">
-          <Lightbulb className="size-4 text-primary-blue shrink-0 mt-0.5" aria-hidden />
+        <div className="p-3 rounded-lg bg-primary-soft text-text-secondary text-sm flex items-start gap-2">
+          <Lightbulb className="size-4 text-primary shrink-0 mt-0.5" aria-hidden />
           <span>
             {topMealTimeInsight.percent}% lượt random của bạn rơi vào khung giờ{" "}
             <strong className="text-text-primary">{topMealTimeInsight.label.toLowerCase()}</strong>.

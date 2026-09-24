@@ -4,8 +4,8 @@ import { cn } from "@/lib/utils";
 type Variant = "blue" | "pink" | "neutral" | "success" | "warning" | "dark";
 
 const VARIANT_CLASSES: Record<Variant, string> = {
-  blue: "bg-soft-blue text-primary-blue",
-  pink: "bg-soft-pink text-primary-pink",
+  blue: "bg-primary-soft text-primary",
+  pink: "bg-accent-soft text-accent-ink",
   neutral: "bg-black/5 text-text-secondary",
   success: "bg-success/15 text-success",
   warning: "bg-warning/20 text-[#92720f]",

@@ -107,7 +107,7 @@ export function UsersContent({ initialUsers }: UsersContentProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <h1 className="text-2xl md:text-3xl font-subheading font-semibold text-text-primary tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-heading font-semibold text-text-primary tracking-tight">
           Quản lý người dùng &amp; phân quyền
         </h1>
         <p className="text-sm text-text-secondary">
@@ -123,13 +123,13 @@ export function UsersContent({ initialUsers }: UsersContentProps) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo tên hoặc email..."
-              className="w-full h-11 pl-10 pr-4 rounded-xl bg-cream text-text-primary text-sm placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
+              className="w-full h-11 pl-10 pr-4 rounded-xl bg-background text-text-primary text-sm placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
-            className="h-11 px-3 rounded-xl bg-cream text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
+            className="h-11 px-3 rounded-xl bg-background text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             <option value="all">Tất cả vai trò</option>
             <option value="user">Thành viên</option>
@@ -139,7 +139,7 @@ export function UsersContent({ initialUsers }: UsersContentProps) {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="h-11 px-3 rounded-xl bg-cream text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
+            className="h-11 px-3 rounded-xl bg-background text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             <option value="all">Tất cả trạng thái</option>
             <option value="active">Hoạt động</option>
@@ -172,7 +172,7 @@ export function UsersContent({ initialUsers }: UsersContentProps) {
                         {isAllowedImageHost(user.avatarUrl) ? (
                           <Image src={user.avatarUrl as string} alt={user.name} width={36} height={36} className="size-9 rounded-full object-cover" />
                         ) : (
-                          <span className="size-9 rounded-full bg-soft-blue text-primary-blue font-semibold flex items-center justify-center text-sm">
+                          <span className="size-9 rounded-full bg-primary-soft text-primary font-semibold flex items-center justify-center text-sm">
                             {user.name.charAt(0).toUpperCase()}
                           </span>
                         )}
@@ -187,7 +187,7 @@ export function UsersContent({ initialUsers }: UsersContentProps) {
                         value={user.role}
                         disabled={pendingRoleChangeId === user.id}
                         onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
-                        className="h-9 px-2 rounded-lg bg-cream text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-blue/40 disabled:opacity-60"
+                        className="h-9 px-2 rounded-lg bg-background text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
                       >
                         <option value="user">{ROLE_LABELS.user}</option>
                         <option value="foodreviewer">{ROLE_LABELS.foodreviewer}</option>
@@ -200,7 +200,7 @@ export function UsersContent({ initialUsers }: UsersContentProps) {
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={cn("font-semibold", user.warningCount > 0 ? "text-primary-pink" : "text-text-secondary")}>
+                      <span className={cn("font-semibold", user.warningCount > 0 ? "text-accent-ink" : "text-text-secondary")}>
                         {user.warningCount}
                       </span>
                     </td>
@@ -227,9 +227,9 @@ export function UsersContent({ initialUsers }: UsersContentProps) {
       )}
 
       <Modal isOpen={!!banTarget} onClose={() => setBanTarget(null)} panelClassName="max-w-md p-6 space-y-4">
-        <div className="flex items-center gap-2 text-primary-pink">
+        <div className="flex items-center gap-2 text-accent-ink">
           <ShieldCheck className="size-5" aria-hidden />
-          <h3 className="font-subheading font-semibold text-text-primary">Khoá tài khoản {banTarget?.name}</h3>
+          <h3 className="font-heading font-semibold text-text-primary">Khoá tài khoản {banTarget?.name}</h3>
         </div>
         <p className="text-sm text-text-secondary">
           Tài khoản sẽ bị đăng xuất khỏi mọi thiết bị và không thể đăng nhập lại cho tới khi được mở khoá.
@@ -239,7 +239,7 @@ export function UsersContent({ initialUsers }: UsersContentProps) {
           onChange={(e) => setBanReason(e.target.value)}
           placeholder="Lý do khoá tài khoản (tuỳ chọn)..."
           rows={3}
-          className="w-full px-3 py-2 rounded-xl bg-cream text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-blue/40 resize-none"
+          className="w-full px-3 py-2 rounded-xl bg-background text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
         />
         <div className="flex justify-end gap-2">
           <Button variant="outline" size="sm" onClick={() => setBanTarget(null)}>

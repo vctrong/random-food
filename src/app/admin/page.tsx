@@ -12,8 +12,8 @@ export default async function AdminOverviewPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-1.5">
-        <p className="text-xs font-bold uppercase tracking-wider text-primary-pink">Trung tâm giám sát</p>
-        <h1 className="text-2xl md:text-3xl font-subheading font-semibold text-text-primary tracking-tight">
+        <p className="text-xs font-bold uppercase tracking-wider text-accent-ink">Trung tâm giám sát</p>
+        <h1 className="text-2xl md:text-3xl font-heading font-semibold text-text-primary tracking-tight">
           Tổng quan hệ thống
         </h1>
         <p className="text-sm text-text-secondary">
@@ -32,7 +32,7 @@ export default async function AdminOverviewPage() {
       </div>
 
       <Card className="p-5">
-        <h2 className="text-lg font-subheading font-semibold text-text-primary mb-4">Hoạt động gần đây</h2>
+        <h2 className="text-lg font-heading font-semibold text-text-primary mb-4">Hoạt động gần đây</h2>
         {activity.length === 0 ? (
           <EmptyState
             icon={ShieldCheck}

@@ -17,17 +17,17 @@ export function AboutSection({ version, totalFoodsCount }: AboutSectionProps) {
     <section id="ve-app" className="bg-surface rounded-2xl p-6 shadow-sm space-y-4 scroll-mt-24">
       <div className="flex items-center justify-between pb-3 border-b border-border flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          <span className="inline-flex p-2 rounded-xl bg-soft-blue text-primary-blue">
+          <span className="inline-flex p-2 rounded-xl bg-primary-soft text-primary">
             <Info className="size-5" aria-hidden />
           </span>
           <div>
-            <h2 className="text-lg font-semibold text-text-primary">Về NayAnGi</h2>
+            <h2 className="text-lg font-semibold text-text-primary">Về Nay Ăn Gì?</h2>
             <p className="text-sm text-text-secondary">
               Trợ lý random món ăn cho sinh viên và người trẻ ở Cần Thơ — {totalFoodsCount} món ăn đang có trong thực đơn.
             </p>
           </div>
         </div>
-        <span className="text-xs px-2.5 py-1 rounded-full bg-soft-blue/50 text-text-secondary shrink-0">
+        <span className="text-xs px-2.5 py-1 rounded-full bg-primary-soft/50 text-text-secondary shrink-0">
           v{version}
         </span>
       </div>
@@ -39,7 +39,7 @@ export function AboutSection({ version, totalFoodsCount }: AboutSectionProps) {
             href={href}
             target={href.startsWith("http") ? "_blank" : undefined}
             rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
-            className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary-blue transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary transition-colors"
           >
             <Icon className="size-3.5" aria-hidden />
             {label}
@@ -49,9 +49,9 @@ export function AboutSection({ version, totalFoodsCount }: AboutSectionProps) {
 
       <Link
         href="/ve-chung-toi"
-        className="inline-flex items-center gap-1 text-sm font-semibold text-primary-blue hover:text-[#4a8ddb] transition-colors"
+        className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-strong transition-colors"
       >
-        Xem đầy đủ trang Giới thiệu
+        Xem đầy đủ trang Về chúng tôi
         <ArrowRight className="size-3.5" aria-hidden />
       </Link>
     </section>

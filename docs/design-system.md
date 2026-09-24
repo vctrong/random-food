@@ -1,61 +1,76 @@
 # NayAnGi — Design System: Hệ thống Typography
 
-> Tài liệu chi tiết cho hệ 3 font đã chốt (thay thế Montserrat + Open Sans cũ). `CLAUDE.md` mục 4.4 chỉ tóm tắt và link sang đây — đây mới là nguồn đầy đủ. Nếu 2 tài liệu lệch nhau, coi code thực tế (`src/app/layout.tsx`, `src/app/globals.css`) là đúng và cập nhật lại file này.
+> Tài liệu chi tiết cho hệ font đã chốt (thay thế hệ Sedgwick Ave + Lexend + Mulish cũ). `CLAUDE.md` mục 4.4 chỉ tóm tắt và link sang đây — đây mới là nguồn đầy đủ. Nếu 2 tài liệu lệch nhau, coi code thực tế (`src/app/layout.tsx`, `src/app/ve-chung-toi/layout.tsx`, `src/app/globals.css`) là đúng và cập nhật lại file này.
 
 ---
 
-## 1. 3 font đã chốt
+## 1. Các font đã chốt
 
-| Vai trò | Font | CSS variable | Tailwind utility | Weight | Google Fonts subsets |
-|---|---|---|---|---|---|
-| Display / hero | **Sedgwick Ave** | `--font-heading` | `font-heading` | Chỉ 400 (static, không phải variable) | latin, latin-ext, vietnamese ✅ |
-| Subheading | **Lexend** | `--font-subheading` | `font-subheading` | Variable, dùng 500–700 | latin, latin-ext, vietnamese ✅ |
-| Body / UI | **Mulish** | `--font-body` | `font-body` | Variable, dùng 400–800 | latin, latin-ext, vietnamese, cyrillic ✅ |
+| Vai trò | Font | Nguồn | CSS variable | Tailwind utility | Weight | Phạm vi |
+|---|---|---|---|---|---|---|
+| Heading (MỌI tiêu đề) | **Fredoka One** — bản Việt hoá DVN | `next/font/local` → `src/app/fonts/DVN-Fredoka-Bold.ttf` | `--font-heading` | `font-heading` | Chỉ 700 (1 file tĩnh) | Toàn app |
+| Body / UI | **Quicksand** | `next/font/google`, subset `latin` + `vietnamese` | `--font-body` | `font-body` (và `font-sans`) | Variable 300–700 | Toàn app |
+| Viết tay | **Sedgwick Ave** | `next/font/google`, subset `latin` + `vietnamese` | `--font-handwriting` | `font-handwriting`, `.text-display-handwriting` | Chỉ 400 | **CHỈ thư ngỏ trang "Về chúng tôi"** (`/ve-chung-toi`): tiêu đề thư, lời chào, "Thân gửi,", chữ ký |
+| Body thư ngỏ | **Patrick Hand** | `next/font/google`, subset `latin` + `vietnamese` | `--font-letter` | `.letter-body` | Chỉ 400 | **CHỈ body thư ngỏ** — khai báo trong `src/components/about/OpenLetter.tsx`, `.variable` chỉ gắn trên `<article>` của thư |
 
-Cả 3 đã xác nhận hỗ trợ subset `vietnamese` qua metadata chính thức của Google Fonts (`github.com/google/fonts` → `ofl/sedgwickave`, `ofl/lexend`, `ofl/mulish` → `METADATA.pb`).
+- **Không dùng bản Fredoka One trên Google Fonts** — bản gốc không hỗ trợ đầy đủ dấu tiếng Việt. File DVN đã được kiểm tra cmap: đủ toàn bộ ký tự tiếng Việt (ă â đ ê ô ơ ư + 5 dấu thanh, cả chữ hoa).
+- Lexend và Mulish đã gỡ hoàn toàn khỏi dự án.
 
-**Cấu hình** (`src/app/layout.tsx`):
+**Cấu hình font toàn app** (`src/app/layout.tsx`):
 
 ```ts
-import { Sedgwick_Ave, Lexend, Mulish } from "next/font/google";
+import localFont from "next/font/local";
+import { Quicksand } from "next/font/google";
 
-const sedgwickAve = Sedgwick_Ave({
+const fredoka = localFont({
+  src: "./fonts/DVN-Fredoka-Bold.ttf",
   variable: "--font-heading",
-  weight: "400",
-  subsets: ["latin", "vietnamese"],
+  weight: "700",
   display: "swap",
 });
 
-const lexend = Lexend({
-  variable: "--font-subheading",
-  subsets: ["latin", "vietnamese"],
-  display: "swap",
-});
-
-const mulish = Mulish({
+const quicksand = Quicksand({
   variable: "--font-body",
   subsets: ["latin", "vietnamese"],
   display: "swap",
 });
 ```
 
-Gắn cả 3 class variable lên `<html>`, `font-body` là mặc định của `<body>`.
+Gắn 2 class variable lên `<html>`, `font-body` là mặc định của `<body>`.
 
-**Tailwind (v4, khai báo trong CSS qua `@theme`)** — `src/app/globals.css`:
+**Font viết tay — chỉ load trong route "Về chúng tôi"** (`src/app/ve-chung-toi/layout.tsx`):
 
-```css
-/* Riêng font PHẢI dùng @theme inline vì tham chiếu var() do next/font tự sinh. */
-@theme inline {
-  --font-sans: var(--font-body);
-  --font-heading: var(--font-heading);
-  --font-subheading: var(--font-subheading);
-  --font-body: var(--font-body);
+```tsx
+const sedgwickAve = Sedgwick_Ave({
+  variable: "--font-handwriting",
+  weight: "400",
+  subsets: ["latin", "vietnamese"],
+  display: "swap",
+});
+
+export default function AboutLayout({ children }: LayoutProps<"/ve-chung-toi">) {
+  return <div className={sedgwickAve.variable}>{children}</div>;
 }
 ```
 
-Tailwind v4 tự sinh 3 utility `font-heading` / `font-subheading` / `font-body` từ 3 token trên — không cần khai báo thủ công.
+Biến `--font-handwriting` chỉ tồn tại bên trong `<div>` này — dùng `font-handwriting` ở trang khác sẽ không có tác dụng (rơi về font kế thừa). **Không** load Sedgwick Ave ở root layout.
 
-**Mặc định heading** — MỌI thẻ `h1`-`h6` mặc định dùng Lexend (`font-subheading`), Sedgwick Ave chỉ áp qua class cụ thể ở mục 3:
+**Font body thư ngỏ — Patrick Hand** (`src/components/about/OpenLetter.tsx`): `Patrick_Hand({ variable: "--font-letter", weight: "400", subsets: ["latin", "vietnamese"] })`, `.variable` gắn trên `<article>` của thư. Dùng qua utility `.letter-body` (globals.css): cỡ `clamp(1.125rem, …, 1.375rem)` (~18px → ~22px), `line-height: 1.85`, `max-width: 62ch`, căn trái, khoảng cách đoạn `1.15em`.
+
+**Tailwind (v4, khai báo trong CSS)** — `src/app/globals.css`:
+
+```css
+/* Font PHẢI dùng @theme inline vì tham chiếu var() do next/font tự sinh. */
+@theme inline {
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+  --font-handwriting: var(--font-handwriting);
+  --font-letter: var(--font-letter);
+}
+```
+
+**Mặc định heading** — MỌI thẻ `h1`-`h6` mặc định dùng Fredoka One:
 
 ```css
 /* Bọc @layer base — nếu để trần, rule này sẽ đè cả class .text-display/.text-h2
@@ -63,7 +78,7 @@ Tailwind v4 tự sinh 3 utility `font-heading` / `font-subheading` / `font-body`
    "utilities" còn CSS không bọc layer luôn thắng CSS có layer (cascade layers). */
 @layer base {
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-subheading);
+    font-family: var(--font-heading);
   }
 }
 ```
@@ -74,45 +89,44 @@ Tailwind v4 tự sinh 3 utility `font-heading` / `font-subheading` / `font-body`
 
 | Thành phần | Font | Ghi chú |
 |---|---|---|
-| H1 Trang chủ (landing hero) | Sedgwick Ave | `.text-display` |
-| Tiêu đề section lớn trên landing (vd "Chỉ 3 bước để có ngay bữa ăn ưng ý", "Rating cao nhất mỗi kiểu thèm ăn", "Bớt suy nghĩ. Ăn ngon hơn.", "Sẵn sàng tìm món ngon cho hôm nay?") | Sedgwick Ave | `.text-display-sm` |
-| H1 các trang public khác (Về chúng tôi, Tin tức) | Sedgwick Ave | `.text-display-sm` |
-| Tên món trong kết quả random (`/random`, demo card ở Hero) | Sedgwick Ave | class `font-heading` trực tiếp (giữ size riêng theo ngữ cảnh card/photo-overlay, không dùng `.text-display*` vì size không hợp) |
-| Wordmark/logo dạng chữ | Sedgwick Ave | hiện logo là ảnh (`/image/logo.png`), không áp dụng — nếu sau này đổi sang text logo thì dùng font này |
-| **H1 trang chức năng** (Hồ sơ, Cài đặt, Admin, Reviewer, Lịch sử, Đã lưu, chi tiết món, danh sách món...) | **Lexend** | Mặc định, không cần class riêng |
-| H2, H3, H4 (trừ các trường hợp Sedgwick Ave ở trên) | Lexend | Mặc định, hoặc `.text-h2`/`.text-h3`/`.text-h4` nếu cần size chuẩn |
-| Tiêu đề card, tiêu đề modal | Lexend | |
-| Tiêu đề nhóm trong Hồ sơ/Cài đặt (vd "Sở thích ăn uống", "Bảo mật") | Lexend | |
-| Tiêu đề dashboard Admin/Reviewer | Lexend | |
-| Số liệu nổi bật (stats, vd số món/số quán/lượt random) | Lexend, weight 700 | `.text-stat` |
-| Tiêu đề các bước "cách hoạt động" | Lexend | |
-| Toàn bộ body text, mô tả | Mulish | Mặc định (kế thừa từ `<body>`) |
-| Nút bấm, label, input, placeholder | Mulish | |
-| Badge, navbar, bảng dữ liệu | Mulish | |
-| Tooltip, toast, chú thích | Mulish | `.text-caption` cho chú thích nhỏ |
+| H1 Trang chủ (landing hero) | Fredoka One | `.text-display` |
+| Tiêu đề section lớn trên landing | Fredoka One | `.text-display-sm` (qua `SectionHeading`) |
+| H1 trang Tin tức | Fredoka One | `.text-display-sm` |
+| H1 trang "Về chúng tôi" | Fredoka One | `.text-display` (như mọi trang khác) |
+| **Tiêu đề thư, lời chào, "Thân gửi,", chữ ký trong thư ngỏ** | **Sedgwick Ave** | `.text-display-handwriting` / `font-handwriting` — nơi DUY NHẤT dùng font viết tay |
+| **Body thư ngỏ** | **Patrick Hand** | `.letter-body` |
+| Tên món trong kết quả random, tên gu ở card mức độ ăn | Fredoka One | class `font-heading` trực tiếp, tự set size theo ngữ cảnh |
+| H1 trang chức năng (Hồ sơ, Cài đặt, Admin, Reviewer, Lịch sử, Đã lưu, chi tiết món...) | Fredoka One | Mặc định `h1`, không cần class riêng |
+| H2, H3, H4, tiêu đề card/modal, tiêu đề nhóm, dashboard | Fredoka One | Mặc định, hoặc `.text-h2`/`.text-h3`/`.text-h4` nếu cần size chuẩn |
+| Số liệu nổi bật (stats) | Fredoka One | `.text-stat` |
+| Toàn bộ body text, mô tả | Quicksand | Mặc định (kế thừa từ `<body>`) |
+| Nút bấm, label, input, placeholder, badge, navbar, bảng dữ liệu | Quicksand | |
+| Tooltip, toast, chú thích | Quicksand | `.text-caption` cho chú thích nhỏ |
 
-**Quy tắc Sedgwick Ave riêng:**
-- Không dùng kèm `font-bold`/`font-semibold` — chỉ 1 weight (400), thêm class weight khác sẽ bị trình duyệt giả đậm (faux-bold) gây vỡ nét chữ viết tay.
-- Có `letter-spacing` nới nhẹ (`0.01em`) để dấu tiếng Việt (ẩ, ỗ, ữ, ặ, ộ...) không bị dính vào ký tự bên cạnh.
-- Line-height thoáng hơn heading thường (1.15–1.2) vì glyph viết tay cao hơn.
+**Lưu ý weight:**
+- Fredoka One chỉ có 1 file weight 700. Mọi `font-normal`/`font-semibold`/`font-bold` trên heading đều hiển thị cùng 1 độ đậm (trình duyệt dùng face 700, không giả đậm) — không cần và không nên thêm class weight để "làm đậm hơn".
+- Quicksand tối đa 700 — `font-extrabold`/`font-black` hiển thị như 700.
+- Sedgwick Ave chỉ 400 — không kèm `font-bold`/`font-semibold` (tránh faux-bold làm vỡ nét viết tay).
 
 ---
 
 ## 3. Type scale — utility class dùng chung
 
-Định nghĩa trong `src/app/globals.css` bằng Tailwind v4 `@utility`, dùng `clamp()` để tự responsive (không cần thêm `md:`/`lg:` ở nơi gọi).
+Định nghĩa trong `src/app/globals.css` bằng Tailwind v4 `@utility`, dùng `clamp()` để tự responsive.
 
-| Class | Font | Weight | Size (fluid, mobile → desktop) | Dùng cho |
-|---|---|---|---|---|
-| `.text-display` | Sedgwick Ave | 400 | `clamp(2.25rem, …, 3.75rem)` (~36px→60px) | H1 landing hero |
-| `.text-display-sm` | Sedgwick Ave | 400 | `clamp(1.75rem, …, 3rem)` (~28px→48px) | Section title landing, H1 trang public khác |
-| `.text-h2` | Lexend | 600 | `clamp(1.5rem, …, 1.875rem)` (~24px→30px) | H2 (khi cần size chuẩn thay vì tự set) |
-| `.text-h3` | Lexend | 600 | `clamp(1.125rem, …, 1.25rem)` (~18px→20px) | H3, tiêu đề card/modal |
-| `.text-h4` | Lexend | 600 | `1rem` (16px, cố định) | H4, tiêu đề nhóm nhỏ |
-| `.text-stat` | Lexend | 700 | `clamp(1.5rem, …, 2.25rem)` (~24px→36px) | Số liệu nổi bật |
-| `.text-caption` | Mulish | 400 | `0.75rem` (12px, cố định) | Chú thích, label phụ |
+| Class | Font | Size (fluid, mobile → desktop) | Dùng cho |
+|---|---|---|---|
+| `.text-display` | Fredoka One | `clamp(2.25rem, …, 3.75rem)` (~36px→60px) | H1 landing hero |
+| `.text-display-sm` | Fredoka One | `clamp(1.75rem, …, 3rem)` (~28px→48px) | Section title landing, H1 Tin tức |
+| `.text-display-handwriting` | Sedgwick Ave | `clamp(1.75rem, …, 3rem)` (~28px→48px) | **Chỉ** tiêu đề thư ngỏ trang "Về chúng tôi" |
+| `.letter-body` | Patrick Hand | `clamp(1.125rem, …, 1.375rem)` (~18px→22px), line-height 1.85 | **Chỉ** body thư ngỏ |
+| `.text-h2` | Fredoka One | `clamp(1.5rem, …, 1.875rem)` (~24px→30px) | H2 |
+| `.text-h3` | Fredoka One | `clamp(1.125rem, …, 1.25rem)` (~18px→20px) | H3, tiêu đề card/modal |
+| `.text-h4` | Fredoka One | `1rem` (16px) | H4, tiêu đề nhóm nhỏ |
+| `.text-stat` | Fredoka One | `clamp(1.5rem, …, 2.25rem)` (~24px→36px) | Số liệu nổi bật |
+| `.text-caption` | Quicksand | `0.75rem` (12px) | Chú thích, label phụ |
 
-Component không bắt buộc dùng đúng 7 class trên — nhiều chỗ (card title, dashboard title...) vẫn tự set size bằng Tailwind thường (`text-lg`, `text-2xl`...) và chỉ cần đúng `font-subheading`/thừa hưởng mặc định `h1`-`h6`. 7 class trên dùng khi cần **nhất quán type scale chuẩn** ở các vị trí mới, tránh mỗi chỗ tự chế 1 size khác nhau.
+Component không bắt buộc dùng đúng các class trên — nhiều chỗ vẫn tự set size bằng Tailwind thường (`text-lg`, `text-2xl`...) kèm `font-heading` hoặc thừa hưởng mặc định `h1`-`h6`.
 
 ---
 
@@ -120,29 +134,26 @@ Component không bắt buộc dùng đúng 7 class trên — nhiều chỗ (card
 
 ```tsx
 // H1 landing hero (src/components/food/HeroSection.tsx)
-<h1 className="text-display text-text-primary mb-4">
-  Hôm nay ăn gì?
-</h1>
+<h1 className="text-display text-text-primary">Hôm nay ăn gì?</h1>
 
-// Section title landing (src/app/page.tsx)
-<h2 className="text-display-sm text-text-primary mt-1">
-  Hôm nay bạn muốn ăn theo gu nào?
-</h2>
+// Section title landing (qua src/components/ui/SectionHeading.tsx)
+<h2 className="text-display-sm text-text-primary">Hôm nay bạn muốn ăn theo gu nào?</h2>
+
+// H1 trang Về chúng tôi (src/components/about/AboutHero.tsx) — Fredoka như các trang khác
+<h1 className="text-display text-text-primary">Về chúng tôi</h1>
+
+// Tiêu đề thư ngỏ (src/components/about/OpenLetter.tsx) — font viết tay
+<h2 className="text-display-handwriting text-text-primary">Lá thư nhỏ từ NayAnGi</h2>
 
 // Tên món trong kết quả random (src/components/food/RandomFoodResult.tsx)
-<h1 className="font-heading text-3xl md:text-4xl drop-shadow-md tracking-wide">
-  {currentFood.name}
-</h1>
+<h1 className="font-heading text-3xl md:text-4xl">{currentFood.name}</h1>
 
 // Số liệu nổi bật (src/components/food/StatsSection.tsx)
 <p className={`text-stat ${toneClassName}`}>{value}</p>
-
-// H1 trang chức năng — KHÔNG cần class riêng, mặc định đã là Lexend
-<h1 className="text-3xl font-bold text-text-primary mt-1">Hồ sơ &amp; Sở thích</h1>
 ```
 
 ---
 
 ## 5. Test chuỗi tiếng Việt đủ dấu
 
-Câu test chuẩn khi thêm chỗ dùng font mới: *"Hôm nay ăn gì? Bún riêu, hủ tiếu, bánh xèo, chè bưởi, cơm tấm sườn nướng Cần Thơ"* — đã kiểm tra trực quan trên cả 3 font, cả 2 theme (sáng/tối), các dấu chồng (ẩ, ỗ, ữ, ặ, ộ) hiển thị đúng, không rơi về font fallback.
+Câu test chuẩn khi thêm chỗ dùng font mới: *"Hôm nay ăn gì? Bún riêu, bánh xèo, hủ tiếu, chè bưởi, cơm tấm sườn nướng Cần Thơ"* — kiểm tra trên cả heading (Fredoka One) và body (Quicksand), cả 2 theme; các dấu chồng (ẩ, ỗ, ữ, ặ, ộ) phải hiển thị đúng, không rơi về font fallback.

@@ -95,7 +95,7 @@ export function CategoriesContent({ initialCategories, initialProposals }: Categ
   return (
     <div className="space-y-6">
       <div className="space-y-1.5">
-        <h1 className="text-2xl md:text-3xl font-subheading font-semibold text-text-primary tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-heading font-semibold text-text-primary tracking-tight">
           Danh mục hệ thống
         </h1>
         <p className="text-sm text-text-secondary">{categories.length} danh mục · {pendingProposals.length} đề xuất chờ duyệt</p>
@@ -103,13 +103,13 @@ export function CategoriesContent({ initialCategories, initialProposals }: Categ
 
       <Card className="p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-subheading font-semibold text-text-primary">Danh mục chính thức</h2>
+          <h2 className="font-heading font-semibold text-text-primary">Danh mục chính thức</h2>
           <div className="flex items-center gap-2">
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               placeholder="Tên danh mục mới..."
-              className="h-10 px-3 rounded-xl bg-cream text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
+              className="h-10 px-3 rounded-xl bg-background text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
             <Button size="sm" leftIcon={<Plus className="size-4" />} isLoading={isCreating} onClick={handleCreate}>
               Tạo mới
@@ -122,7 +122,7 @@ export function CategoriesContent({ initialCategories, initialProposals }: Categ
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {categories.map((category) => (
-              <div key={category.id} className="flex items-center justify-between gap-2 p-3 rounded-xl bg-cream">
+              <div key={category.id} className="flex items-center justify-between gap-2 p-3 rounded-xl bg-background">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-text-primary truncate">{category.name}</p>
                   <p className="text-xs text-text-secondary truncate">/{category.slug}</p>
@@ -135,7 +135,7 @@ export function CategoriesContent({ initialCategories, initialProposals }: Categ
       </Card>
 
       <Card className="p-5 space-y-4">
-        <h2 className="font-subheading font-semibold text-text-primary">Đề xuất từ cộng đồng</h2>
+        <h2 className="font-heading font-semibold text-text-primary">Đề xuất từ cộng đồng</h2>
         {pendingProposals.length === 0 ? (
           <EmptyState
             icon={Tags}

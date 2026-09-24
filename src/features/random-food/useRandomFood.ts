@@ -30,6 +30,9 @@ interface UseRandomFoodOptions {
    * (2 lần random độc lập trên server/client sẽ ra kết quả khác nhau và gây
    * hydration mismatch). */
   initialFood: Food | null;
+  /** Thời gian hiệu ứng trước khi chốt kết quả — máy slot ở landing cần dài hơn
+   * mặc định để 3 cuộn kịp quay và dừng lệch nhau. */
+  randomizeDurationMs?: number;
 }
 
 export function useRandomFood({
@@ -37,8 +40,10 @@ export function useRandomFood({
   initialEatingLevel,
   initialCategoryId,
   initialFood,
+  randomizeDurationMs = RANDOMIZE_DURATION_MS,
 }: UseRandomFoodOptions) {
-  const [eatingLevel] = useState<EatingLevel | null>(initialEatingLevel);
+  const [eatingLevel, setEatingLevel] = useState<EatingLevel | null>(initialEatingLevel);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
     initialCategoryId ? [initialCategoryId] : [],
   );
@@ -94,14 +99,19 @@ export function useRandomFood({
   }, [isAuthenticated]);
 
   const filters: RandomFilters = useMemo(
-    () => ({ eatingLevel, categoryIds: selectedCategoryIds, tags: selectedTags }),
-    [eatingLevel, selectedCategoryIds, selectedTags],
+    () => ({ eatingLevel, categoryIds: selectedCategoryIds, tags: selectedTags, maxPrice }),
+    [eatingLevel, selectedCategoryIds, selectedTags, maxPrice],
   );
 
-  const pool = useMemo(() => {
-    const base = filterFoods(allFoods, filters);
-    return personalPreferences ? applyPersonalPreferences(base, personalPreferences, recentFoodIds) : base;
-  }, [allFoods, filters, personalPreferences, recentFoodIds]);
+  const buildPool = useCallback(
+    (poolFilters: RandomFilters) => {
+      const base = filterFoods(allFoods, poolFilters);
+      return personalPreferences ? applyPersonalPreferences(base, personalPreferences, recentFoodIds) : base;
+    },
+    [allFoods, personalPreferences, recentFoodIds],
+  );
+
+  const pool = useMemo(() => buildPool(filters), [buildPool, filters]);
 
   // Món liên quan (cùng quán, fallback cùng danh mục) — hàm THUẦN/tất định nên
   // tính trực tiếp bằng useMemo, không cần effect hay giá trị initial từ server
@@ -111,20 +121,44 @@ export function useRandomFood({
     [allFoods, currentFood],
   );
 
-  const runWithTransition = useCallback((getNextFood: () => Food | null) => {
-    setIsRandomizing(true);
-    window.setTimeout(() => {
-      setCurrentFood(getNextFood());
-      setIsRandomizing(false);
-      if (readSoundPreference()) playRandomizeChime();
-    }, RANDOMIZE_DURATION_MS);
-  }, []);
+  /**
+   * Chốt món NGAY khi bắt đầu (không phải lúc hết hiệu ứng) và trả về cho nơi gọi —
+   * máy slot ở landing cần biết trước món trúng để cuộn dừng đúng tên món đó.
+   */
+  const runWithTransition = useCallback(
+    (nextFood: Food | null) => {
+      setIsRandomizing(true);
+      window.setTimeout(() => {
+        setCurrentFood(nextFood);
+        setIsRandomizing(false);
+        if (readSoundPreference()) playRandomizeChime();
+      }, randomizeDurationMs);
+      return nextFood;
+    },
+    [randomizeDurationMs],
+  );
 
-  const randomize = useCallback(() => {
-    if (isRandomizing) return;
+  /** Trả về món vừa chốt, hoặc `undefined` nếu đang quay dở (bỏ qua lượt bấm). */
+  const randomize = useCallback((): Food | null | undefined => {
+    if (isRandomizing) return undefined;
     trackRandomEvent();
-    runWithTransition(() => pickRandomFood(pool, currentFood?.id ?? null));
+    return runWithTransition(pickRandomFood(pool, currentFood?.id ?? null));
   }, [isRandomizing, pool, currentFood, runWithTransition]);
+
+  /**
+   * Đổi mức độ ăn VÀ quay ngay trong cùng 1 lượt — pool tính lại tại chỗ theo mức
+   * mới, vì state `eatingLevel` chỉ cập nhật ở lần render sau (vòng quay may mắn).
+   */
+  const randomizeWithLevel = useCallback(
+    (level: EatingLevel | null): Food | null | undefined => {
+      if (isRandomizing) return undefined;
+      setEatingLevel(level);
+      trackRandomEvent();
+      const levelPool = buildPool({ ...filters, eatingLevel: level });
+      return runWithTransition(pickRandomFood(levelPool, currentFood?.id ?? null));
+    },
+    [isRandomizing, buildPool, filters, currentFood, runWithTransition],
+  );
 
   const toggleCategory = useCallback((value: string) => {
     setSelectedCategoryIds((prev) =>
@@ -142,17 +176,18 @@ export function useRandomFood({
     trackRandomEvent();
     setSelectedCategoryIds([]);
     setSelectedTags([]);
+    setMaxPrice(null);
     const base = filterFoods(allFoods, { eatingLevel, categoryIds: [], tags: [] });
     const fullPool = personalPreferences
       ? applyPersonalPreferences(base, personalPreferences, recentFoodIds)
       : base;
-    runWithTransition(() => pickRandomFood(fullPool, currentFood?.id ?? null));
+    runWithTransition(pickRandomFood(fullPool, currentFood?.id ?? null));
   }, [isRandomizing, allFoods, eatingLevel, currentFood, runWithTransition, personalPreferences, recentFoodIds]);
 
   const selectFood = useCallback(
     (food: Food) => {
       if (isRandomizing) return;
-      runWithTransition(() => food);
+      runWithTransition(food);
     },
     [isRandomizing, runWithTransition],
   );
@@ -227,6 +262,9 @@ export function useRandomFood({
 
   return {
     eatingLevel,
+    setEatingLevel,
+    maxPrice,
+    setMaxPrice,
     currentFood,
     relatedFoods,
     isRandomizing,
@@ -239,6 +277,7 @@ export function useRandomFood({
     toggleCategory,
     toggleTag,
     randomize,
+    randomizeWithLevel,
     randomizeAll,
     selectFood,
     toggleSaved,

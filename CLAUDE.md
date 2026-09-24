@@ -52,6 +52,7 @@ src/
 │   ├── page.tsx
 │   ├── globals.css
 │   ├── favicon.ico
+│   ├── fonts/              # File font local (Fredoka One Việt hoá) cho next/font/local
 │   └── api/                # Route Handlers — LỚP BACKEND DUY NHẤT, giữ mỏng
 │       ├── auth/           # đăng ký / đăng nhập / session
 │       ├── foods/
@@ -159,38 +160,48 @@ Modern, professional, friendly, playful nhưng trưởng thành (playful but mat
 - Testimonial giả
 - Section marketing không cần thiết (vd: "Why choose us", banner quảng cáo giả)
 
-### 4.3 Bảng màu (dùng CHÍNH XÁC các mã hex sau, không tự chế thêm màu)
+### 4.3 Bảng màu (dùng CHÍNH XÁC các token sau, không tự chế thêm màu)
 
-| Vai trò | Tên | Hex |
-|---|---|---|
-| Primary | Primary Blue | `#5B9EEB` |
-| Primary | Primary Pink | `#F07FA5` |
-| Accent tối | Deep Blue | `#23466F` |
-| Nền phụ | Soft Blue | `#EAF4FF` |
-| Nền phụ | Soft Pink | `#FFF0F5` |
-| Nền chính | Cream Background | `#FFF9F5` |
-| Text | Primary Text | `#1F2937` |
-| Text | Secondary Text | `#6B7280` |
-| Border | Border | `#E5E7EB` |
-| State | Success | `#54B889` |
-| State | Warning | `#F4C95D` |
+Token đặt theo **vai trò**, khai báo trong `@theme` của `src/app/globals.css` (dark mode override trong `.dark`). Trong component luôn dùng class token (`bg-primary`, `text-accent-ink`...), không hardcode hex.
+
+| Vai trò | Token | Light | Dark | Dùng cho |
+|---|---|---|---|---|
+| Màu chủ đạo | `primary` | `#5B9EEB` | = | Viền, icon, highlight, chữ nhấn, thanh tiến độ |
+| | `primary-strong` | `#2F6FB8` | = | **Nền đặc có chữ trắng** (nút, badge, chip active) — ~5.1:1 |
+| | `primary-strong-hover` | `#285F9E` | = | Hover/active của `primary-strong` |
+| | `primary-soft` | `#EAF3FD` | `#16283D` | Nền nhạt |
+| | `primary-line` | `#C4DCF7` | `#25405F` | Viền nhạt |
+| Màu thứ cấp | `secondary` | `#995C2F` | = | Tông tối nhấn: thân máy random, bóng `shadow-chunky`, viền đậm |
+| | `secondary-strong` | `#7A4824` | = | Chữ trên nền vàng/hồng nhạt (cần `dark:` fallback nếu nằm trên surface) |
+| | `secondary-soft` | `#F6EDE6` | `#2A1F17` | Nền nhạt |
+| Màu nhấn chính | `accent` | `#F4B2E0` | = | Nền/viền/glow/highlight trang trí — **không** dùng làm màu chữ, **không** đặt chữ trắng lên |
+| | `accent-strong` | `#B8488F` | = | Nền đặc có chữ trắng — ~4.8:1 |
+| | `accent-strong-hover` | `#9D3A79` | = | Hover của `accent-strong` |
+| | `accent-soft` | `#FDF1F9` | `#2B1B27` | Nền nhạt |
+| | `accent-ink` | `#B8488F` | `#F4B2E0` | Chữ màu nhấn (hồng) |
+| Màu nhấn phụ | `background` | `#FAFBFC` | `#0E141B` | Nền trang |
+| Bề mặt | `surface` | `#FFFFFF` | `#17232F` | Nền card/input |
+| Text | `text-primary` / `text-secondary` | `#1F2937` / `#6B7280` | `#F1F5F9` / `#94A3B8` | Chữ |
+| Border | `border` | `#E5E7EB` | `#26313F` | Viền |
+| State | `success` / `warning` | `#54B889` / `#F4C95D` | = | Trạng thái |
 
 **Nguyên tắc dùng màu:**
-- Xanh dương và hồng là 2 màu **accent thương hiệu** — dùng có chủ đích (nút chính, highlight, icon quan trọng), không nhồi vào mọi thứ.
-- Đa số nền: trắng / cream / soft-blue / soft-pink rất nhạt.
+- `primary` và `accent` là 2 màu **accent thương hiệu** — dùng có chủ đích (nút chính, highlight, icon quan trọng), không nhồi vào mọi thứ.
+- **Chữ trắng không bao giờ đặt trên `primary` hoặc `accent` gốc** (tương phản ~2.8:1 và ~1.6:1) — dùng `primary-strong` / `accent-strong`.
+- Đa số nền: `background` / `surface` / `primary-soft` / `accent-soft`.
 - **Không được** biến mọi component thành nhiều màu — giữ visual hierarchy tiết chế, chuyên nghiệp.
-- Khai báo các màu này như CSS variables / Tailwind theme tokens ngay từ đầu (không hardcode hex rải rác trong component).
-- Marker/pin trên bản đồ Leaflet: ưu tiên dùng Primary Blue hoặc Primary Pink, không dùng marker mặc định sặc sỡ của Leaflet nếu không cần thiết.
+- Marker/pin trên bản đồ Leaflet: dùng `primary` hoặc `accent-strong` (qua `var(--color-...)`), không dùng marker mặc định sặc sỡ của Leaflet.
 
 ### 4.4 Typography
 
-**Hệ 3 font đã chốt: Sedgwick Ave (display) + Lexend (subheading) + Mulish (body).** Cả 3 đều load qua `next/font/google`, subset `['latin', 'vietnamese']`, `display: 'swap'`. Chi tiết đầy đủ — bảng ánh xạ "thành phần → font", type scale, utility class, ví dụ code — nằm ở **[`docs/design-system.md`](docs/design-system.md)**, file này chỉ tóm tắt quy tắc cốt lõi:
+**Hệ font đã chốt: Fredoka One Việt hoá (heading) + Quicksand (body) + Sedgwick Ave (viết tay, CHỈ trang "Về chúng tôi").** Chi tiết đầy đủ — bảng ánh xạ "thành phần → font", type scale, utility class, ví dụ code — nằm ở **[`docs/design-system.md`](docs/design-system.md)**, file này chỉ tóm tắt quy tắc cốt lõi:
 
-- `font-heading` (Sedgwick Ave, chỉ weight 400, `--font-heading`) — **CHỈ** dùng cho: H1 landing/trang public (Trang chủ, Về chúng tôi, Tin tức...), tiêu đề section lớn trên landing, tên món trong kết quả random (`/random`). **Không** dùng cho H1 của Hồ sơ/Cài đặt/Admin/Reviewer (dùng `font-subheading` để dễ đọc). **Không** kèm `font-bold` (tránh giả đậm xấu).
-- `font-subheading` (Lexend, weight 500–700, `--font-subheading`) — mặc định cho MỌI heading (`h1`-`h6` qua `@layer base`), dùng cho H2-H4, tiêu đề card/modal, tiêu đề nhóm Hồ sơ/Cài đặt, tiêu đề dashboard Admin/Reviewer, số liệu nổi bật (stats), tiêu đề bước "cách hoạt động".
-- `font-body` (Mulish, weight 400–800, `--font-body`) — mặc định `<body>`, dùng cho toàn bộ body text, nút, label, input, badge, navbar, bảng, tooltip, toast, caption.
-- Class dùng chung có sẵn (Tailwind v4 `@utility` trong `globals.css`): `.text-display`, `.text-display-sm`, `.text-h2`, `.text-h3`, `.text-h4`, `.text-stat`, `.text-caption` — ưu tiên dùng lại thay vì set font/size thủ công từng chỗ.
-- Không hardcode tên font rải rác — mọi nơi đều qua CSS variable + utility ở trên.
+- `font-heading` (Fredoka One bản Việt hoá DVN, `--font-heading`) — load bằng `next/font/local` từ `src/app/fonts/DVN-Fredoka-Bold.ttf`, 1 weight 700. Dùng cho **MỌI tiêu đề**: mặc định `h1`-`h6` qua `@layer base`, `.text-display`, `.text-display-sm`, `.text-h2/h3/h4`, `.text-stat`, tên món trong kết quả random, tiêu đề card/modal/dashboard. **Không** thay bằng bản Fredoka One trên Google Fonts (không đủ dấu tiếng Việt).
+- `font-body` (Quicksand, `--font-body`) — `next/font/google`, subset `['latin', 'vietnamese']`. Mặc định `<body>`, dùng cho toàn bộ body text, nút, label, input, badge, navbar, bảng, tooltip, toast, caption.
+- `font-handwriting` (Sedgwick Ave, `--font-handwriting`) — **CHỈ** dùng trong trang "Về chúng tôi" (`/ve-chung-toi`). Font chỉ được load ở `src/app/ve-chung-toi/layout.tsx`, **không** load ở root layout, **không** dùng ở bất kỳ trang/component nào khác. Dùng qua `.text-display-handwriting`; không kèm `font-bold`.
+- `font-letter` (Patrick Hand, `--font-letter`) — **CHỈ** body thư ngỏ trang "Về chúng tôi", khai báo trong `src/components/about/OpenLetter.tsx`, dùng qua `.letter-body`. Tiêu đề/lời chào/chữ ký thư ngỏ dùng Sedgwick Ave; H1 trang này dùng Fredoka như mọi trang.
+- Class dùng chung có sẵn (Tailwind v4 `@utility` trong `globals.css`): `.text-display`, `.text-display-sm`, `.text-display-handwriting` (chỉ trang Về chúng tôi), `.text-h2`, `.text-h3`, `.text-h4`, `.text-stat`, `.text-caption` — ưu tiên dùng lại thay vì set font/size thủ công từng chỗ.
+- Không hardcode tên font rải rác — mọi nơi đều qua CSS variable + utility ở trên. Lexend và Mulish đã bị gỡ, không thêm lại.
 
 ### 4.5 Ngôn ngữ thiết kế tổng thể
 - Border radius: 12–20px tuỳ kích cỡ component (nút nhỏ dùng radius nhỏ hơn card lớn).

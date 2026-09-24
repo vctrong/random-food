@@ -70,7 +70,7 @@ export function ReviewerHistoryContent({ initialEntries, initialTotal, initialSu
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-1.5">
-        <h1 className="text-2xl font-subheading font-bold text-text-primary">Nhật ký thẩm định cá nhân</h1>
+        <h1 className="text-2xl font-heading font-bold text-text-primary">Nhật ký thẩm định cá nhân</h1>
         <p className="text-sm text-text-secondary max-w-2xl">
           Theo dõi minh bạch các quyết định phê duyệt/từ chối/yêu cầu sửa mà bạn đã đưa ra (BR-F09).
         </p>
@@ -78,19 +78,19 @@ export function ReviewerHistoryContent({ initialEntries, initialTotal, initialSu
 
       {/* Bento stats — số thật tính từ AuditLog, không có số liệu giả */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={History} label="Tổng hồ sơ đã xử lý" value={String(summary.total)} accent="text-primary-blue" />
+        <StatCard icon={History} label="Tổng hồ sơ đã xử lý" value={String(summary.total)} accent="text-primary" />
         <div className="p-4 rounded-2xl bg-surface border border-border shadow-sm flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-text-secondary">Tỷ lệ phê duyệt</span>
-            <TrendingUp className="size-5 text-primary-blue" aria-hidden />
+            <TrendingUp className="size-5 text-primary" aria-hidden />
           </div>
-          <span className="text-3xl font-subheading font-bold text-text-primary">{approvalRate}%</span>
-          <div className="w-full h-2 rounded-full bg-cream flex overflow-hidden gap-0.5">
+          <span className="text-3xl font-heading font-bold text-text-primary">{approvalRate}%</span>
+          <div className="w-full h-2 rounded-full bg-background flex overflow-hidden gap-0.5">
             {summary.total > 0 && (
               <>
                 <div className="bg-success h-full" style={{ width: `${(summary.approved / summary.total) * 100}%` }} />
                 <div className="bg-warning h-full" style={{ width: `${(summary.needsRevision / summary.total) * 100}%` }} />
-                <div className="bg-primary-pink h-full" style={{ width: `${(summary.rejected / summary.total) * 100}%` }} />
+                <div className="bg-accent h-full" style={{ width: `${(summary.rejected / summary.total) * 100}%` }} />
               </>
             )}
           </div>
@@ -99,9 +99,9 @@ export function ReviewerHistoryContent({ initialEntries, initialTotal, initialSu
           icon={Timer}
           label="Thời gian xử lý trung bình"
           value={summary.avgProcessingMinutes !== null ? formatDurationMinutes(summary.avgProcessingMinutes) : "—"}
-          accent="text-primary-pink"
+          accent="text-accent-ink"
         />
-        <StatCard icon={CalendarClock} label="Xử lý trong 7 ngày qua" value={String(summary.last7Days)} accent="text-deep-blue" />
+        <StatCard icon={CalendarClock} label="Xử lý trong 7 ngày qua" value={String(summary.last7Days)} accent="text-secondary-strong dark:text-text-primary" />
       </div>
 
       {/* Toolbar */}
@@ -116,10 +116,10 @@ export function ReviewerHistoryContent({ initialEntries, initialTotal, initialSu
                 setSearch(event.target.value);
               }}
               placeholder="Tìm theo tên món/quán, người gửi, mã hồ sơ..."
-              className="w-full h-10 pl-10 pr-3 rounded-xl bg-cream text-sm text-text-primary placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
+              className="w-full h-10 pl-10 pr-3 rounded-xl bg-background text-sm text-text-primary placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-cream overflow-x-auto">
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-background overflow-x-auto">
             {STATUS_TABS.map((tab) => (
               <button
                 key={tab.id}
@@ -130,7 +130,7 @@ export function ReviewerHistoryContent({ initialEntries, initialTotal, initialSu
                 }}
                 className={cn(
                   "px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all",
-                  status === tab.id ? "bg-surface shadow-sm text-primary-blue" : "text-text-secondary hover:text-text-primary",
+                  status === tab.id ? "bg-surface shadow-sm text-primary" : "text-text-secondary hover:text-text-primary",
                 )}
               >
                 {tab.label(summary)}
@@ -152,7 +152,7 @@ export function ReviewerHistoryContent({ initialEntries, initialTotal, initialSu
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-cream text-text-secondary text-[11px] font-bold uppercase tracking-wider">
+                <tr className="bg-background text-text-secondary text-[11px] font-bold uppercase tracking-wider">
                   <th className="py-3 px-4 min-w-[260px]">Món / Quán ăn</th>
                   <th className="py-3 px-4 min-w-[150px]">Phân loại &amp; giá</th>
                   <th className="py-3 px-4 min-w-[120px]">Quyết định</th>
@@ -165,15 +165,15 @@ export function ReviewerHistoryContent({ initialEntries, initialTotal, initialSu
                   <tr
                     key={entry.logId}
                     onClick={() => setDetailEntry(entry)}
-                    className="border-t border-border hover:bg-cream/60 transition-colors cursor-pointer"
+                    className="border-t border-border hover:bg-background/60 transition-colors cursor-pointer"
                   >
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="relative size-11 rounded-xl overflow-hidden shrink-0 bg-soft-blue flex items-center justify-center">
+                        <div className="relative size-11 rounded-xl overflow-hidden shrink-0 bg-primary-soft flex items-center justify-center">
                           {entry.images[0] ? (
                             <Image src={entry.images[0]} alt="" fill sizes="44px" className="object-cover" />
                           ) : (
-                            <UtensilsCrossed className="size-5 text-primary-blue/60" aria-hidden />
+                            <UtensilsCrossed className="size-5 text-primary/60" aria-hidden />
                           )}
                         </div>
                         <div className="min-w-0">
@@ -185,7 +185,7 @@ export function ReviewerHistoryContent({ initialEntries, initialTotal, initialSu
                     <td className="py-3.5 px-4">
                       <div className="flex flex-col gap-1 items-start">
                         {entry.categoryNames[0] && (
-                          <span className="px-2 py-0.5 rounded-full bg-soft-blue text-primary-blue text-[11px] font-medium">
+                          <span className="px-2 py-0.5 rounded-full bg-primary-soft text-primary text-[11px] font-medium">
                             {entry.categoryNames[0]}
                           </span>
                         )}
@@ -232,7 +232,7 @@ export function ReviewerHistoryContent({ initialEntries, initialTotal, initialSu
                 type="button"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="h-8 px-3 rounded-lg text-xs font-semibold text-text-secondary hover:bg-cream disabled:opacity-40 disabled:pointer-events-none"
+                className="h-8 px-3 rounded-lg text-xs font-semibold text-text-secondary hover:bg-background disabled:opacity-40 disabled:pointer-events-none"
               >
                 Trước
               </button>
@@ -240,7 +240,7 @@ export function ReviewerHistoryContent({ initialEntries, initialTotal, initialSu
                 type="button"
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="h-8 px-3 rounded-lg text-xs font-semibold text-text-secondary hover:bg-cream disabled:opacity-40 disabled:pointer-events-none"
+                className="h-8 px-3 rounded-lg text-xs font-semibold text-text-secondary hover:bg-background disabled:opacity-40 disabled:pointer-events-none"
               >
                 Sau
               </button>
@@ -256,12 +256,12 @@ export function ReviewerHistoryContent({ initialEntries, initialTotal, initialSu
               <DecisionBadge decision={detailEntry.decision} />
               <span className="text-xs text-text-secondary">{formatDateTime(detailEntry.decidedAt)}</span>
             </div>
-            <h3 className="text-lg font-subheading font-semibold text-text-primary">{detailEntry.name}</h3>
+            <h3 className="text-lg font-heading font-semibold text-text-primary">{detailEntry.name}</h3>
             <p className="text-xs text-text-secondary">
               Người gửi: <span className="font-medium text-text-primary">{detailEntry.submitter.name}</span>
               {detailEntry.submittedAt && ` • Gửi lúc ${formatDateTime(detailEntry.submittedAt)}`}
             </p>
-            <div className="p-4 rounded-2xl bg-cream flex flex-col gap-1.5">
+            <div className="p-4 rounded-2xl bg-background flex flex-col gap-1.5">
               <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary">Ghi chú thẩm định</span>
               <p className="text-sm text-text-primary leading-relaxed">{detailEntry.reason ?? "Không có ghi chú."}</p>
             </div>
@@ -289,7 +289,7 @@ function StatCard({
         <span className="text-sm font-medium text-text-secondary">{label}</span>
         <Icon className={cn("size-5", accent)} aria-hidden />
       </div>
-      <span className="text-3xl font-subheading font-bold text-text-primary">{value}</span>
+      <span className="text-3xl font-heading font-bold text-text-primary">{value}</span>
     </div>
   );
 }

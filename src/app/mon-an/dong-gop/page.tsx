@@ -28,7 +28,7 @@ export default async function ContributeFoodPage() {
   return (
     <div className="w-full max-w-3xl mx-auto px-4 md:px-6 lg:px-8 py-10">
       <div className="mb-8">
-        <span className="text-xs uppercase tracking-widest text-primary-blue font-bold">
+        <span className="text-xs uppercase tracking-widest text-primary font-bold">
           Đóng góp cho cộng đồng
         </span>
         <h1 className="text-3xl font-bold text-text-primary mt-1">Thêm món ăn mới</h1>

@@ -22,13 +22,13 @@ export function ReviewerApplicationPageContent({ overview, categories, defaultFu
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-10 flex flex-col gap-8">
       <header className="flex flex-col gap-6">
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-text-secondary">
-          <Link href="/" className="hover:text-primary-blue transition-colors">Trang chủ</Link>
+          <Link href="/" className="hover:text-primary transition-colors">Trang chủ</Link>
           <ChevronRight className="size-3.5" aria-hidden />
           <span className="text-text-primary font-medium">Ứng tuyển FoodReviewer</span>
         </nav>
 
         <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-soft-blue text-primary-blue text-xs font-bold uppercase tracking-wider mb-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-soft text-primary text-xs font-bold uppercase tracking-wider mb-2">
             <BadgeCheck className="size-3.5" aria-hidden />
             <span>Chương trình FoodReviewer</span>
           </div>
@@ -43,10 +43,10 @@ export function ReviewerApplicationPageContent({ overview, categories, defaultFu
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {APPLICATION_BENEFITS.map(({ icon: Icon, title, text }) => (
               <div key={title} className="p-5 rounded-2xl bg-surface border border-border shadow-sm flex flex-col gap-2">
-                <span className="size-10 rounded-xl bg-soft-blue text-primary-blue flex items-center justify-center">
+                <span className="size-10 rounded-xl bg-primary-soft text-primary flex items-center justify-center">
                   <Icon className="size-5" aria-hidden />
                 </span>
-                <h3 className="font-subheading font-semibold text-text-primary">{title}</h3>
+                <h3 className="font-heading font-semibold text-text-primary">{title}</h3>
                 <p className="text-sm text-text-secondary leading-relaxed">{text}</p>
               </div>
             ))}

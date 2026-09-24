@@ -1,5 +1,5 @@
 /**
- * Seed 5 món ăn ẢO (từ example/seed.js) vào DB test `random_food_test`, kèm
+ * Seed 5 món ăn ẢO (chuyển từ bản mongosh cũ example/seed.js, đã xoá) vào DB test `random_food_test`, kèm
  * upload 5 ảnh thật trong example/*.jpg lên Cloudinary rồi gắn secure_url vào
  * thay cho link picsum.photos placeholder ban đầu.
  *

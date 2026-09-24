@@ -40,7 +40,7 @@ export function HistoryTimelineItem({
     >
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4 min-w-0">
-          <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shrink-0 bg-soft-blue">
+          <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shrink-0 bg-primary-soft">
             {coverImage ? (
               <Image
                 src={coverImage}
@@ -50,7 +50,7 @@ export function HistoryTimelineItem({
                 className="object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-primary-blue">
+              <div className="w-full h-full flex items-center justify-center text-primary">
                 <UtensilsCrossed className="size-6" aria-hidden />
               </div>
             )}
@@ -62,7 +62,7 @@ export function HistoryTimelineItem({
                 {formatClockTime(entry.timestamp)}
               </span>
               {eatingLevelLabel && (
-                <span className="px-2 py-0.5 rounded-full bg-soft-blue text-primary-blue text-xs font-semibold">
+                <span className="px-2 py-0.5 rounded-full bg-primary-soft text-primary text-xs font-semibold">
                   {eatingLevelLabel}
                 </span>
               )}
@@ -75,7 +75,7 @@ export function HistoryTimelineItem({
             </div>
             <h3 className="font-semibold text-text-primary truncate">{food.name}</h3>
             <div className="flex items-center gap-2 text-sm">
-              <span className="font-semibold text-primary-blue">
+              <span className="font-semibold text-primary">
                 {food.priceMin !== null ? `~${food.priceMin.toLocaleString("vi-VN")}đ` : "Chưa cập nhật giá"}
               </span>
               <span className="text-border">•</span>
@@ -95,8 +95,8 @@ export function HistoryTimelineItem({
               className={cn(
                 "p-2 rounded-full transition-colors",
                 entry.isSaved
-                  ? "text-primary-pink bg-soft-pink"
-                  : "text-text-secondary hover:text-primary-pink hover:bg-soft-pink",
+                  ? "text-accent-ink bg-accent-soft"
+                  : "text-text-secondary hover:text-accent-ink hover:bg-accent-soft",
               )}
             >
               <Star className="size-5" fill={entry.isSaved ? "currentColor" : "none"} aria-hidden />
@@ -112,7 +112,7 @@ export function HistoryTimelineItem({
           </div>
           <Link
             href={entry.eatingLevel ? `/random?muc-do=${entry.eatingLevel}` : "/random"}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-soft-blue hover:bg-primary-blue hover:text-white text-primary-blue text-sm font-medium transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-soft hover:bg-primary-strong hover:text-white text-primary text-sm font-medium transition-colors"
           >
             <RefreshCw className="size-3.5" aria-hidden />
             <span>Random lại món này</span>
@@ -138,7 +138,7 @@ function ReviewSection({
 
   if (entry.review) {
     return (
-      <div className="rounded-xl bg-soft-blue/40 p-3 flex flex-col gap-1.5">
+      <div className="rounded-xl bg-primary-soft/40 p-3 flex flex-col gap-1.5">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((value) => (
@@ -184,7 +184,7 @@ function ReviewSection({
     <button
       type="button"
       onClick={() => setIsComposerOpen(true)}
-      className="self-start inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-soft-pink hover:bg-primary-pink/20 text-primary-pink text-sm font-medium transition-colors"
+      className="self-start inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-soft hover:bg-accent/20 text-accent-ink text-sm font-medium transition-colors"
     >
       <MessageSquareText className="size-4" aria-hidden />
       Đánh giá món này
@@ -212,7 +212,7 @@ function ReviewComposer({
   };
 
   return (
-    <div className="rounded-xl bg-soft-blue/40 border border-border p-3 flex flex-col gap-3">
+    <div className="rounded-xl bg-primary-soft/40 border border-border p-3 flex flex-col gap-3">
       <div className="flex items-center gap-1">
         <span className="text-sm text-text-secondary mr-1">Chất lượng:</span>
         {[1, 2, 3, 4, 5].map((value) => (
@@ -240,7 +240,7 @@ function ReviewComposer({
         onChange={(e) => setComment(e.target.value.slice(0, MAX_REVIEW_COMMENT_LENGTH))}
         rows={2}
         placeholder="Chia sẻ thêm cảm nhận của bạn về món này (không bắt buộc)..."
-        className="w-full p-3 rounded-lg bg-surface border border-border text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-blue resize-none"
+        className="w-full p-3 rounded-lg bg-surface border border-border text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary resize-none"
       />
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-text-secondary">{comment.length}/{MAX_REVIEW_COMMENT_LENGTH}</span>
@@ -257,7 +257,7 @@ function ReviewComposer({
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary-blue hover:bg-[#4a8ddb] text-white text-sm font-semibold shadow-sm transition-all disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary-strong hover:bg-primary-strong-hover text-white text-sm font-semibold shadow-sm transition-all disabled:opacity-60"
           >
             <Send className="size-4" aria-hidden />
             {isSubmitting ? "Đang gửi..." : "Gửi đánh giá"}

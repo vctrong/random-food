@@ -14,15 +14,15 @@ export function StatCard({ icon: Icon, label, value, tone = "blue" }: StatCardPr
       <div
         className={
           tone === "blue"
-            ? "w-12 h-12 rounded-2xl bg-soft-blue flex items-center justify-center text-primary-blue shrink-0"
-            : "w-12 h-12 rounded-2xl bg-soft-pink flex items-center justify-center text-primary-pink shrink-0"
+            ? "w-12 h-12 rounded-2xl bg-primary-soft flex items-center justify-center text-primary shrink-0"
+            : "w-12 h-12 rounded-2xl bg-accent-soft flex items-center justify-center text-accent-ink shrink-0"
         }
       >
         <Icon className="size-6" aria-hidden />
       </div>
       <div className="min-w-0">
         <p className="text-sm text-text-secondary leading-snug">{label}</p>
-        <p className="text-2xl font-subheading font-semibold text-text-primary tracking-tight">
+        <p className="text-2xl font-heading font-semibold text-text-primary tracking-tight">
           {new Intl.NumberFormat("vi-VN").format(value)}
         </p>
       </div>

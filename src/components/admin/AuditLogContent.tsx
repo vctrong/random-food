@@ -57,7 +57,7 @@ export function AuditLogContent({ initialEntries, initialTotal }: AuditLogConten
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <h1 className="text-2xl md:text-3xl font-subheading font-semibold text-text-primary tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-heading font-semibold text-text-primary tracking-tight">
           Nhật ký kiểm toán hệ thống
         </h1>
         <p className="text-sm text-text-secondary">
@@ -70,7 +70,7 @@ export function AuditLogContent({ initialEntries, initialTotal }: AuditLogConten
           <select
             value={actionFilter}
             onChange={(e) => handleFilterChange(setActionFilter, e.target.value)}
-            className="h-11 px-3 rounded-xl bg-cream text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
+            className="h-11 px-3 rounded-xl bg-background text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             <option value="">Tất cả hành động</option>
             {Object.entries(AUDIT_ACTION_LABELS).map(([value, label]) => (
@@ -82,7 +82,7 @@ export function AuditLogContent({ initialEntries, initialTotal }: AuditLogConten
           <select
             value={targetFilter}
             onChange={(e) => handleFilterChange(setTargetFilter, e.target.value)}
-            className="h-11 px-3 rounded-xl bg-cream text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
+            className="h-11 px-3 rounded-xl bg-background text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             <option value="">Tất cả đối tượng</option>
             {Object.entries(AUDIT_TARGET_LABELS).map(([value, label]) => (
@@ -132,7 +132,7 @@ export function AuditLogContent({ initialEntries, initialTotal }: AuditLogConten
                 type="button"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="w-9 h-9 rounded-xl border border-border flex items-center justify-center text-text-secondary hover:bg-cream disabled:opacity-40"
+                className="w-9 h-9 rounded-xl border border-border flex items-center justify-center text-text-secondary hover:bg-background disabled:opacity-40"
               >
                 <ChevronLeft className="size-4" aria-hidden />
               </button>
@@ -140,7 +140,7 @@ export function AuditLogContent({ initialEntries, initialTotal }: AuditLogConten
                 type="button"
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="w-9 h-9 rounded-xl border border-border flex items-center justify-center text-text-secondary hover:bg-cream disabled:opacity-40"
+                className="w-9 h-9 rounded-xl border border-border flex items-center justify-center text-text-secondary hover:bg-background disabled:opacity-40"
               >
                 <ChevronRight className="size-4" aria-hidden />
               </button>

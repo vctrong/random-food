@@ -26,7 +26,7 @@ export function RandomButton({
     <Link
       href={href}
       className={cn(
-        "group inline-flex items-center justify-center rounded-full font-semibold bg-primary-blue text-white shadow-md hover:shadow-xl hover:bg-[#4a8ddb] transition-all active:scale-95",
+        "group inline-flex items-center justify-center rounded-full font-semibold bg-primary-strong text-white shadow-md hover:shadow-xl hover:bg-primary-strong-hover transition-all active:scale-95",
         SIZE_CLASSES[size],
         className,
       )}

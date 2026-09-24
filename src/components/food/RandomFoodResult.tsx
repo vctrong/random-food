@@ -101,7 +101,7 @@ export function RandomFoodResult({
     <div className="relative w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pt-6 pb-16">
       <div
         aria-hidden
-        className="absolute top-10 right-1/4 w-96 h-96 bg-soft-blue/60 rounded-full blur-3xl pointer-events-none -z-10"
+        className="absolute top-10 right-1/4 w-96 h-96 bg-primary-soft/60 rounded-full blur-3xl pointer-events-none -z-10"
       />
 
       {/* Header row */}
@@ -109,17 +109,17 @@ export function RandomFoodResult({
         <div className="flex flex-wrap items-center gap-3">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface hover:bg-soft-blue transition-colors shadow-sm text-sm font-medium text-text-primary"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface hover:bg-primary-soft transition-colors shadow-sm text-sm font-medium text-text-primary"
           >
             <ArrowLeft className="size-4" aria-hidden />
             <span>Quay lại chọn chế độ</span>
           </Link>
-          <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-soft-blue text-primary-blue text-sm font-medium">
+          <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary-soft text-primary text-sm font-medium">
             <UtensilsCrossed className="size-3.5" aria-hidden />
             <span>Chế độ: {eatingLevelConfig ?? "Ngẫu nhiên tất cả món"}</span>
           </div>
           {selectedCategoryIds.length > 0 && (
-            <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-soft-pink text-primary-pink text-sm font-medium">
+            <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-accent-soft text-accent-ink text-sm font-medium">
               <Soup className="size-3.5" aria-hidden />
               <span>
                 Danh mục:{" "}
@@ -133,8 +133,8 @@ export function RandomFoodResult({
         {currentFood && !isRandomizing && (
           <div className="inline-flex items-center gap-2 self-start lg:self-auto px-4 py-1.5 rounded-full bg-surface shadow-sm">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-blue opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary-blue" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
             </span>
             <span className="text-sm text-text-primary">Đã tìm thấy món phù hợp cho bạn!</span>
           </div>
@@ -145,14 +145,14 @@ export function RandomFoodResult({
       <div className="bg-surface rounded-2xl p-4 shadow-sm mb-6 flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 text-xs text-text-secondary uppercase tracking-wider">
-            <CheckCircle2 className="size-4 text-primary-blue" aria-hidden />
+            <CheckCircle2 className="size-4 text-primary" aria-hidden />
             <span>Đang lọc từ {poolSize} món phù hợp</span>
           </div>
           <button
             type="button"
             onClick={randomizeAll}
             disabled={isRandomizing}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-soft-pink text-primary-pink text-sm font-semibold shadow-sm transition-all active:scale-95 disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-accent-soft text-accent-ink text-sm font-semibold shadow-sm transition-all active:scale-95 disabled:opacity-60"
           >
             <Dices className="size-4" aria-hidden />
             Random hoàn toàn
@@ -202,7 +202,7 @@ export function RandomFoodResult({
                     <button
                       type="button"
                       onClick={randomizeAll}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary-blue text-white text-sm font-semibold shadow-sm active:scale-95 transition-all"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary-strong text-white text-sm font-semibold shadow-sm active:scale-95 transition-all"
                     >
                       Xoá bộ lọc
                     </button>
@@ -213,7 +213,7 @@ export function RandomFoodResult({
               <RandomLoadingSkeleton />
             ) : (
               <div key={currentFood.id} className="animate-fade-slide-up">
-                <div className="relative w-full h-72 sm:h-96 md:h-[420px] rounded-xl overflow-hidden mb-6 group bg-soft-blue">
+                <div className="relative w-full h-72 sm:h-96 md:h-[420px] rounded-xl overflow-hidden mb-6 group bg-primary-soft">
                   {currentFood.images[0] ? (
                     <Image
                       src={currentFood.images[0]}
@@ -224,13 +224,13 @@ export function RandomFoodResult({
                       className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-primary-blue">
+                    <div className="w-full h-full flex items-center justify-center text-primary">
                       <UtensilsCrossed className="size-16" aria-hidden />
                     </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
                   <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface/95 backdrop-blur-md text-primary-blue text-sm font-semibold shadow-md">
+                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface/95 backdrop-blur-md text-primary text-sm font-semibold shadow-md">
                       <Sparkles className="size-3.5" aria-hidden />
                       Gợi ý hôm nay
                     </span>
@@ -291,8 +291,8 @@ export function RandomFoodResult({
                         className="w-full h-full"
                       />
                     </div>
-                    <div className="bg-soft-blue/60 px-4 py-2.5 flex items-center gap-1.5 text-sm text-text-secondary">
-                      <MapPin className="size-4 text-primary-blue shrink-0" aria-hidden />
+                    <div className="bg-primary-soft/60 px-4 py-2.5 flex items-center gap-1.5 text-sm text-text-secondary">
+                      <MapPin className="size-4 text-primary shrink-0" aria-hidden />
                       <span className="truncate">
                         <span className="font-medium text-text-primary">
                           {currentFood.restaurant.name}
@@ -303,8 +303,8 @@ export function RandomFoodResult({
                   </div>
                 )}
 
-                <div className="bg-soft-blue/70 rounded-xl p-4 flex items-start gap-3">
-                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary-blue text-white shrink-0 mt-0.5 shadow-sm">
+                <div className="bg-primary-soft/70 rounded-xl p-4 flex items-start gap-3">
+                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary-strong text-white shrink-0 mt-0.5 shadow-sm">
                     <Lightbulb className="size-4" aria-hidden />
                   </span>
                   <div className="flex flex-col gap-0.5">
@@ -331,7 +331,7 @@ export function RandomFoodResult({
               type="button"
               onClick={randomize}
               disabled={isRandomizing || hasNoData}
-              className="flex-1 inline-flex items-center justify-center gap-2 h-12 px-6 rounded-full bg-primary-blue hover:bg-[#4a8ddb] text-white font-semibold shadow-md active:scale-95 transition-all disabled:opacity-70"
+              className="flex-1 inline-flex items-center justify-center gap-2 h-12 px-6 rounded-full bg-primary-strong hover:bg-primary-strong-hover text-white font-semibold shadow-md active:scale-95 transition-all disabled:opacity-70"
             >
               <RefreshCw
                 className={isRandomizing ? "size-5 animate-spin" : "size-5"}
@@ -343,10 +343,10 @@ export function RandomFoodResult({
               type="button"
               onClick={toggleSaved}
               disabled={!currentFood || isRandomizing}
-              className="inline-flex items-center justify-center gap-2 h-12 px-5 rounded-full bg-soft-pink hover:bg-primary-pink/20 text-text-primary font-medium transition-all active:scale-95 disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 h-12 px-5 rounded-full bg-accent-soft hover:bg-accent/20 text-text-primary font-medium transition-all active:scale-95 disabled:opacity-60"
             >
               <Heart
-                className="size-5 text-primary-pink"
+                className="size-5 text-accent-ink"
                 fill={isSaved ? "currentColor" : "none"}
                 aria-hidden
               />
@@ -356,9 +356,9 @@ export function RandomFoodResult({
               type="button"
               onClick={markEaten}
               disabled={!currentFood || isRandomizing}
-              className="inline-flex items-center justify-center gap-2 h-12 px-5 rounded-full bg-soft-blue hover:bg-primary-blue/20 text-text-primary font-medium transition-all active:scale-95 disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 h-12 px-5 rounded-full bg-primary-soft hover:bg-primary/20 text-text-primary font-medium transition-all active:scale-95 disabled:opacity-60"
             >
-              <CheckCircle2 className="size-5 text-primary-blue" aria-hidden />
+              <CheckCircle2 className="size-5 text-primary" aria-hidden />
               <span>Đã ăn món này</span>
             </button>
             <button
@@ -366,7 +366,7 @@ export function RandomFoodResult({
               onClick={share}
               disabled={!currentFood || isRandomizing}
               aria-label="Chia sẻ món ăn"
-              className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-soft-blue hover:bg-primary-blue/20 text-text-primary transition-all active:scale-95 disabled:opacity-60"
+              className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary-soft hover:bg-primary/20 text-text-primary transition-all active:scale-95 disabled:opacity-60"
             >
               <Share2 className="size-5" aria-hidden />
             </button>
@@ -376,7 +376,7 @@ export function RandomFoodResult({
         {/* Sidebar */}
         <div className="lg:col-span-4 flex flex-col gap-4">
           <div className="bg-surface rounded-2xl p-4 shadow-sm">
-            <span className="text-xs text-primary-blue uppercase font-bold tracking-wider">
+            <span className="text-xs text-primary uppercase font-bold tracking-wider">
               Đặc điểm món
             </span>
             {hasNoData ? (
@@ -401,8 +401,8 @@ export function RandomFoodResult({
               </div>
             ) : (
               <div className="flex gap-2 mt-3">
-                <div className="h-6 w-20 rounded-full bg-soft-blue animate-pulse" />
-                <div className="h-6 w-24 rounded-full bg-soft-blue animate-pulse" />
+                <div className="h-6 w-20 rounded-full bg-primary-soft animate-pulse" />
+                <div className="h-6 w-24 rounded-full bg-primary-soft animate-pulse" />
               </div>
             )}
           </div>
@@ -431,7 +431,7 @@ export function RandomFoodResult({
 
           <div className="bg-surface rounded-2xl p-4 shadow-sm">
             <div className="flex items-start gap-3">
-              <span className="text-primary-blue mt-0.5">
+              <span className="text-primary mt-0.5">
                 <Sparkles className="size-5" aria-hidden />
               </span>
               <div className="flex flex-col gap-1">
@@ -440,7 +440,7 @@ export function RandomFoodResult({
                   Bạn có thể thay đổi sở thích ẩm thực và loại trừ món dị ứng trong phần{" "}
                   <Link
                     href="/cai-dat"
-                    className="text-primary-blue font-semibold hover:underline inline-flex items-center gap-0.5"
+                    className="text-primary font-semibold hover:underline inline-flex items-center gap-0.5"
                   >
                     Cài đặt
                     <ArrowRight className="size-3" aria-hidden />
@@ -480,10 +480,10 @@ function StatCard({
   hint: string;
 }) {
   return (
-    <div className="bg-soft-blue/60 rounded-xl p-4 flex flex-col justify-between">
+    <div className="bg-primary-soft/60 rounded-xl p-4 flex flex-col justify-between">
       <div className="flex items-center justify-between text-text-secondary mb-1">
         <span className="text-xs">{label}</span>
-        <Icon className="size-4 text-primary-blue" aria-hidden />
+        <Icon className="size-4 text-primary" aria-hidden />
       </div>
       <p className="font-semibold text-text-primary">{value}</p>
       <span className="text-xs text-text-secondary mt-1">{hint}</span>

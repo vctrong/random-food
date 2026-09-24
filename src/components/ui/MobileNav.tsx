@@ -4,72 +4,69 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { Home, Shuffle, Newspaper, Info, User, UtensilsCrossed } from "lucide-react";
+import { Dices } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const NAV_LINKS = [
-  { href: "/", label: "Trang chủ", icon: Home },
-  { href: "/mon-an", label: "Món ăn", icon: UtensilsCrossed },
-  { href: "/random", label: "Random", icon: Shuffle },
-  { href: "/tin-tuc", label: "Tin tức", icon: Newspaper },
-  { href: "/ve-chung-toi", label: "Về chúng tôi", icon: Info },
-];
+import { ACCOUNT_ROUTES, MOBILE_DOCK_LINKS, isActiveRoute } from "@/constants/navigation";
+import type { NavLink } from "@/constants/navigation";
 
 const MotionLink = motion.create(Link);
 
+function DockItem({ link, isActive }: { link: NavLink; isActive: boolean }) {
+  const Icon = link.icon;
+  return (
+    <MotionLink
+      href={link.href}
+      whileTap={{ scale: 0.92 }}
+      aria-current={isActive ? "page" : undefined}
+      className="relative flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl text-[11px] font-semibold"
+    >
+      {isActive && (
+        <motion.span
+          layoutId="mobile-dock-active"
+          className="absolute inset-x-1 inset-y-0.5 -z-10 rounded-2xl bg-primary-soft"
+          transition={{ type: "spring", stiffness: 380, damping: 32 }}
+        />
+      )}
+      <Icon className={cn("size-5", isActive ? "text-primary" : "text-text-secondary")} aria-hidden />
+      <span className={isActive ? "text-primary-strong dark:text-primary" : "text-text-secondary"}>{link.label}</span>
+    </MotionLink>
+  );
+}
+
+/** Dock nổi dưới cùng (dưới lg): 4 mục + nút Random nổi ở giữa. */
 export function MobileNav() {
   const pathname = usePathname();
   const { status } = useSession();
-  const accountHref = status === "authenticated" ? "/ho-so" : "/dang-nhap";
-  const isAccountActive = ["/ho-so", "/cai-dat", "/lich-su", "/da-luu", "/dang-nhap", "/dang-ky"].some(
-    (href) => pathname.startsWith(href),
-  );
+
+  const [home, saved] = MOBILE_DOCK_LINKS.left;
+  const [history, account] = MOBILE_DOCK_LINKS.right;
+  const accountLink = { ...account, href: status === "authenticated" ? account.href : "/dang-nhap" };
+  const isAccountActive = ACCOUNT_ROUTES.some((href) => pathname.startsWith(href));
+  const isRandomActive = isActiveRoute(pathname, "/random");
 
   return (
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 px-2 pb-[env(safe-area-inset-bottom)]">
-      <div className="flex items-stretch justify-between gap-0.5 px-1 py-1.5 rounded-t-3xl bg-surface/95 backdrop-blur-xl border border-border shadow-[0_-4px_20px_-6px_rgba(35,70,111,0.12)]">
-        {NAV_LINKS.map(({ href, label, icon: Icon }) => {
-          const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
-          return (
-            <MotionLink
-              key={href}
-              href={href}
-              whileTap={{ scale: 0.92 }}
-              className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 rounded-2xl text-[11px] font-medium"
-            >
-              {isActive && (
-                <motion.span
-                  layoutId="mobile-nav-active-pill"
-                  className="absolute inset-1 rounded-2xl bg-soft-blue -z-10"
-                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                />
-              )}
-              <Icon
-                className={cn("size-5 transition-colors", isActive ? "text-primary-blue" : "text-text-secondary")}
-                aria-hidden
-              />
-              <span className={cn(isActive ? "text-primary-blue" : "text-text-secondary")}>{label}</span>
-            </MotionLink>
-          );
-        })}
-        <MotionLink
-          href={accountHref}
-          whileTap={{ scale: 0.92 }}
-          className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 rounded-2xl text-[11px] font-medium"
-        >
-          {isAccountActive && (
-            <motion.span
-              layoutId="mobile-nav-active-pill"
-              className="absolute inset-1 rounded-2xl bg-soft-blue -z-10"
-              transition={{ type: "spring", stiffness: 380, damping: 32 }}
-            />
-          )}
-          <User
-            className={cn("size-5 transition-colors", isAccountActive ? "text-primary-blue" : "text-text-secondary")}
-            aria-hidden
-          />
-          <span className={cn(isAccountActive ? "text-primary-blue" : "text-text-secondary")}>Tài khoản</span>
-        </MotionLink>
+    <nav
+      aria-label="Điều hướng nhanh"
+      className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 lg:hidden"
+    >
+      <div className="isolate flex items-center gap-1 rounded-full border border-accent/50 bg-surface/90 px-2 py-1.5 shadow-[0_10px_30px_-10px_color-mix(in_oklab,var(--color-primary)_45%,transparent)] backdrop-blur-xl">
+        <DockItem link={home} isActive={isActiveRoute(pathname, home.href)} />
+        <DockItem link={saved} isActive={isActiveRoute(pathname, saved.href)} />
+
+        <div className="relative flex w-16 shrink-0 justify-center">
+          <MotionLink
+            href="/random"
+            whileTap={{ scale: 0.9 }}
+            aria-label="Random món ăn"
+            aria-current={isRandomActive ? "page" : undefined}
+            className="-mt-8 inline-flex size-14 items-center justify-center rounded-full bg-primary-strong text-white shadow-[0_6px_16px_-4px_color-mix(in_oklab,var(--color-primary-strong)_70%,transparent)] ring-4 ring-background"
+          >
+            <Dices className="size-6 animate-dice-wiggle" aria-hidden />
+          </MotionLink>
+        </div>
+
+        <DockItem link={history} isActive={isActiveRoute(pathname, history.href)} />
+        <DockItem link={accountLink} isActive={isAccountActive} />
       </div>
     </nav>
   );

@@ -8,7 +8,7 @@ import { LocateFixed, Loader2, MapPin, Search } from "lucide-react";
 const LocationPickerMap = dynamic(() => import("./LocationPickerMap"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full rounded-xl bg-soft-blue animate-pulse flex items-center justify-center text-primary-blue">
+    <div className="w-full h-full rounded-xl bg-primary-soft animate-pulse flex items-center justify-center text-primary">
       <MapPin className="size-6" aria-hidden />
     </div>
   ),
@@ -125,7 +125,7 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
           onChange={handleQueryChange}
           onKeyDown={handleKeyDown}
           placeholder="Tìm địa chỉ để định vị nhanh (vd: 123 Nguyễn Văn Cừ, Ninh Kiều)"
-          className="w-full h-11 pl-10 pr-10 rounded-xl border border-border bg-surface text-sm text-text-primary placeholder:text-text-secondary/70 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+          className="w-full h-11 pl-10 pr-10 rounded-xl border border-border bg-surface text-sm text-text-primary placeholder:text-text-secondary/70 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
         />
         {isSearching && (
           <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-text-secondary animate-spin" aria-hidden />
@@ -137,9 +137,9 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
                 <button
                   type="button"
                   onClick={() => selectResult(result)}
-                  className="w-full text-left px-3.5 py-2.5 text-sm text-text-primary hover:bg-soft-blue transition-colors flex items-start gap-2"
+                  className="w-full text-left px-3.5 py-2.5 text-sm text-text-primary hover:bg-primary-soft transition-colors flex items-start gap-2"
                 >
-                  <MapPin className="size-4 shrink-0 mt-0.5 text-primary-pink" aria-hidden />
+                  <MapPin className="size-4 shrink-0 mt-0.5 text-accent-ink" aria-hidden />
                   <span className="line-clamp-2">{result.label}</span>
                 </button>
               </li>
@@ -154,13 +154,13 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
         </p>
       )}
 
-      {locationError && <p className="text-xs text-primary-pink">{locationError}</p>}
+      {locationError && <p className="text-xs text-accent-ink">{locationError}</p>}
 
       <button
         type="button"
         onClick={useCurrentLocation}
         disabled={isLocating}
-        className="self-start inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl border border-border bg-surface text-sm font-medium text-primary-blue hover:bg-soft-blue transition-colors disabled:opacity-60"
+        className="self-start inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl border border-border bg-surface text-sm font-medium text-primary hover:bg-primary-soft transition-colors disabled:opacity-60"
       >
         {isLocating ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <LocateFixed className="size-4" aria-hidden />}
         Dùng vị trí hiện tại của tôi

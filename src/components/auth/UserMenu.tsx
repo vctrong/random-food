@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { BadgeCheck, Bookmark, ChefHat, ChevronDown, ClipboardCheck, History, LogOut, Settings, ShieldCheck, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
 
 export function UserMenu() {
@@ -28,18 +27,24 @@ export function UserMenu() {
   }, []);
 
   if (status === "loading") {
-    return <div className="size-9 rounded-full bg-soft-blue animate-pulse" />;
+    return <div className="size-9 rounded-full bg-primary-soft animate-pulse" />;
   }
 
   if (status !== "authenticated" || !session?.user) {
     return (
       <div className="flex items-center gap-2 shrink-0">
-        <Button href="/dang-nhap" variant="outline" size="sm">
+        <Link
+          href="/dang-nhap"
+          className="inline-flex h-10 items-center whitespace-nowrap rounded-full border border-primary/50 px-4 text-sm font-semibold text-primary-strong transition-colors hover:border-primary hover:bg-primary-soft dark:text-primary"
+        >
           Đăng nhập
-        </Button>
-        <Button href="/dang-ky" variant="primary" size="sm">
+        </Link>
+        <Link
+          href="/dang-ky"
+          className="hidden h-10 items-center whitespace-nowrap rounded-full bg-primary-soft px-4 xl:inline-flex text-sm font-semibold text-primary-strong transition-colors hover:bg-primary-line dark:text-primary dark:hover:bg-primary-line/40"
+        >
           Đăng ký
-        </Button>
+        </Link>
       </div>
     );
   }
@@ -57,7 +62,7 @@ export function UserMenu() {
         onClick={() => setIsOpen((prev) => !prev)}
         aria-expanded={isOpen}
         aria-haspopup="menu"
-        className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full bg-surface border border-border hover:bg-soft-blue transition-colors"
+        className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full bg-surface border border-border hover:bg-primary-soft transition-colors"
       >
         {image ? (
           <Image
@@ -68,7 +73,7 @@ export function UserMenu() {
             className="size-8 rounded-full object-cover"
           />
         ) : (
-          <span className="size-8 rounded-full bg-soft-blue text-primary-blue font-semibold flex items-center justify-center text-sm">
+          <span className="size-8 rounded-full bg-primary-soft text-primary font-semibold flex items-center justify-center text-sm">
             {initial}
           </span>
         )}
@@ -95,7 +100,7 @@ export function UserMenu() {
               href="/admin"
               role="menuitem"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-primary-pink font-medium hover:bg-soft-pink transition-colors border-b border-border"
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-accent-ink font-medium hover:bg-accent-soft transition-colors border-b border-border"
             >
               <ShieldCheck className="size-4" aria-hidden />
               Quản trị hệ thống
@@ -106,7 +111,7 @@ export function UserMenu() {
               href="/reviewer"
               role="menuitem"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-primary-blue font-medium hover:bg-soft-blue transition-colors border-b border-border"
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-primary font-medium hover:bg-primary-soft transition-colors border-b border-border"
             >
               <ClipboardCheck className="size-4" aria-hidden />
               Không gian thẩm định
@@ -116,7 +121,7 @@ export function UserMenu() {
             href="/ho-so"
             role="menuitem"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-primary hover:bg-soft-blue transition-colors"
+            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-primary hover:bg-primary-soft transition-colors"
           >
             <UserIcon className="size-4 text-text-secondary" aria-hidden />
             Hồ sơ &amp; Sở thích
@@ -125,7 +130,7 @@ export function UserMenu() {
             href="/lich-su"
             role="menuitem"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-primary hover:bg-soft-blue transition-colors"
+            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-primary hover:bg-primary-soft transition-colors"
           >
             <History className="size-4 text-text-secondary" aria-hidden />
             Lịch sử
@@ -134,7 +139,7 @@ export function UserMenu() {
             href="/dong-gop"
             role="menuitem"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-primary hover:bg-soft-blue transition-colors"
+            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-primary hover:bg-primary-soft transition-colors"
           >
             <ChefHat className="size-4 text-text-secondary" aria-hidden />
             Món đã đóng góp
@@ -144,7 +149,7 @@ export function UserMenu() {
               href="/ung-tuyen-reviewer"
               role="menuitem"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-primary hover:bg-soft-blue transition-colors"
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-primary hover:bg-primary-soft transition-colors"
             >
               <BadgeCheck className="size-4 text-text-secondary" aria-hidden />
               Ứng tuyển FoodReviewer
@@ -154,7 +159,7 @@ export function UserMenu() {
             href="/da-luu"
             role="menuitem"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-primary hover:bg-soft-blue transition-colors"
+            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-primary hover:bg-primary-soft transition-colors"
           >
             <Bookmark className="size-4 text-text-secondary" aria-hidden />
             Đã lưu
@@ -163,7 +168,7 @@ export function UserMenu() {
             href="/cai-dat"
             role="menuitem"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-primary hover:bg-soft-blue transition-colors border-b border-border"
+            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-primary hover:bg-primary-soft transition-colors border-b border-border"
           >
             <Settings className="size-4 text-text-secondary" aria-hidden />
             Cài đặt

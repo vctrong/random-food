@@ -81,7 +81,7 @@ export function ReportsContent({ initialReports }: ReportsContentProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <h1 className="text-2xl md:text-3xl font-subheading font-semibold text-text-primary tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-heading font-semibold text-text-primary tracking-tight">
           Xử lý báo cáo vi phạm
         </h1>
         <p className="text-sm text-text-secondary">
@@ -101,13 +101,13 @@ export function ReportsContent({ initialReports }: ReportsContentProps) {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Tìm theo người báo cáo, lý do..."
-                  className="w-full h-10 pl-10 pr-3 rounded-xl bg-cream text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
+                  className="w-full h-10 pl-10 pr-3 rounded-xl bg-background text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                className="h-10 px-3 rounded-xl bg-cream text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
+                className="h-10 px-3 rounded-xl bg-background text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
               >
                 <option value="pending">Chờ xử lý</option>
                 <option value="reviewed">Đã xử lý</option>
@@ -126,7 +126,7 @@ export function ReportsContent({ initialReports }: ReportsContentProps) {
                     onClick={() => setSelectedId(report.id)}
                     className={cn(
                       "flex flex-col gap-1 p-3 rounded-xl text-left transition-colors border",
-                      selected?.id === report.id ? "bg-soft-blue border-primary-blue/40" : "border-border hover:bg-cream",
+                      selected?.id === report.id ? "bg-primary-soft border-primary/40" : "border-border hover:bg-background",
                     )}
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -150,7 +150,7 @@ export function ReportsContent({ initialReports }: ReportsContentProps) {
             <Card className="p-5 space-y-4">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <h3 className="font-subheading font-semibold text-text-primary">{selected.targetLabel ?? "Nội dung đã bị xoá"}</h3>
+                  <h3 className="font-heading font-semibold text-text-primary">{selected.targetLabel ?? "Nội dung đã bị xoá"}</h3>
                   <p className="text-sm text-text-secondary">{REPORT_TARGET_LABELS[selected.targetType]}</p>
                 </div>
                 <Badge variant={selected.status === "pending" ? "warning" : "success"}>
@@ -158,7 +158,7 @@ export function ReportsContent({ initialReports }: ReportsContentProps) {
                 </Badge>
               </div>
 
-              <div className="rounded-xl bg-cream p-3 space-y-1">
+              <div className="rounded-xl bg-background p-3 space-y-1">
                 <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Lý do báo cáo</p>
                 <p className="text-sm text-text-primary">{selected.reason}</p>
                 <p className="text-xs text-text-secondary">
@@ -180,7 +180,7 @@ export function ReportsContent({ initialReports }: ReportsContentProps) {
                     onChange={(e) => setNote(e.target.value)}
                     placeholder="Ghi chú quyết định (tuỳ chọn)..."
                     rows={2}
-                    className="w-full px-3 py-2 rounded-xl bg-cream text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-blue/40 resize-none"
+                    className="w-full px-3 py-2 rounded-xl bg-background text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
                   />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {ACTION_OPTIONS.map(({ action, label, icon: Icon }) => (

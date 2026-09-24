@@ -1,71 +1,71 @@
-"use client";
-
-import { motion } from "framer-motion";
-import { Dices, Scale, Store } from "lucide-react";
+import { SectionHeading } from "@/components/ui/SectionHeading";
+import { Reveal } from "@/components/ui/Reveal";
+import { cn } from "@/lib/utils";
 
 const STEPS = [
   {
-    icon: Scale,
-    step: "BƯỚC 01",
     title: "Chọn gu thèm ăn",
-    description: "Khám phá theo 4 kích cỡ dạ dày: Ăn vặt, Ăn bình thường, Ăn vừa vừa, hay Ăn lớn.",
-    tone: "blue" as const,
+    description: "Chọn mức độ đói và tầm giá mong muốn — hoặc để trống, số phận lo hết.",
+    badgeClassName: "bg-primary-strong text-white",
   },
   {
-    icon: Dices,
-    step: "BƯỚC 02",
-    title: "Nhấn nút Random",
-    description: "Thuật toán chọn ngẫu nhiên trong tập món phù hợp mức độ và bộ lọc bạn đã chọn.",
-    tone: "pink" as const,
+    title: "Gạt cần random",
+    description: "Nhấn “Quay ngay”, nhấn Space hoặc kéo cần gạt — máy tự chốt món trong vài giây.",
+    badgeClassName: "bg-accent text-secondary-strong",
   },
   {
-    icon: Store,
-    step: "BƯỚC 03",
-    title: "Khám phá & thưởng thức",
-    description: "Xem ngay địa chỉ quán trên bản đồ, ước lượng calo và lưu món để quay lại sau.",
-    tone: "blue" as const,
+    title: "Đi ăn & lưu món ngon",
+    description: "Bấm “Chỉ đường” để mở Google Maps tới quán, hoặc lưu món để dành cho lần sau.",
+    badgeClassName: "bg-warning text-secondary-strong",
   },
 ];
 
-const TONE_CLASSES = {
-  blue: "bg-soft-blue text-primary-blue",
-  pink: "bg-soft-pink text-primary-pink",
-};
-
 export function HowItWorksSection() {
   return (
-    <section className="py-16">
-      <div className="text-center max-w-2xl mx-auto space-y-3 mb-12">
-        <span className="text-xs uppercase tracking-widest text-primary-blue font-bold">
-          Quy trình thông minh
-        </span>
-        <h2 className="text-display-sm text-text-primary">Chỉ 3 bước để có ngay bữa ăn ưng ý</h2>
-        <p className="text-text-secondary">
-          Bớt suy nghĩ, ăn ngon hơn — biến quyết định ăn uống mỗi ngày thành niềm vui.
-        </p>
-      </div>
+    <section aria-labelledby="how-title" className="border-y border-border bg-accent-soft/60 py-16 md:py-20">
+      <div className="mx-auto max-w-6xl px-4 md:px-6 lg:px-8">
+        <SectionHeading
+          id="how-title"
+          align="center"
+          tone="pink"
+          eyebrow="Đơn giản vậy thôi"
+          title="Chỉ 3 bước để có ngay bữa ăn ưng ý"
+          description="Không cần tranh luận, không cần lướt app giao hàng cả buổi."
+        />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {STEPS.map(({ icon: Icon, step, title, description, tone }, index) => (
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.5, delay: index * 0.12, ease: [0.16, 1, 0.3, 1] }}
-            whileHover={{ y: -4 }}
-            className="rounded-2xl bg-surface p-6 md:p-8 shadow-sm space-y-4"
-          >
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${TONE_CLASSES[tone]}`}>
-              <Icon className="size-6" aria-hidden />
-            </div>
-            <div className="space-y-1.5">
-              <span className="text-xs font-bold text-primary-blue">{step}</span>
-              <h3 className="text-lg font-semibold text-text-primary">{title}</h3>
-              <p className="text-sm text-text-secondary leading-relaxed">{description}</p>
-            </div>
-          </motion.div>
-        ))}
+        <ol className="relative mt-10 grid grid-cols-1 gap-5 md:mt-10 md:grid-cols-3 md:gap-8 md:pt-7">
+          {/* Đường nối: dọc trên mobile (qua tâm các số), ngang trên desktop (qua tâm các badge). */}
+          <span
+            aria-hidden
+            className="absolute left-7 top-6 bottom-6 border-l-2 border-dashed border-secondary/20 md:hidden"
+          />
+          <span
+            aria-hidden
+            className="absolute left-[16%] right-[16%] top-7 hidden border-t-2 border-dashed border-secondary/20 md:block"
+          />
+
+          {STEPS.map((step, index) => (
+            <Reveal
+              as="li"
+              key={step.title}
+              delay={index * 0.1}
+              className="relative flex items-start gap-4 md:h-full md:flex-col md:items-center md:rounded-2xl md:border md:border-border md:bg-surface md:px-6 md:pb-7 md:text-center md:shadow-sm"
+            >
+              <span
+                className={cn(
+                  "relative z-10 flex size-14 shrink-0 items-center justify-center rounded-2xl border-2 border-secondary font-heading text-lg font-bold shadow-chunky-sm md:-mt-7",
+                  step.badgeClassName,
+                )}
+              >
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <div className="pt-1 md:pt-0">
+                <h3 className="text-lg font-semibold text-text-primary">{step.title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">{step.description}</p>
+              </div>
+            </Reveal>
+          ))}
+        </ol>
       </div>
     </section>
   );

@@ -14,7 +14,7 @@ function createPinIcon() {
   return L.divIcon({
     html: `
       <svg width="32" height="42" viewBox="0 0 32 42" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 0C7.163 0 0 7.163 0 16c0 11 16 26 16 26s16-15 16-26C32 7.163 24.837 0 16 0z" fill="#F07FA5"/>
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 11 16 26 16 26s16-15 16-26C32 7.163 24.837 0 16 0z" fill="var(--color-accent-strong)"/>
         <circle cx="16" cy="16" r="6.5" fill="#FFFFFF"/>
       </svg>
     `,

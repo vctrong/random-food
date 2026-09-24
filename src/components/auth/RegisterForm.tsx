@@ -149,23 +149,23 @@ export function RegisterForm() {
       <div className="relative w-full max-w-[460px]">
         <div
           aria-hidden
-          className="absolute -top-10 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full bg-soft-pink blur-3xl pointer-events-none -z-10"
+          className="absolute -top-10 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full bg-accent-soft blur-3xl pointer-events-none -z-10"
         />
         <div
           aria-hidden
-          className="absolute -bottom-10 right-0 w-64 h-64 rounded-full bg-soft-blue blur-3xl pointer-events-none -z-10"
+          className="absolute -bottom-10 right-0 w-64 h-64 rounded-full bg-primary-soft blur-3xl pointer-events-none -z-10"
         />
 
         <div className="relative overflow-hidden bg-surface rounded-2xl shadow-xl p-6 sm:p-8">
           <div
             aria-hidden
-            className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-primary-pink via-primary-blue to-primary-blue"
+            className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-accent via-primary to-primary"
           />
 
           {step === "form" ? (
             <>
               <div className="flex flex-col items-center text-center mb-6">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-soft-pink text-primary-pink text-sm font-medium mb-4 shadow-sm">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-accent-soft text-accent-ink text-sm font-medium mb-4 shadow-sm">
                   <PartyPopper className="size-3.5" aria-hidden />
                   <span>Thành viên mới</span>
                 </div>
@@ -192,7 +192,7 @@ export function RegisterForm() {
                       value={name}
                       onChange={(event) => setName(event.target.value)}
                       placeholder="Nhập họ và tên"
-                      className="w-full h-12 pl-11 pr-4 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+                      className="w-full h-12 pl-11 pr-4 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                     />
                   </div>
                 </div>
@@ -211,7 +211,7 @@ export function RegisterForm() {
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
                       placeholder="Nhập email của bạn"
-                      className="w-full h-12 pl-11 pr-4 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+                      className="w-full h-12 pl-11 pr-4 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                     />
                   </div>
                 </div>
@@ -231,7 +231,7 @@ export function RegisterForm() {
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
                       placeholder="Tối thiểu 8 ký tự, có chữ, số và ký tự đặc biệt"
-                      className="w-full h-12 pl-11 pr-11 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+                      className="w-full h-12 pl-11 pr-11 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                     />
                     <button
                       type="button"
@@ -283,7 +283,7 @@ export function RegisterForm() {
                       value={confirmPassword}
                       onChange={(event) => setConfirmPassword(event.target.value)}
                       placeholder="Nhập lại mật khẩu"
-                      className="w-full h-12 pl-11 pr-11 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+                      className="w-full h-12 pl-11 pr-11 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                     />
                     {passwordsMatch && (
                       <span className="absolute right-3.5" title="Mật khẩu trùng khớp">
@@ -295,8 +295,8 @@ export function RegisterForm() {
 
                 <p className="text-xs text-text-secondary leading-relaxed">
                   Bằng việc tạo tài khoản, bạn đồng ý với{" "}
-                  <span className="font-medium text-primary-blue">Điều khoản sử dụng</span> và{" "}
-                  <span className="font-medium text-primary-blue">Chính sách riêng tư</span> của Hôm Nay Ăn Gì?
+                  <span className="font-medium text-primary">Điều khoản sử dụng</span> và{" "}
+                  <span className="font-medium text-primary">Chính sách riêng tư</span> của Nay Ăn Gì?
                 </p>
 
                 {error && <p className="text-sm text-red-600 -mt-1">{error}</p>}
@@ -316,7 +316,7 @@ export function RegisterForm() {
               <button
                 type="button"
                 onClick={() => signIn("google", { callbackUrl })}
-                className="w-full h-12 px-4 rounded-xl border border-border bg-surface hover:bg-soft-blue text-text-primary text-sm font-semibold flex items-center justify-center gap-3 shadow-sm transition-all active:scale-[0.99]"
+                className="w-full h-12 px-4 rounded-xl border border-border bg-surface hover:bg-primary-soft text-text-primary text-sm font-semibold flex items-center justify-center gap-3 shadow-sm transition-all active:scale-[0.99]"
               >
                 <GoogleIcon className="size-5" />
                 <span>Tiếp tục với Google</span>
@@ -325,7 +325,7 @@ export function RegisterForm() {
               <div className="mt-6 pt-5 border-t border-border text-center">
                 <p className="text-sm text-text-secondary">
                   Đã có tài khoản?{" "}
-                  <Link href="/dang-nhap" className="font-semibold text-primary-pink hover:underline">
+                  <Link href="/dang-nhap" className="font-semibold text-accent-ink hover:underline">
                     Đăng nhập
                   </Link>
                 </p>
@@ -344,7 +344,7 @@ export function RegisterForm() {
               </button>
 
               <div className="flex flex-col items-center text-center mb-6">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-soft-blue text-primary-blue text-sm font-medium mb-4 shadow-sm">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-primary-soft text-primary text-sm font-medium mb-4 shadow-sm">
                   <ImagePlus className="size-3.5" aria-hidden />
                   <span>Bước cuối</span>
                 </div>
@@ -358,7 +358,7 @@ export function RegisterForm() {
 
               <div className="flex flex-col items-center gap-4">
                 <div className="relative shrink-0">
-                  <div className="size-28 rounded-full overflow-hidden bg-soft-blue flex items-center justify-center text-primary-blue text-3xl font-bold">
+                  <div className="size-28 rounded-full overflow-hidden bg-primary-soft flex items-center justify-center text-primary text-3xl font-bold">
                     {avatarPreview ? (
                       // eslint-disable-next-line @next/next/no-img-element -- blob preview cục bộ, next/image không hỗ trợ blob: URL
                       <img src={avatarPreview} alt="Xem trước ảnh đại diện" className="object-cover size-28" />
@@ -370,7 +370,7 @@ export function RegisterForm() {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     aria-label="Chọn ảnh đại diện"
-                    className="absolute -bottom-1 -right-1 size-9 rounded-full bg-primary-blue text-white flex items-center justify-center shadow-md hover:bg-[#4a8ddb] transition-colors"
+                    className="absolute -bottom-1 -right-1 size-9 rounded-full bg-primary-strong text-white flex items-center justify-center shadow-md hover:bg-primary-strong-hover transition-colors"
                   >
                     <Camera className="size-4.5" aria-hidden />
                   </button>

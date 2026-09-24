@@ -13,7 +13,7 @@ export async function GET() {
   const foods = await Food.find({ moderationStatus: "approved", visibility: "visible" })
     .sort({ createdAt: -1 })
     .populate("categoryIds", "name slug icon")
-    .populate("restaurantId", "name address location")
+    .populate("restaurantId", "name address location openingHours")
     .lean();
 
   return NextResponse.json(
@@ -23,6 +23,7 @@ export async function GET() {
         name: string;
         address: string;
         location?: { coordinates?: [number, number] };
+        openingHours?: string;
       } | null;
       const categories = (food.categoryIds ?? []) as unknown as {
         _id: string;
@@ -58,6 +59,7 @@ export async function GET() {
               address: restaurant.address,
               // GeoJSON lưu [lng, lat] — đổi sang {lat, lng} cho dễ dùng ở Leaflet.
               location: coordinates ? { lat: coordinates[1], lng: coordinates[0] } : null,
+              openingHours: restaurant.openingHours?.trim() || null,
             }
           : null,
       };

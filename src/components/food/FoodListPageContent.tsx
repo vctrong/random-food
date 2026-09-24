@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Dices, PlusCircle, Search, Soup, UtensilsCrossed } from "lucide-react";
-import type { Food } from "@/types/food";
+import type { EatingLevel, Food } from "@/types/food";
 import { EATING_LEVELS, EATING_LEVEL_LABELS, EATING_LEVEL_ORDER } from "@/constants/categories";
 import { useFoodList } from "@/features/food-list/useFoodList";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -11,9 +11,10 @@ import { FoodListCard } from "./FoodListCard";
 
 interface FoodListPageContentProps {
   initialFoods: Food[];
+  initialEatingLevel?: EatingLevel;
 }
 
-export function FoodListPageContent({ initialFoods }: FoodListPageContentProps) {
+export function FoodListPageContent({ initialFoods, initialEatingLevel }: FoodListPageContentProps) {
   const {
     search,
     setSearch,
@@ -26,24 +27,24 @@ export function FoodListPageContent({ initialFoods }: FoodListPageContentProps) 
     filteredFoods,
     isSystemEmpty,
     hasNoFilterMatch,
-  } = useFoodList({ initialFoods });
+  } = useFoodList({ initialFoods, initialEatingLevel });
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8 md:py-10 space-y-8">
       {/* Hero */}
-      <header className="relative rounded-3xl p-6 md:p-10 overflow-hidden bg-gradient-to-br from-surface via-soft-blue/40 to-soft-pink/40 shadow-sm">
+      <header className="relative rounded-3xl p-6 md:p-10 overflow-hidden bg-gradient-to-br from-surface via-primary-soft/40 to-accent-soft/40 shadow-sm">
         <div
           aria-hidden
-          className="absolute -top-16 -right-16 w-80 h-80 rounded-full bg-primary-blue/10 blur-3xl pointer-events-none"
+          className="absolute -top-16 -right-16 w-80 h-80 rounded-full bg-primary/10 blur-3xl pointer-events-none"
         />
         <div
           aria-hidden
-          className="absolute -bottom-16 left-1/4 w-72 h-72 rounded-full bg-primary-pink/10 blur-3xl pointer-events-none"
+          className="absolute -bottom-16 left-1/4 w-72 h-72 rounded-full bg-accent/10 blur-3xl pointer-events-none"
         />
 
         <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-surface text-primary-blue text-xs font-bold uppercase tracking-wider shadow-sm mb-3">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-surface text-primary text-xs font-bold uppercase tracking-wider shadow-sm mb-3">
               <UtensilsCrossed className="size-3.5" aria-hidden />
               <span>Kho ẩm thực Cần Thơ</span>
             </div>
@@ -59,19 +60,19 @@ export function FoodListPageContent({ initialFoods }: FoodListPageContentProps) 
 
           <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
             <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-surface text-text-secondary shadow-sm">
-              <span className="size-2.5 rounded-full bg-primary-blue animate-pulse" aria-hidden />
+              <span className="size-2.5 rounded-full bg-primary animate-pulse" aria-hidden />
               <span className="text-sm font-semibold text-text-primary">{initialFoods.length} món sẵn sàng</span>
             </div>
             <Link
               href="/random"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-primary-blue hover:bg-[#4a8ddb] text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all active:scale-95"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-primary-strong hover:bg-primary-strong-hover text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all active:scale-95"
             >
               <Dices className="size-4.5" aria-hidden />
               <span>Random ngay món ngẫu nhiên</span>
             </Link>
             <Link
               href="/mon-an/dong-gop"
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-surface hover:bg-soft-pink text-primary-pink text-sm font-semibold shadow-sm transition-all active:scale-95"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-surface hover:bg-accent-soft text-accent-ink text-sm font-semibold shadow-sm transition-all active:scale-95"
             >
               <PlusCircle className="size-4.5" aria-hidden />
               <span>Đóng góp món mới</span>
@@ -103,7 +104,7 @@ export function FoodListPageContent({ initialFoods }: FoodListPageContentProps) 
           action={
             <Link
               href="/mon-an/dong-gop"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-primary-blue hover:bg-[#4a8ddb] text-white text-sm font-semibold shadow-md transition-all active:scale-95"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-primary-strong hover:bg-primary-strong-hover text-white text-sm font-semibold shadow-md transition-all active:scale-95"
             >
               <PlusCircle className="size-4.5" aria-hidden />
               <span>Đóng góp món đầu tiên</span>
@@ -120,7 +121,7 @@ export function FoodListPageContent({ initialFoods }: FoodListPageContentProps) 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Tìm món ăn theo tên, mô tả, quán..."
-                className="w-full h-11 pl-10 pr-4 rounded-xl bg-soft-blue/40 text-text-primary placeholder:text-text-secondary text-sm focus:outline-none focus:bg-soft-blue transition-colors"
+                className="w-full h-11 pl-10 pr-4 rounded-xl bg-primary-soft/40 text-text-primary placeholder:text-text-secondary text-sm focus:outline-none focus:bg-primary-soft transition-colors"
               />
             </div>
 
@@ -196,7 +197,7 @@ function MetricCard({
   value: string;
   tone: "blue" | "pink";
 }) {
-  const toneClasses = tone === "blue" ? "bg-soft-blue text-primary-blue" : "bg-soft-pink text-primary-pink";
+  const toneClasses = tone === "blue" ? "bg-primary-soft text-primary" : "bg-accent-soft text-accent-ink";
 
   return (
     <div className="flex items-center gap-3 p-4 rounded-2xl bg-surface shadow-sm hover:shadow-md transition-shadow">
@@ -205,7 +206,7 @@ function MetricCard({
       </div>
       <div className="min-w-0">
         <p className="text-xs text-text-secondary truncate">{label}</p>
-        <p className="font-subheading font-semibold text-text-primary tracking-tight">{value}</p>
+        <p className="font-heading font-semibold text-text-primary tracking-tight">{value}</p>
       </div>
     </div>
   );
@@ -223,7 +224,7 @@ function FilterPill({
   children: ReactNode;
 }) {
   const activeClasses =
-    tone === "pink" ? "bg-primary-pink text-white shadow-sm" : "bg-primary-blue text-white shadow-sm";
+    tone === "pink" ? "bg-accent-strong text-white shadow-sm" : "bg-primary-strong text-white shadow-sm";
 
   return (
     <button
@@ -232,7 +233,7 @@ function FilterPill({
       className={
         active
           ? `shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all ${activeClasses}`
-          : "shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-soft-blue/50 text-text-secondary hover:bg-soft-blue transition-all"
+          : "shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-primary-soft/50 text-text-secondary hover:bg-primary-soft transition-all"
       }
     >
       {children}

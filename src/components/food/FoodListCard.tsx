@@ -18,7 +18,7 @@ export function FoodListCard({ food }: FoodListCardProps) {
 
   return (
     <article className="group flex flex-col bg-surface rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-      <div className="relative w-full aspect-[4/3] overflow-hidden bg-soft-blue">
+      <div className="relative w-full aspect-[4/3] overflow-hidden bg-primary-soft">
         {coverImage ? (
           <Image
             src={coverImage}
@@ -28,7 +28,7 @@ export function FoodListCard({ food }: FoodListCardProps) {
             className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-primary-blue">
+          <div className="w-full h-full flex items-center justify-center text-primary">
             <UtensilsCrossed className="size-10" aria-hidden />
           </div>
         )}
@@ -37,7 +37,7 @@ export function FoodListCard({ food }: FoodListCardProps) {
           {food.eatingLevels.slice(0, 1).map((level) => (
             <span
               key={level}
-              className="px-2.5 py-1 rounded-full bg-surface/90 backdrop-blur-md text-primary-blue text-xs font-semibold"
+              className="px-2.5 py-1 rounded-full bg-surface/90 backdrop-blur-md text-primary text-xs font-semibold"
             >
               {EATING_LEVEL_LABELS[level]}
             </span>
@@ -58,9 +58,9 @@ export function FoodListCard({ food }: FoodListCardProps) {
 
       <div className="p-4 flex-1 flex flex-col">
         <div className="flex items-start justify-between gap-2 mb-1">
-          <h2 className="font-subheading font-semibold text-text-primary line-clamp-1">{food.name}</h2>
+          <h2 className="font-heading font-semibold text-text-primary line-clamp-1">{food.name}</h2>
         </div>
-        <div className="text-sm font-semibold text-primary-blue mb-2">{priceLabel}</div>
+        <div className="text-sm font-semibold text-primary mb-2">{priceLabel}</div>
         <p className="text-sm text-text-secondary line-clamp-2 mb-3">
           {food.description || "Chưa có mô tả cho món này."}
         </p>
@@ -81,7 +81,7 @@ export function FoodListCard({ food }: FoodListCardProps) {
             {food.categories.map((category) => (
               <span
                 key={category.id}
-                className="px-2 py-0.5 rounded-full bg-soft-pink text-primary-pink text-xs font-medium"
+                className="px-2 py-0.5 rounded-full bg-accent-soft text-accent-ink text-xs font-medium"
               >
                 {category.name}
               </span>
@@ -92,7 +92,7 @@ export function FoodListCard({ food }: FoodListCardProps) {
         <div className="mt-auto flex items-center gap-2">
           <Link
             href={`/mon-an/${food.id}`}
-            className="flex-1 h-10 rounded-xl bg-soft-blue text-primary-blue hover:bg-primary-blue hover:text-white text-sm font-medium flex items-center justify-center gap-1.5 transition-colors"
+            className="flex-1 h-10 rounded-xl bg-primary-soft text-primary hover:bg-primary-strong hover:text-white text-sm font-medium flex items-center justify-center gap-1.5 transition-colors"
           >
             <Info className="size-4" aria-hidden />
             <span>Xem chi tiết</span>
@@ -104,7 +104,7 @@ export function FoodListCard({ food }: FoodListCardProps) {
               rel="noopener noreferrer"
               aria-label="Định vị trên Google Maps"
               title="Định vị trên Google Maps"
-              className="w-10 h-10 shrink-0 rounded-xl bg-soft-pink text-primary-pink hover:bg-primary-pink hover:text-white flex items-center justify-center transition-colors"
+              className="w-10 h-10 shrink-0 rounded-xl bg-accent-soft text-accent-ink hover:bg-accent-strong hover:text-white flex items-center justify-center transition-colors"
             >
               <ExternalLink className="size-4" aria-hidden />
             </a>

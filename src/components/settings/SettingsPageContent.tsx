@@ -38,7 +38,7 @@ const NAV_ITEMS: SectionNavItem[] = [
   { id: "thong-bao", label: "Thông báo", icon: Bell },
   { id: "du-lieu", label: "Quản lý dữ liệu", icon: Database },
   { id: "quyen-rieng-tu", label: "Quyền riêng tư", icon: ShieldAlert },
-  { id: "ve-app", label: "Về NayAnGi", icon: Info },
+  { id: "ve-app", label: "Về Nay Ăn Gì?", icon: Info },
 ];
 
 export function SettingsPageContent({
@@ -72,7 +72,7 @@ export function SettingsPageContent({
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-10">
       <div className="mb-6 pb-6 border-b border-border">
-        <div className="flex items-center gap-1.5 text-primary-blue text-xs font-bold uppercase tracking-wider mb-2">
+        <div className="flex items-center gap-1.5 text-primary text-xs font-bold uppercase tracking-wider mb-2">
           <Settings2 className="size-4" aria-hidden />
           <span>Cài đặt chung</span>
         </div>

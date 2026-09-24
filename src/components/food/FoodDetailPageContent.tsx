@@ -98,12 +98,12 @@ export function FoodDetailPageContent({ food, similarFoods }: FoodDetailPageCont
       <div className="w-full bg-surface/60">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-3">
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-text-secondary overflow-x-auto whitespace-nowrap">
-            <Link href="/" className="hover:text-primary-blue transition-colors flex items-center gap-1">
+            <Link href="/" className="hover:text-primary transition-colors flex items-center gap-1">
               <Home className="size-3.5" aria-hidden />
               <span>Trang chủ</span>
             </Link>
             <ChevronRight className="size-3.5 text-border shrink-0" aria-hidden />
-            <Link href="/mon-an" className="hover:text-primary-blue transition-colors">
+            <Link href="/mon-an" className="hover:text-primary transition-colors">
               Danh sách món ăn
             </Link>
             <ChevronRight className="size-3.5 text-border shrink-0" aria-hidden />
@@ -116,11 +116,11 @@ export function FoodDetailPageContent({ food, similarFoods }: FoodDetailPageCont
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
           {/* Gallery */}
           <div className="lg:col-span-6 flex flex-col gap-3">
-            <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden shadow-xl bg-soft-blue">
+            <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden shadow-xl bg-primary-soft">
               {coverImage ? (
                 <Image src={coverImage} alt={`Ảnh món ${food.name}`} fill sizes="(min-width: 1024px) 50vw, 100vw" priority className="object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-primary-blue">
+                <div className="w-full h-full flex items-center justify-center text-primary">
                   <UtensilsCrossed className="size-16" aria-hidden />
                 </div>
               )}
@@ -139,8 +139,8 @@ export function FoodDetailPageContent({ food, similarFoods }: FoodDetailPageCont
                     key={image}
                     type="button"
                     onClick={() => setActiveImage(index)}
-                    className={`relative rounded-xl overflow-hidden aspect-square bg-soft-blue transition-all ${
-                      index === activeImage ? "ring-2 ring-primary-blue" : "opacity-80 hover:opacity-100"
+                    className={`relative rounded-xl overflow-hidden aspect-square bg-primary-soft transition-all ${
+                      index === activeImage ? "ring-2 ring-primary" : "opacity-80 hover:opacity-100"
                     }`}
                   >
                     <Image src={image} alt={`Ảnh ${index + 1} của ${food.name}`} fill sizes="120px" className="object-cover" />
@@ -153,7 +153,7 @@ export function FoodDetailPageContent({ food, similarFoods }: FoodDetailPageCont
           {/* Info */}
           <div className="lg:col-span-6 flex flex-col gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-subheading font-bold text-text-primary tracking-tight mb-2">{food.name}</h1>
+              <h1 className="text-3xl md:text-4xl font-heading font-bold text-text-primary tracking-tight mb-2">{food.name}</h1>
               <p className="text-text-secondary leading-relaxed">{food.description || "Chưa có mô tả cho món này."}</p>
             </div>
 
@@ -185,7 +185,7 @@ export function FoodDetailPageContent({ food, similarFoods }: FoodDetailPageCont
               <button
                 type="button"
                 onClick={markEaten}
-                className="flex-1 h-12 rounded-full bg-primary-blue hover:bg-[#4a8ddb] text-white font-semibold shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
+                className="flex-1 h-12 rounded-full bg-primary-strong hover:bg-primary-strong-hover text-white font-semibold shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
               >
                 <CheckCircle2 className="size-5" aria-hidden />
                 <span>Đã ăn món này</span>
@@ -193,9 +193,9 @@ export function FoodDetailPageContent({ food, similarFoods }: FoodDetailPageCont
               <button
                 type="button"
                 onClick={toggleSaved}
-                className="h-12 px-5 rounded-full bg-soft-pink hover:bg-primary-pink/20 text-text-primary font-medium transition-all active:scale-95 flex items-center justify-center gap-2"
+                className="h-12 px-5 rounded-full bg-accent-soft hover:bg-accent/20 text-text-primary font-medium transition-all active:scale-95 flex items-center justify-center gap-2"
               >
-                <Heart className="size-5 text-primary-pink" fill={isSaved ? "currentColor" : "none"} aria-hidden />
+                <Heart className="size-5 text-accent-ink" fill={isSaved ? "currentColor" : "none"} aria-hidden />
                 <span>{isSaved ? "Đã lưu" : "Lưu món"}</span>
               </button>
             </div>
@@ -203,7 +203,7 @@ export function FoodDetailPageContent({ food, similarFoods }: FoodDetailPageCont
             {food.restaurant && (
               <div className="space-y-2">
                 <div className="flex items-start gap-1.5 text-sm text-text-primary">
-                  <MapPin className="size-4 shrink-0 mt-0.5 text-primary-blue" aria-hidden />
+                  <MapPin className="size-4 shrink-0 mt-0.5 text-primary" aria-hidden />
                   <span>
                     <span className="font-semibold">{food.restaurant.name}</span>
                     <span className="text-text-secondary"> · {food.restaurant.address}</span>
@@ -220,12 +220,12 @@ export function FoodDetailPageContent({ food, similarFoods }: FoodDetailPageCont
               </div>
             )}
 
-            <div className="rounded-2xl bg-soft-blue/60 p-4 flex items-start gap-3">
-              <CheckCircle2 className="size-5 text-primary-blue shrink-0 mt-0.5" aria-hidden />
+            <div className="rounded-2xl bg-primary-soft/60 p-4 flex items-start gap-3">
+              <CheckCircle2 className="size-5 text-primary shrink-0 mt-0.5" aria-hidden />
               <p className="text-sm text-text-secondary leading-relaxed">
                 Chỉ những thực khách đã xác nhận <strong className="text-text-primary">đã ăn món này</strong> mới có thể để
                 lại đánh giá. Sau khi bấm &quot;Đã ăn món này&quot;, bạn có thể viết đánh giá ngay tại trang{" "}
-                <Link href="/lich-su" className="text-primary-blue font-semibold hover:underline">
+                <Link href="/lich-su" className="text-primary font-semibold hover:underline">
                   Lịch sử ăn uống
                 </Link>
                 .
@@ -242,7 +242,7 @@ export function FoodDetailPageContent({ food, similarFoods }: FoodDetailPageCont
         {/* Similar foods */}
         {similarFoods.length > 0 && (
           <div className="mt-8">
-            <h2 className="text-xl font-subheading font-bold text-text-primary mb-4">Món ăn cùng danh mục</h2>
+            <h2 className="text-xl font-heading font-bold text-text-primary mb-4">Món ăn cùng danh mục</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {similarFoods.map((item) => (
                 <SimilarFoodCard key={item.id} food={item} />
@@ -254,7 +254,7 @@ export function FoodDetailPageContent({ food, similarFoods }: FoodDetailPageCont
         <div className="mt-8 flex justify-center">
           <Link
             href="/random"
-            className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-soft-pink hover:bg-primary-pink/20 text-primary-pink font-semibold transition-all active:scale-95"
+            className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-accent-soft hover:bg-accent/20 text-accent-ink font-semibold transition-all active:scale-95"
           >
             <Dices className="size-5" aria-hidden />
             <span>Không hợp gu? Random món khác</span>
@@ -269,7 +269,7 @@ export function FoodDetailPageContent({ food, similarFoods }: FoodDetailPageCont
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="p-3 rounded-xl bg-soft-blue/60">
+    <div className="p-3 rounded-xl bg-primary-soft/60">
       <p className="text-xs text-text-secondary mb-1">{label}</p>
       <p className="font-semibold text-text-primary">{value}</p>
     </div>
@@ -286,11 +286,11 @@ function SimilarFoodCard({ food }: { food: Food }) {
       href={`/mon-an/${food.id}`}
       className="group flex flex-col bg-surface rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
     >
-      <div className="relative w-full aspect-[16/10] bg-soft-blue">
+      <div className="relative w-full aspect-[16/10] bg-primary-soft">
         {coverImage ? (
           <Image src={coverImage} alt={`Ảnh món ${food.name}`} fill sizes="(min-width: 640px) 33vw, 100vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-primary-blue">
+          <div className="w-full h-full flex items-center justify-center text-primary">
             <UtensilsCrossed className="size-8" aria-hidden />
           </div>
         )}
@@ -300,7 +300,7 @@ function SimilarFoodCard({ food }: { food: Food }) {
           <span className="font-semibold text-text-primary truncate">{food.name}</span>
         </div>
         <div className="flex items-center justify-between text-xs text-text-secondary">
-          <span className="text-primary-blue font-semibold">{priceLabel}</span>
+          <span className="text-primary font-semibold">{priceLabel}</span>
           {food.ratingCount > 0 && (
             <span className="flex items-center gap-0.5">
               <Star className="size-3 text-warning" fill="currentColor" aria-hidden />

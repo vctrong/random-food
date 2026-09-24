@@ -10,7 +10,7 @@ export function PrivacySection() {
   return (
     <section id="quyen-rieng-tu" className="bg-surface rounded-2xl p-6 shadow-sm space-y-4 scroll-mt-24">
       <div className="flex items-center gap-3 pb-3 border-b border-border">
-        <span className="inline-flex p-2 rounded-xl bg-soft-blue text-primary-blue">
+        <span className="inline-flex p-2 rounded-xl bg-primary-soft text-primary">
           <ShieldAlert className="size-5" aria-hidden />
         </span>
         <div>
@@ -23,11 +23,11 @@ export function PrivacySection() {
         {PLACEHOLDER_LINKS.map(({ label, icon: Icon }) => (
           <span
             key={label}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-soft-blue/30 text-text-secondary text-sm"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-primary-soft/30 text-text-secondary text-sm"
           >
             <Icon className="size-3.5" aria-hidden />
             {label}
-            <span className="px-1.5 py-0.5 rounded-full bg-soft-blue/60 text-[10px] font-semibold">Sắp có</span>
+            <span className="px-1.5 py-0.5 rounded-full bg-primary-soft/60 text-[10px] font-semibold">Sắp có</span>
           </span>
         ))}
       </div>

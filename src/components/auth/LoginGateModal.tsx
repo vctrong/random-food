@@ -28,7 +28,7 @@ export function LoginGateModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} panelClassName="max-w-sm p-6 flex flex-col items-center text-center">
-      <div className="w-14 h-14 rounded-full bg-soft-pink text-primary-pink flex items-center justify-center mb-4">
+      <div className="w-14 h-14 rounded-full bg-accent-soft text-accent-ink flex items-center justify-center mb-4">
         <Heart className="size-6" aria-hidden />
       </div>
 
@@ -39,19 +39,19 @@ export function LoginGateModal({
         <button
           type="button"
           onClick={() => signIn("google", { callbackUrl: resolvedCallbackUrl })}
-          className="w-full h-11 px-4 rounded-full border border-border bg-surface hover:bg-soft-blue text-text-primary text-sm font-semibold flex items-center justify-center gap-3 shadow-sm transition-all active:scale-95"
+          className="w-full h-11 px-4 rounded-full border border-border bg-surface hover:bg-primary-soft text-text-primary text-sm font-semibold flex items-center justify-center gap-3 shadow-sm transition-all active:scale-95"
         >
           <GoogleIcon className="size-4.5" />
           <span>Tiếp tục với Google</span>
         </button>
         <Link
           href={loginHref}
-          className="w-full h-11 rounded-full bg-primary-blue text-white font-semibold shadow-md hover:bg-[#4a8ddb] transition-all active:scale-95 flex items-center justify-center"
+          className="w-full h-11 rounded-full bg-primary-strong text-white font-semibold shadow-md hover:bg-primary-strong-hover transition-all active:scale-95 flex items-center justify-center"
         >
           Đăng nhập bằng email
         </Link>
-        <Link href={registerHref} className="text-sm text-text-secondary hover:text-primary-blue mt-1">
-          Chưa có tài khoản? <span className="font-semibold text-primary-pink">Đăng ký</span>
+        <Link href={registerHref} className="text-sm text-text-secondary hover:text-primary mt-1">
+          Chưa có tài khoản? <span className="font-semibold text-accent-ink">Đăng ký</span>
         </Link>
       </div>
     </Modal>

@@ -34,7 +34,7 @@ export function ProfilePageContent(props: ProfilePageContentProps) {
   return (
     <div className="w-full max-w-6xl mx-auto px-4 md:px-6 lg:px-8 py-10">
       <div className="mb-6 pb-6 border-b border-border">
-        <span className="text-xs uppercase tracking-widest text-primary-blue font-bold">Tài khoản của bạn</span>
+        <span className="text-xs uppercase tracking-widest text-primary font-bold">Tài khoản của bạn</span>
         <h1 className="text-3xl font-bold text-text-primary mt-1">Hồ sơ & Sở thích</h1>
         <p className="text-text-secondary mt-1">
           Cá nhân hoá thông tin, khẩu vị và quản lý bảo mật tài khoản.

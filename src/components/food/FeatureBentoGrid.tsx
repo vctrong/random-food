@@ -1,101 +1,262 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { ArrowRight, Bookmark, ChefHat, History, MapPin } from "lucide-react";
+import { useSession } from "next-auth/react";
+import {
+  ArrowRight,
+  Bookmark,
+  Dices,
+  Heart,
+  History,
+  LogIn,
+  MapPinned,
+  PlusCircle,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { Food } from "@/types/food";
+import { useLandingRandom } from "@/features/random-food/LandingRandomProvider";
+import { getAllHistory } from "@/services/historyService";
+import { getSavedFoodRecords } from "@/services/savedFoodService";
+import { cn, formatRelativeTime } from "@/lib/utils";
+import { SectionHeading } from "@/components/ui/SectionHeading";
+import { Reveal } from "@/components/ui/Reveal";
 
-interface FeatureTile {
-  href: string;
-  icon: LucideIcon;
-  tone: "blue" | "pink";
-  title: string;
-  description: string;
-  span: string;
+const PREVIEW_COUNT = 3;
+
+interface PersonalPreview {
+  history: { id: string; food: Food; timestamp: string }[];
+  saved: Food[];
 }
 
-const FEATURES: FeatureTile[] = [
-  {
-    href: "/lich-su",
-    icon: History,
-    tone: "blue",
-    title: "Lịch sử ăn uống",
-    description: "Check-in mỗi lần ghé quán để tự động lưu lại những gì bạn đã ăn, xem lại bất cứ lúc nào.",
-    span: "md:col-span-2",
-  },
-  {
-    href: "/da-luu",
-    icon: Bookmark,
-    tone: "pink",
-    title: "Món đã lưu",
-    description: "Lưu nhanh món ưng ý để lần sau khỏi phải random lại từ đầu.",
-    span: "md:col-span-1",
-  },
-  {
-    href: "/mon-an",
-    icon: MapPin,
-    tone: "pink",
-    title: "Bản đồ quán ăn",
-    description: "Mỗi món gợi ý đều kèm vị trí quán thật trên bản đồ, xem đường đi chỉ với 1 chạm.",
-    span: "md:col-span-1",
-  },
-  {
-    href: "/dong-gop",
-    icon: ChefHat,
-    tone: "blue",
-    title: "Cộng đồng đóng góp món",
-    description: "Biết quán ngon nào chưa có trên NayAnGi? Đóng góp ngay — FoodReviewer sẽ kiểm duyệt trước khi công khai.",
-    span: "md:col-span-2",
-  },
-];
-
-const TONE_CLASSES = {
-  blue: "bg-soft-blue text-primary-blue",
-  pink: "bg-soft-pink text-primary-pink",
-};
-
-export function FeatureBentoGrid() {
+function TileIcon({ icon: Icon, className }: { icon: LucideIcon; className: string }) {
   return (
-    <section className="py-16">
-      <div className="max-w-2xl mb-10">
-        <span className="text-xs uppercase tracking-widest text-primary-blue font-bold">
-          Tiện ích đi kèm
-        </span>
-        <h2 className="text-display-sm text-text-primary mt-1">
-          Không chỉ random — đồng hành cả hành trình ăn uống
-        </h2>
-      </div>
+    <span className={cn("flex size-11 items-center justify-center rounded-2xl border-2 border-secondary shadow-chunky-sm", className)}>
+      <Icon className="size-5" aria-hidden />
+    </span>
+  );
+}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {FEATURES.map(({ href, icon: Icon, tone, title, description, span }, index) => (
-          <motion.div
-            key={href + title}
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.5, delay: index * 0.08, ease: [0.16, 1, 0.3, 1] }}
-            className={span}
-          >
-            <Link
-              href={href}
-              className="group h-full flex flex-col justify-between gap-6 rounded-2xl bg-surface p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-            >
-              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${TONE_CLASSES[tone]}`}>
-                <Icon className="size-5" aria-hidden />
+function TileLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="group inline-flex items-center gap-1 text-sm font-bold text-primary hover:text-secondary-strong dark:hover:text-text-primary transition-colors"
+    >
+      {children}
+      <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
+    </Link>
+  );
+}
+
+function LoginPrompt({ text }: { text: string }) {
+  return (
+    <Link
+      href="/dang-nhap"
+      className="flex items-center gap-3 rounded-xl border-2 border-dashed border-border bg-surface/70 p-3 text-sm text-text-secondary transition-colors hover:border-primary"
+    >
+      <LogIn className="size-4 shrink-0 text-primary" aria-hidden />
+      <span>
+        {text} <span className="font-bold text-primary">Đăng nhập</span>
+      </span>
+    </Link>
+  );
+}
+
+interface FeatureBentoGridProps {
+  restaurantCount: number;
+}
+
+export function FeatureBentoGrid({ restaurantCount }: FeatureBentoGridProps) {
+  const { allFoods, scrollToMachineAndSpin } = useLandingRandom();
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === "authenticated" && Boolean(session?.user);
+  const [preview, setPreview] = useState<PersonalPreview | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let cancelled = false;
+    Promise.all([getAllHistory(allFoods), getSavedFoodRecords()]).then(([history, savedRecords]) => {
+      if (cancelled) return;
+      const foodsById = new Map(allFoods.map((food) => [food.id, food]));
+      setPreview({
+        history: [...history]
+          .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+          .flatMap((entry) => {
+            const food = foodsById.get(entry.foodId);
+            return food ? [{ id: entry.id, food, timestamp: entry.timestamp }] : [];
+          })
+          .slice(0, PREVIEW_COUNT),
+        saved: [...savedRecords]
+          .sort((a, b) => b.savedAt.localeCompare(a.savedAt))
+          .flatMap((record) => {
+            const food = foodsById.get(record.foodId);
+            return food ? [food] : [];
+          })
+          .slice(0, PREVIEW_COUNT),
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, allFoods]);
+
+  const isLoadingPreview = isAuthenticated && preview === null;
+
+  return (
+    <section aria-labelledby="bento-title" className="border-t border-border bg-surface/60 py-16 md:py-20">
+      <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">
+        <SectionHeading
+          id="bento-title"
+          align="center"
+          tone="pink"
+          eyebrow="Hệ sinh thái ăn uống"
+          title="Không chỉ random — đồng hành cả hành trình ăn uống"
+        />
+
+        <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
+          {/* Lịch sử ăn uống */}
+          <Reveal className="md:col-span-2">
+            <div className="flex h-full flex-col justify-between gap-6 rounded-3xl border border-border bg-primary-soft p-6 sm:p-8">
+              <div>
+                <TileIcon icon={History} className="bg-primary-strong text-white" />
+                <h3 className="mt-4 text-xl sm:text-2xl font-semibold text-text-primary">Lịch sử ăn uống</h3>
+                <p className="mt-1 max-w-xl text-sm text-text-secondary">
+                  Check-in mỗi lần ghé quán để app nhớ giúp bạn đã ăn gì — đỡ ăn trùng món hôm qua.
+                </p>
               </div>
-              <div className="space-y-1.5">
-                <h3 className="text-lg font-semibold text-text-primary group-hover:text-primary-blue transition-colors">
-                  {title}
-                </h3>
-                <p className="text-sm text-text-secondary leading-relaxed">{description}</p>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {isAuthenticated ? (
+                  <>
+                    {isLoadingPreview &&
+                      Array.from({ length: 2 }, (_, index) => (
+                        <div key={index} className="h-18 animate-pulse rounded-xl bg-surface/70" aria-hidden />
+                      ))}
+                    {preview?.history.map((entry) => (
+                      <Link
+                        key={entry.id}
+                        href={`/mon-an/${entry.food.id}`}
+                        className="rounded-xl border border-border bg-surface p-3 text-xs transition-colors hover:border-primary"
+                      >
+                        <span className="font-semibold text-text-secondary">{formatRelativeTime(entry.timestamp)}</span>
+                        <p className="mt-0.5 truncate font-heading text-sm font-semibold text-text-primary">
+                          {entry.food.name}
+                        </p>
+                        <span className="mt-1 inline-block font-bold text-success">Đã ăn</span>
+                      </Link>
+                    ))}
+                    {preview && preview.history.length === 0 && (
+                      <p className="rounded-xl border border-border bg-surface p-3 text-sm text-text-secondary sm:col-span-2">
+                        Chưa có bữa nào được ghi lại. Random một món, ghé quán rồi đánh dấu “Đã ăn” nhé.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <div className="sm:col-span-2">
+                    <LoginPrompt text="Lịch sử chỉ lưu cho tài khoản." />
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={scrollToMachineAndSpin}
+                  className="flex flex-col items-start rounded-xl border-2 border-dashed border-primary/50 bg-surface/60 p-3 text-left text-xs transition-colors hover:border-primary"
+                >
+                  <span className="font-semibold text-text-secondary">Bữa tiếp theo</span>
+                  <span className="mt-0.5 font-heading text-sm font-semibold text-primary">Sẵn sàng gạt cần!</span>
+                  <span className="mt-1 inline-flex items-center gap-1 font-bold text-text-primary">
+                    <Dices className="size-3.5" aria-hidden />
+                    Random ngay
+                  </span>
+                </button>
               </div>
-              <span className="inline-flex items-center gap-1 text-sm font-semibold text-primary-blue">
-                Khám phá
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden />
-              </span>
-            </Link>
-          </motion.div>
-        ))}
+            </div>
+          </Reveal>
+
+          {/* Món đã lưu */}
+          <Reveal delay={0.08}>
+            <div className="flex h-full flex-col justify-between gap-6 rounded-3xl border border-border bg-accent-soft p-6 sm:p-8">
+              <div>
+                <TileIcon icon={Bookmark} className="bg-accent text-secondary-strong" />
+                <h3 className="mt-4 text-xl sm:text-2xl font-semibold text-text-primary">Món đã lưu</h3>
+                <p className="mt-1 text-sm text-text-secondary">Kho “quán chân ái” bạn tích góp sau những lần quay trúng.</p>
+              </div>
+              <div className="space-y-2">
+                {isAuthenticated ? (
+                  <>
+                    {isLoadingPreview && <div className="h-10 animate-pulse rounded-xl bg-surface/70" aria-hidden />}
+                    {preview?.saved.map((food) => (
+                      <Link
+                        key={food.id}
+                        href={`/mon-an/${food.id}`}
+                        className="flex items-center justify-between gap-2 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm font-semibold text-text-primary transition-colors hover:border-accent"
+                      >
+                        <span className="truncate">{food.name}</span>
+                        <Heart className="size-4 shrink-0 fill-accent text-accent-ink" aria-hidden />
+                      </Link>
+                    ))}
+                    {preview && preview.saved.length === 0 && (
+                      <p className="rounded-xl border border-border bg-surface p-3 text-sm text-text-secondary">
+                        Chưa lưu món nào — bấm “Lưu món” ở thẻ kết quả random.
+                      </p>
+                    )}
+                    <TileLink href="/da-luu">Xem tất cả món đã lưu</TileLink>
+                  </>
+                ) : (
+                  <LoginPrompt text="Lưu món cần có tài khoản." />
+                )}
+              </div>
+            </div>
+          </Reveal>
+
+          {/* Bản đồ */}
+          <Reveal delay={0.12}>
+            <div className="flex h-full flex-col justify-between gap-6 rounded-3xl border border-border bg-surface p-6 sm:p-8">
+              <div>
+                <TileIcon icon={MapPinned} className="bg-warning text-secondary-strong" />
+                <h3 className="mt-4 text-xl sm:text-2xl font-semibold text-text-primary">Bản đồ ẩm thực Tây Đô</h3>
+                <p className="mt-1 text-sm text-text-secondary">
+                  Mỗi món đều gắn với vị trí quán thật — chỉ đường bằng Google Maps chỉ với 1 chạm.
+                </p>
+              </div>
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-warning/60 bg-warning/15 p-4 text-sm">
+                <span className="font-bold text-text-primary">{restaurantCount} quán đã có vị trí</span>
+                <TileLink href="/mon-an">Xem món</TileLink>
+              </div>
+            </div>
+          </Reveal>
+
+          {/* Cộng đồng */}
+          <Reveal delay={0.16} className="md:col-span-2">
+            <div className="flex h-full flex-col justify-between gap-6 rounded-3xl border border-border bg-success/10 p-6 sm:p-8">
+              <div>
+                <TileIcon icon={Users} className="bg-success text-secondary-strong" />
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <h3 className="text-xl sm:text-2xl font-semibold text-text-primary">Cộng đồng thổ địa Cần Thơ</h3>
+                  <span className="inline-flex items-center gap-1.5 self-start rounded-full border border-success/40 bg-surface px-3 py-1 text-xs font-bold text-success">
+                    <ShieldCheck className="size-3.5" aria-hidden />
+                    Được reviewer kiểm duyệt
+                  </span>
+                </div>
+                <p className="mt-1 max-w-xl text-sm text-text-secondary">
+                  Món và quán do chính người dùng đóng góp, FoodReviewer kiểm duyệt trước khi xuất hiện trong random.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  href="/mon-an/dong-gop"
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-secondary bg-surface px-4 py-2.5 text-sm font-bold text-text-primary shadow-chunky-sm transition-transform hover:-translate-y-0.5 active:translate-y-0.5"
+                >
+                  <PlusCircle className="size-4 text-success" aria-hidden />
+                  Đóng góp quán mới
+                </Link>
+                <TileLink href="/ung-tuyen-reviewer">Ứng tuyển làm reviewer</TileLink>
+              </div>
+            </div>
+          </Reveal>
+        </div>
       </div>
     </section>
   );
