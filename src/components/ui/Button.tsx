@@ -32,11 +32,11 @@ type ButtonProps = ButtonAsButton | ButtonAsLink;
 
 const VARIANT_CLASSES: Record<Variant, string> = {
   primary:
-    "bg-primary-blue text-white shadow-[0_4px_12px_rgba(91,158,235,0.28)] hover:bg-[#4a8ddb] hover:shadow-lg",
+    "bg-primary-strong text-white shadow-[0_4px_12px_color-mix(in_oklab,var(--color-primary)_28%,transparent)] hover:bg-primary-strong-hover hover:shadow-lg",
   secondary:
-    "bg-surface text-text-primary shadow-sm hover:bg-soft-blue border border-border",
+    "bg-surface text-text-primary shadow-sm hover:bg-primary-soft border border-border",
   outline:
-    "bg-transparent text-text-primary border border-border hover:bg-soft-blue",
+    "bg-transparent text-text-primary border border-border hover:bg-primary-soft",
   dark: "bg-text-primary text-white hover:bg-[#374151]",
 };
 

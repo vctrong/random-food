@@ -4,7 +4,7 @@ import type { ModerationDecision } from "@/types/reviewer";
 const CONFIG: Record<ModerationDecision, { label: string; className: string; icon: typeof CheckCircle2 }> = {
   approved: { label: "Đã duyệt", className: "bg-success/15 text-success", icon: CheckCircle2 },
   needs_revision: { label: "Cần sửa", className: "bg-warning/20 text-[#8a690b]", icon: PenLine },
-  rejected: { label: "Từ chối", className: "bg-primary-pink/15 text-primary-pink", icon: XCircle },
+  rejected: { label: "Từ chối", className: "bg-accent/15 text-accent-ink", icon: XCircle },
 };
 
 export function DecisionBadge({ decision }: { decision: ModerationDecision }) {

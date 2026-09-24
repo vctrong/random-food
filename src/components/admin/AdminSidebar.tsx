@@ -55,8 +55,8 @@ export function AdminSidebar({
     <aside className="w-full lg:w-72 lg:shrink-0 lg:sticky lg:top-24 flex flex-col gap-4">
       <div className="rounded-2xl bg-surface border border-border shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-border">
-          <p className="text-xs font-bold uppercase tracking-wider text-primary-pink">Admin Workspace</p>
-          <h2 className="text-lg font-subheading font-semibold text-text-primary mt-0.5">Quản trị hệ thống</h2>
+          <p className="text-xs font-bold uppercase tracking-wider text-accent-ink">Admin Workspace</p>
+          <h2 className="text-lg font-heading font-semibold text-text-primary mt-0.5">Quản trị hệ thống</h2>
         </div>
 
         <nav className="flex flex-col gap-1 p-3">
@@ -70,8 +70,8 @@ export function AdminSidebar({
                 className={cn(
                   "flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-soft-blue text-primary-blue font-semibold"
-                    : "text-text-secondary hover:bg-cream hover:text-text-primary",
+                    ? "bg-primary-soft text-primary font-semibold"
+                    : "text-text-secondary hover:bg-background hover:text-text-primary",
                 )}
               >
                 <span className="flex items-center gap-2.5">
@@ -79,7 +79,7 @@ export function AdminSidebar({
                   {item.label}
                 </span>
                 {item.badge > 0 && (
-                  <span className="min-w-5 h-5 px-1.5 rounded-full bg-primary-pink text-white text-[11px] font-bold flex items-center justify-center">
+                  <span className="min-w-5 h-5 px-1.5 rounded-full bg-accent-strong text-white text-[11px] font-bold flex items-center justify-center">
                     {item.badge}
                   </span>
                 )}
@@ -91,7 +91,7 @@ export function AdminSidebar({
         <div className="px-3 pb-3">
           <Link
             href="/"
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm text-text-secondary hover:text-primary-blue hover:bg-soft-blue transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm text-text-secondary hover:text-primary hover:bg-primary-soft transition-colors"
           >
             <ArrowLeft className="size-4" aria-hidden />
             Về trang cộng đồng

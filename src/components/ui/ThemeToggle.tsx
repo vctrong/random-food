@@ -40,7 +40,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       aria-label={`${THEME_LABEL[current]} — bấm để đổi chủ đề`}
       title={THEME_LABEL[current]}
       className={cn(
-        "w-9 h-9 rounded-full flex items-center justify-center text-text-secondary hover:text-primary-blue bg-surface hover:bg-soft-blue border border-border transition-colors",
+        "size-10 rounded-full flex items-center justify-center text-text-secondary hover:text-primary bg-surface hover:bg-primary-soft border border-accent/40 transition-colors",
         className,
       )}
     >

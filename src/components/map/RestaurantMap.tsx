@@ -8,7 +8,7 @@ import { getGoogleMapsUrl } from "@/lib/utils";
 const LeafletMap = dynamic(() => import("./LeafletMap"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full rounded-xl bg-soft-blue animate-pulse flex items-center justify-center text-primary-blue">
+    <div className="w-full h-full rounded-xl bg-primary-soft animate-pulse flex items-center justify-center text-primary">
       <MapPin className="size-6" aria-hidden />
     </div>
   ),
@@ -26,7 +26,7 @@ export function RestaurantMap({ location, name, address, className }: Restaurant
   if (!location) {
     return (
       <div
-        className={`w-full h-full rounded-xl bg-soft-blue/60 flex flex-col items-center justify-center gap-2 text-text-secondary text-sm p-4 text-center ${className ?? ""}`}
+        className={`w-full h-full rounded-xl bg-primary-soft/60 flex flex-col items-center justify-center gap-2 text-text-secondary text-sm p-4 text-center ${className ?? ""}`}
       >
         <MapPin className="size-5" aria-hidden />
         <span>Chưa có vị trí bản đồ cho quán này</span>
@@ -34,7 +34,7 @@ export function RestaurantMap({ location, name, address, className }: Restaurant
           href={getGoogleMapsUrl(null, address)}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface shadow-sm text-xs font-semibold text-primary-blue hover:bg-primary-blue hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface shadow-sm text-xs font-semibold text-primary hover:bg-primary-strong hover:text-white transition-colors"
         >
           <ExternalLink className="size-3.5" aria-hidden />
           <span>Tìm theo địa chỉ trên Google Maps</span>
@@ -51,7 +51,7 @@ export function RestaurantMap({ location, name, address, className }: Restaurant
         target="_blank"
         rel="noopener noreferrer"
         onClick={(e) => e.stopPropagation()}
-        className="absolute top-3 right-3 z-[500] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface shadow-md text-xs font-semibold text-primary-blue hover:bg-primary-blue hover:text-white transition-colors"
+        className="absolute top-3 right-3 z-[500] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface shadow-md text-xs font-semibold text-primary hover:bg-primary-strong hover:text-white transition-colors"
       >
         <ExternalLink className="size-3.5" aria-hidden />
         <span>Mở Google Maps</span>

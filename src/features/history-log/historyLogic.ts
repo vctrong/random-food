@@ -185,10 +185,10 @@ export interface EatingLevelBreakdownSlice {
 }
 
 const EATING_LEVEL_COLORS: Record<EatingLevel, string> = {
-  snack: "#F07FA5",
-  normal: "#5B9EEB",
-  hearty: "#23466F",
-  full: "#F4C95D",
+  snack: "var(--color-accent)",
+  normal: "var(--color-primary)",
+  hearty: "var(--color-secondary)",
+  full: "var(--color-warning)",
 };
 
 export function computeEatingLevelBreakdown(entries: HistoryWithFood[]): EatingLevelBreakdownSlice[] {

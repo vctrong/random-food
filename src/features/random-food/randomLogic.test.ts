@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Food } from "@/types/food";
-import { applyPersonalPreferences, pickRelatedFoods, type PersonalPreferences } from "./randomLogic";
+import {
+  applyPersonalPreferences,
+  filterFoods,
+  pickRelatedFoods,
+  pickTopRatedPerLevel,
+  type PersonalPreferences,
+} from "./randomLogic";
 
 function makeFood(overrides: Partial<Food> & { id: string }): Food {
   return {
@@ -152,5 +158,48 @@ describe("pickRelatedFoods", () => {
     ];
     const result = pickRelatedFoods(foods, current, 2);
     expect(result.foods).toHaveLength(2);
+  });
+});
+
+describe("filterFoods — maxPrice", () => {
+  const NO_FILTERS = { eatingLevel: null, categoryIds: [], tags: [] };
+
+  it("giữ món có priceMin không vượt maxPrice, loại món chưa có giá", () => {
+    const foods = [
+      makeFood({ id: "1", priceMin: 20000, priceMax: 35000 }),
+      makeFood({ id: "2", priceMin: 30000, priceMax: 30000 }),
+      makeFood({ id: "3", priceMin: 45000, priceMax: 60000 }),
+      makeFood({ id: "4", priceMin: null, priceMax: null }),
+    ];
+    const result = filterFoods(foods, { ...NO_FILTERS, maxPrice: 30000 });
+    expect(result.map((f) => f.id)).toEqual(["1", "2"]);
+  });
+
+  it("maxPrice null/không truyền thì không lọc giá", () => {
+    const foods = [makeFood({ id: "1", priceMin: null, priceMax: null }), makeFood({ id: "2", priceMin: 90000 })];
+    expect(filterFoods(foods, NO_FILTERS)).toHaveLength(2);
+    expect(filterFoods(foods, { ...NO_FILTERS, maxPrice: null })).toHaveLength(2);
+  });
+
+  it("kết hợp AND với eatingLevel", () => {
+    const foods = [
+      makeFood({ id: "1", priceMin: 20000, eatingLevels: ["snack"] }),
+      makeFood({ id: "2", priceMin: 20000, eatingLevels: ["full"] }),
+    ];
+    const result = filterFoods(foods, { ...NO_FILTERS, eatingLevel: "snack", maxPrice: 30000 });
+    expect(result.map((f) => f.id)).toEqual(["1"]);
+  });
+});
+
+describe("pickTopRatedPerLevel", () => {
+  it("mỗi mức 1 món rating cao nhất, không trùng món giữa các mức, bỏ mức không có món", () => {
+    const foods = [
+      makeFood({ id: "lau", eatingLevels: ["hearty", "full"], avgRating: 4.9, ratingCount: 10 }),
+      makeFood({ id: "bun", eatingLevels: ["hearty"], avgRating: 4.5, ratingCount: 3 }),
+      makeFood({ id: "che", eatingLevels: ["snack"], avgRating: 4.2, ratingCount: 8 }),
+      makeFood({ id: "che2", eatingLevels: ["snack"], avgRating: 4.2, ratingCount: 20 }),
+    ];
+    const result = pickTopRatedPerLevel(foods).map(({ level, food }) => `${level}:${food.id}`);
+    expect(result).toEqual(["snack:che2", "hearty:lau"]);
   });
 });

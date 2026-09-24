@@ -11,6 +11,15 @@ export function formatPriceRange(min: number, max: number): string {
   return `${formatter.format(min)} - ${formatter.format(max)}đ`;
 }
 
+/** Giá rút gọn kiểu "15k – 25k" cho chỗ hẹp (cuộn máy slot, chip). */
+export function formatPriceShort(min: number | null, max: number | null): string {
+  const short = (value: number) => (value >= 1000 ? `${Math.round(value / 1000)}k` : `${value}đ`);
+  if (min === null && max === null) return "Chưa rõ giá";
+  if (min === null) return `Dưới ${short(max as number)}`;
+  if (max === null || min === max) return short(min);
+  return `${short(min)} – ${short(max)}`;
+}
+
 export function formatCalories(kcal: number): string {
   return `${new Intl.NumberFormat("vi-VN").format(kcal)} kcal`;
 }

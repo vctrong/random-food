@@ -24,7 +24,7 @@ const DECISION_LABEL = {
 const DECISION_DOT = {
   approved: "bg-success",
   needs_revision: "bg-warning",
-  rejected: "bg-primary-pink",
+  rejected: "bg-accent",
 } as const;
 
 export function ContributionDetailModal({ contribution, onClose, onEdit }: ContributionDetailModalProps) {
@@ -37,16 +37,16 @@ export function ContributionDetailModal({ contribution, onClose, onEdit }: Contr
             <span className="text-xs text-text-secondary">Gửi ngày {formatDate(contribution.createdAt)}</span>
           </div>
 
-          <h3 className="text-xl font-subheading font-semibold text-text-primary -mt-2">{contribution.name}</h3>
+          <h3 className="text-xl font-heading font-semibold text-text-primary -mt-2">{contribution.name}</h3>
 
           {contribution.images.length > 0 && (
             <div className="flex gap-2 overflow-x-auto pb-1">
               {contribution.images.map((url, index) => (
-                <div key={url} className="relative size-28 sm:size-32 rounded-xl overflow-hidden shrink-0 bg-soft-blue flex items-center justify-center">
+                <div key={url} className="relative size-28 sm:size-32 rounded-xl overflow-hidden shrink-0 bg-primary-soft flex items-center justify-center">
                   {isAllowedImageHost(url) ? (
                     <Image src={url} alt={`${contribution.name} — ảnh ${index + 1}`} fill sizes="128px" className="object-cover" />
                   ) : (
-                    <UtensilsCrossed className="size-6 text-primary-blue/60" aria-hidden />
+                    <UtensilsCrossed className="size-6 text-primary/60" aria-hidden />
                   )}
                 </div>
               ))}
@@ -74,20 +74,20 @@ export function ContributionDetailModal({ contribution, onClose, onEdit }: Contr
           )}
 
           {contribution.restaurant && (
-            <div className="p-4 rounded-2xl bg-cream flex flex-col gap-1.5">
+            <div className="p-4 rounded-2xl bg-background flex flex-col gap-1.5">
               <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary">
                 {contribution.restaurant.isOwnedByUser ? "Quán bạn thêm mới" : "Quán bán món này"}
               </span>
               <p className="font-semibold text-text-primary">{contribution.restaurant.name}</p>
               <p className="text-sm text-text-secondary flex items-start gap-1.5">
-                <MapPin className="size-4 shrink-0 mt-0.5 text-primary-pink" aria-hidden />
+                <MapPin className="size-4 shrink-0 mt-0.5 text-accent-ink" aria-hidden />
                 {contribution.restaurant.address}
               </p>
               <a
                 href={getGoogleMapsUrl(contribution.restaurant.location, contribution.restaurant.address)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs font-medium text-primary-blue hover:underline inline-flex items-center gap-1 w-fit"
+                className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 w-fit"
               >
                 Mở trên Google Maps <ExternalLink className="size-3" aria-hidden />
               </a>
@@ -121,7 +121,7 @@ export function ContributionDetailModal({ contribution, onClose, onEdit }: Contr
               <button
                 type="button"
                 onClick={() => onEdit(contribution)}
-                className="h-10 px-5 rounded-full bg-primary-pink text-white text-sm font-semibold shadow-sm hover:opacity-90 active:scale-95 transition-all inline-flex items-center gap-1.5"
+                className="h-10 px-5 rounded-full bg-accent-strong text-white text-sm font-semibold shadow-sm hover:opacity-90 active:scale-95 transition-all inline-flex items-center gap-1.5"
               >
                 <PenLine className="size-4" aria-hidden />
                 Chỉnh sửa & nộp lại
@@ -130,7 +130,7 @@ export function ContributionDetailModal({ contribution, onClose, onEdit }: Contr
             {contribution.status === "approved" && (
               <Link
                 href={`/mon-an/${contribution.id}`}
-                className="h-10 px-5 rounded-full bg-primary-blue text-white text-sm font-semibold shadow-sm hover:bg-[#4a8ddb] active:scale-95 transition-all inline-flex items-center gap-1.5"
+                className="h-10 px-5 rounded-full bg-primary-strong text-white text-sm font-semibold shadow-sm hover:bg-primary-strong-hover active:scale-95 transition-all inline-flex items-center gap-1.5"
               >
                 Xem trang món ăn
               </Link>

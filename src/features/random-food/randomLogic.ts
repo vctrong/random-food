@@ -5,6 +5,12 @@ export interface RandomFilters {
   eatingLevel: EatingLevel | null;
   categoryIds: string[];
   tags: string[];
+  /**
+   * Chip "Dưới 30k" ở landing: giữ món có giá khởi điểm (priceMin) không vượt
+   * mức này — tức là ăn được trong tầm tiền đó. Món chưa có giá bị loại vì không
+   * xác nhận được. Bỏ trống/null = không lọc giá.
+   */
+  maxPrice?: number | null;
 }
 
 export interface PersonalPreferences {
@@ -89,6 +95,7 @@ export function filterFoods(foods: Food[], filters: RandomFilters): Food[] {
       return false;
     }
     if (filters.tags.length > 0 && !filters.tags.some((tag) => food.tags.includes(tag))) return false;
+    if (filters.maxPrice != null && (food.priceMin === null || food.priceMin > filters.maxPrice)) return false;
     return true;
   });
 }
@@ -164,4 +171,26 @@ export function pickTopRatedByEatingLevel(foods: Food[], perLevel = 5): Food[] {
   }
 
   return [...picked.values()];
+}
+
+/**
+ * Mỗi mức độ ăn lấy đúng 1 món rating cao nhất (không trùng món giữa các mức) —
+ * trả kèm mức độ mà món đại diện, cho thẻ "Rating cao nhất mỗi kiểu thèm ăn".
+ * Mức nào không có món thì bỏ qua.
+ */
+export function pickTopRatedPerLevel(foods: Food[]): { level: EatingLevel; food: Food }[] {
+  const pickedIds = new Set<string>();
+  const result: { level: EatingLevel; food: Food }[] = [];
+
+  for (const level of EATING_LEVEL_ORDER) {
+    const best = foods
+      .filter((food) => food.eatingLevels.includes(level) && !pickedIds.has(food.id))
+      .sort((a, b) => b.avgRating - a.avgRating || b.ratingCount - a.ratingCount)[0];
+    if (best) {
+      pickedIds.add(best.id);
+      result.push({ level, food: best });
+    }
+  }
+
+  return result;
 }

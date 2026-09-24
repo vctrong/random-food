@@ -99,7 +99,7 @@ export function ContentModerationContent({ initialRows }: ContentModerationConte
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <h1 className="text-2xl md:text-3xl font-subheading font-semibold text-text-primary tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-heading font-semibold text-text-primary tracking-tight">
           Quản lý nội dung ẩm thực
         </h1>
         <p className="text-sm text-text-secondary">{rows.length} món ăn &amp; quán ăn trong hệ thống</p>
@@ -117,13 +117,13 @@ export function ContentModerationContent({ initialRows }: ContentModerationConte
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Tìm theo tên..."
-                  className="w-full h-10 pl-10 pr-3 rounded-xl bg-cream text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
+                  className="w-full h-10 pl-10 pr-3 rounded-xl bg-background text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                className="h-10 px-3 rounded-xl bg-cream text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
+                className="h-10 px-3 rounded-xl bg-background text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
               >
                 <option value="pending">Chờ duyệt</option>
                 <option value="approved">Đã duyệt</option>
@@ -144,13 +144,13 @@ export function ContentModerationContent({ initialRows }: ContentModerationConte
                     onClick={() => setSelectedKey(key(row))}
                     className={cn(
                       "flex items-center gap-3 p-3 rounded-xl text-left transition-colors border",
-                      selectedKeyValue === key(row) ? "bg-soft-blue border-primary-blue/40" : "border-border hover:bg-cream",
+                      selectedKeyValue === key(row) ? "bg-primary-soft border-primary/40" : "border-border hover:bg-background",
                     )}
                   >
                     {isAllowedImageHost(row.images[0]) ? (
                       <Image src={row.images[0]} alt={row.name} width={44} height={44} className="size-11 rounded-lg object-cover shrink-0" />
                     ) : (
-                      <span className="size-11 rounded-lg bg-soft-blue flex items-center justify-center text-primary-blue shrink-0">
+                      <span className="size-11 rounded-lg bg-primary-soft flex items-center justify-center text-primary shrink-0">
                         <UtensilsCrossed className="size-5" aria-hidden />
                       </span>
                     )}
@@ -169,7 +169,7 @@ export function ContentModerationContent({ initialRows }: ContentModerationConte
             <Card className="p-5 space-y-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-subheading font-semibold text-text-primary">{selected.name}</h3>
+                  <h3 className="font-heading font-semibold text-text-primary">{selected.name}</h3>
                   <p className="text-sm text-text-secondary">
                     {selected.targetType === "food" ? "Món ăn" : "Quán ăn"} · bởi {selected.submitter.name}
                   </p>
@@ -180,10 +180,10 @@ export function ContentModerationContent({ initialRows }: ContentModerationConte
               {selected.description && <p className="text-sm text-text-primary">{selected.description}</p>}
               {selected.address && <p className="text-sm text-text-secondary">📍 {selected.address}</p>}
               {selected.priceMin != null && selected.priceMax != null && (
-                <p className="text-sm font-semibold text-primary-blue">{formatPriceRange(selected.priceMin, selected.priceMax)}</p>
+                <p className="text-sm font-semibold text-primary">{formatPriceRange(selected.priceMin, selected.priceMax)}</p>
               )}
               {selected.moderationNote && (
-                <p className="text-sm text-text-secondary bg-cream rounded-xl px-3 py-2">Ghi chú: {selected.moderationNote}</p>
+                <p className="text-sm text-text-secondary bg-background rounded-xl px-3 py-2">Ghi chú: {selected.moderationNote}</p>
               )}
 
               {selected.images.length > 0 && (
@@ -200,7 +200,7 @@ export function ContentModerationContent({ initialRows }: ContentModerationConte
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="Ghi chú/lý do (bắt buộc khi từ chối hoặc yêu cầu sửa)..."
                   rows={3}
-                  className="w-full px-3 py-2 rounded-xl bg-cream text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-blue/40 resize-none"
+                  className="w-full px-3 py-2 rounded-xl bg-background text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
                 />
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" leftIcon={<CheckCircle2 className="size-4" />} isLoading={isSubmitting === "approved"} onClick={() => handleDecision("approved")}>

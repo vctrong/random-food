@@ -57,21 +57,21 @@ export function LoginForm() {
       <div className="relative w-full max-w-[440px]">
         <div
           aria-hidden
-          className="absolute -top-12 -left-12 w-64 h-64 rounded-full bg-soft-blue blur-3xl pointer-events-none -z-10"
+          className="absolute -top-12 -left-12 w-64 h-64 rounded-full bg-primary-soft blur-3xl pointer-events-none -z-10"
         />
         <div
           aria-hidden
-          className="absolute -bottom-10 -right-10 w-60 h-60 rounded-full bg-soft-pink blur-3xl pointer-events-none -z-10"
+          className="absolute -bottom-10 -right-10 w-60 h-60 rounded-full bg-accent-soft blur-3xl pointer-events-none -z-10"
         />
 
         <div className="relative overflow-hidden bg-surface rounded-2xl shadow-xl p-6 md:p-8">
           <div
             aria-hidden
-            className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-primary-blue via-primary-blue to-primary-pink"
+            className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-primary via-primary to-accent"
           />
 
           <div className="flex flex-col items-center text-center mb-6">
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-soft-blue text-primary-blue text-sm font-medium mb-4 shadow-sm">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-primary-soft text-primary text-sm font-medium mb-4 shadow-sm">
               <Soup className="size-3.5" aria-hidden />
               <span>Đồng hành cùng bữa ngon của bạn</span>
             </div>
@@ -98,7 +98,7 @@ export function LoginForm() {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="tenban@email.com"
-                  className="w-full h-12 pl-11 pr-4 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+                  className="w-full h-12 pl-11 pr-4 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                 />
               </div>
             </div>
@@ -117,7 +117,7 @@ export function LoginForm() {
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="••••••••"
-                  className="w-full h-12 pl-11 pr-11 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+                  className="w-full h-12 pl-11 pr-11 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                 />
                 <button
                   type="button"
@@ -136,13 +136,13 @@ export function LoginForm() {
                   type="checkbox"
                   checked={remember}
                   onChange={(event) => setRemember(event.target.checked)}
-                  className="size-4 rounded border-border accent-primary-blue cursor-pointer"
+                  className="size-4 rounded border-border accent-primary cursor-pointer"
                 />
                 Ghi nhớ đăng nhập
               </label>
               <Link
                 href="/quen-mat-khau"
-                className="text-sm font-medium text-primary-blue hover:text-[#4a8ddb] transition-colors"
+                className="text-sm font-medium text-primary hover:text-primary-strong transition-colors"
               >
                 Quên mật khẩu?
               </Link>
@@ -169,16 +169,16 @@ export function LoginForm() {
           <button
             type="button"
             onClick={() => signIn("google", { callbackUrl })}
-            className="w-full h-12 px-4 rounded-xl border border-border bg-surface hover:bg-soft-blue text-text-primary text-sm font-semibold flex items-center justify-center gap-3 shadow-sm transition-all active:scale-[0.99]"
+            className="w-full h-12 px-4 rounded-xl border border-border bg-surface hover:bg-primary-soft text-text-primary text-sm font-semibold flex items-center justify-center gap-3 shadow-sm transition-all active:scale-[0.99]"
           >
             <GoogleIcon className="size-5" />
             <span>Tiếp tục với Google</span>
           </button>
 
-          <div className="mt-6 -mx-6 -mb-6 md:-mx-8 md:-mb-8 px-6 md:px-8 py-5 bg-soft-blue/50 text-center rounded-b-2xl">
+          <div className="mt-6 -mx-6 -mb-6 md:-mx-8 md:-mb-8 px-6 md:px-8 py-5 bg-primary-soft/50 text-center rounded-b-2xl">
             <p className="text-sm text-text-secondary">
               Chưa có tài khoản?{" "}
-              <Link href="/dang-ky" className="font-semibold text-primary-pink hover:underline">
+              <Link href="/dang-ky" className="font-semibold text-accent-ink hover:underline">
                 Đăng ký ngay
               </Link>
             </p>
@@ -187,7 +187,7 @@ export function LoginForm() {
 
         <div className="mt-5 flex items-center justify-center">
           <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-surface shadow-sm text-text-secondary text-xs">
-            <ShieldCheck className="size-3.5 text-primary-blue" aria-hidden />
+            <ShieldCheck className="size-3.5 text-primary" aria-hidden />
             <span>Bảo mật thông tin &amp; đồng bộ nhật ký ăn uống tức thì</span>
           </div>
         </div>

@@ -238,7 +238,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
     <div className="flex flex-col gap-6">
       {/* Ảnh món ăn */}
       <section className="bg-surface rounded-2xl shadow-sm p-5 sm:p-6">
-        <h2 className="font-subheading font-semibold text-text-primary mb-1">Ảnh món ăn</h2>
+        <h2 className="font-heading font-semibold text-text-primary mb-1">Ảnh món ăn</h2>
         <p className="text-sm text-text-secondary mb-4">Tối đa {MAX_IMAGES} ảnh, ảnh đầu tiên sẽ là ảnh đại diện.</p>
         <div className="flex flex-wrap gap-3">
           {images.map((image, index) => (
@@ -259,7 +259,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="size-24 rounded-xl border-2 border-dashed border-border text-text-secondary hover:text-primary-blue hover:border-primary-blue flex flex-col items-center justify-center gap-1 transition-colors shrink-0"
+              className="size-24 rounded-xl border-2 border-dashed border-border text-text-secondary hover:text-primary hover:border-primary flex flex-col items-center justify-center gap-1 transition-colors shrink-0"
             >
               <ImagePlus className="size-5" aria-hidden />
               <span className="text-xs font-medium">Thêm ảnh</span>
@@ -278,7 +278,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
 
       {/* Thông tin món ăn */}
       <section className="bg-surface rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
-        <h2 className="font-subheading font-semibold text-text-primary">Thông tin món ăn</h2>
+        <h2 className="font-heading font-semibold text-text-primary">Thông tin món ăn</h2>
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="food-name" className="text-sm font-medium text-text-primary">
@@ -289,7 +289,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="Vd: Bún bò Huế đặc biệt"
-            className="w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+            className="w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
           />
         </div>
 
@@ -303,7 +303,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
             onChange={(event) => setDescription(event.target.value)}
             placeholder="Món ăn có gì đặc biệt, hương vị ra sao..."
             rows={3}
-            className="w-full px-4 py-2.5 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue resize-none"
+            className="w-full px-4 py-2.5 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary resize-none"
           />
         </div>
 
@@ -319,7 +319,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
               value={priceMin}
               onChange={(event) => setPriceMin(event.target.value)}
               placeholder="25000"
-              className="w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+              className="w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -333,7 +333,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
               value={priceMax}
               onChange={(event) => setPriceMax(event.target.value)}
               placeholder="45000"
-              className="w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+              className="w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
             />
           </div>
         </div>
@@ -351,7 +351,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
                   className={cn(
                     "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium border transition-colors",
                     active
-                      ? "bg-primary-blue border-primary-blue text-white shadow-sm"
+                      ? "bg-primary-strong border-primary text-white shadow-sm"
                       : "bg-surface border-border text-text-secondary hover:text-text-primary",
                   )}
                 >
@@ -379,7 +379,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
                     className={cn(
                       "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium border transition-colors",
                       active
-                        ? "bg-soft-pink border-primary-pink text-primary-pink"
+                        ? "bg-accent-soft border-accent text-accent-ink"
                         : "bg-surface border-border text-text-secondary hover:text-text-primary",
                     )}
                   >
@@ -404,7 +404,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
                 }}
                 placeholder="Tên danh mục muốn đề xuất"
                 maxLength={40}
-                className="h-9 px-3.5 rounded-full border border-border bg-surface text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue w-56"
+                className="h-9 px-3.5 rounded-full border border-border bg-surface text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary w-56"
               />
               <Button
                 type="button"
@@ -431,7 +431,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
             <button
               type="button"
               onClick={() => setIsProposingCategory(true)}
-              className="inline-flex items-center gap-1.5 w-fit text-sm text-primary-blue font-medium hover:text-[#4a8ddb] transition-colors mt-1"
+              className="inline-flex items-center gap-1.5 w-fit text-sm text-primary font-medium hover:text-primary-strong transition-colors mt-1"
             >
               <PlusCircle className="size-3.5" aria-hidden />
               Không thấy danh mục phù hợp? Đề xuất danh mục mới
@@ -445,15 +445,15 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
 
       {/* Quán ăn */}
       <section className="bg-surface rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
-        <h2 className="font-subheading font-semibold text-text-primary">Quán bán món này</h2>
+        <h2 className="font-heading font-semibold text-text-primary">Quán bán món này</h2>
 
-        <div className="inline-flex p-1 rounded-full bg-soft-blue/50 gap-1 w-full sm:w-auto">
+        <div className="inline-flex p-1 rounded-full bg-primary-soft/50 gap-1 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setRestaurantMode("existing")}
             className={cn(
               "flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors",
-              restaurantMode === "existing" ? "bg-surface text-primary-blue shadow-sm" : "text-text-secondary",
+              restaurantMode === "existing" ? "bg-surface text-primary shadow-sm" : "text-text-secondary",
             )}
           >
             <Search className="size-3.5" aria-hidden />
@@ -464,7 +464,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
             onClick={() => setRestaurantMode("new")}
             className={cn(
               "flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors",
-              restaurantMode === "new" ? "bg-surface text-primary-blue shadow-sm" : "text-text-secondary",
+              restaurantMode === "new" ? "bg-surface text-primary shadow-sm" : "text-text-secondary",
             )}
           >
             <PlusCircle className="size-3.5" aria-hidden />
@@ -480,7 +480,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
               value={restaurantQuery}
               onChange={handleRestaurantQueryChange}
               placeholder="Tìm theo tên quán..."
-              className="w-full h-11 pl-10 pr-10 rounded-xl border border-border bg-surface text-sm text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+              className="w-full h-11 pl-10 pr-10 rounded-xl border border-border bg-surface text-sm text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
             />
             {isSearchingRestaurant && (
               <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-text-secondary animate-spin" aria-hidden />
@@ -492,7 +492,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
                     <button
                       type="button"
                       onClick={() => selectRestaurant(restaurant)}
-                      className="w-full text-left px-3.5 py-2.5 text-sm text-text-primary hover:bg-soft-blue transition-colors"
+                      className="w-full text-left px-3.5 py-2.5 text-sm text-text-primary hover:bg-primary-soft transition-colors"
                     >
                       <div className="font-medium">{restaurant.name}</div>
                       <div className="text-xs text-text-secondary line-clamp-1">{restaurant.address}</div>
@@ -519,7 +519,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
                 value={newRestaurantName}
                 onChange={(event) => setNewRestaurantName(event.target.value)}
                 placeholder="Vd: Quán Bún Bò Cô Ba"
-                className="w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+                className="w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -531,12 +531,12 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
                 value={newRestaurantAddress}
                 onChange={(event) => setNewRestaurantAddress(event.target.value)}
                 placeholder="Vd: 123 Nguyễn Văn Cừ, Ninh Kiều, Cần Thơ"
-                className="w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+                className="w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </div>
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-text-primary flex items-center gap-1.5">
-                <MapPin className="size-4 text-primary-pink" aria-hidden />
+                <MapPin className="size-4 text-accent-ink" aria-hidden />
                 Vị trí trên bản đồ
               </span>
               <LocationPicker value={newRestaurantLocation} onChange={setNewRestaurantLocation} />
@@ -545,7 +545,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
         )}
 
         <p className="text-xs text-text-secondary flex items-start gap-1.5">
-          <Sparkles className="size-3.5 shrink-0 mt-0.5 text-primary-blue" aria-hidden />
+          <Sparkles className="size-3.5 shrink-0 mt-0.5 text-primary" aria-hidden />
           Món ăn và quán mới sẽ ở trạng thái chờ duyệt cho đến khi đội kiểm duyệt xác nhận.
         </p>
       </section>

@@ -89,7 +89,7 @@ export function ReviewerApplicationsContent({ initialApplications }: ReviewerApp
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <h1 className="text-2xl md:text-3xl font-subheading font-semibold text-text-primary tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-heading font-semibold text-text-primary tracking-tight">
           Đơn ứng tuyển FoodReviewer
         </h1>
         <p className="text-sm text-text-secondary">
@@ -113,13 +113,13 @@ export function ReviewerApplicationsContent({ initialApplications }: ReviewerApp
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Tìm theo tên/email..."
-                  className="w-full h-10 pl-10 pr-3 rounded-xl bg-cream text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
+                  className="w-full h-10 pl-10 pr-3 rounded-xl bg-background text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                className="h-10 px-3 rounded-xl bg-cream text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
+                className="h-10 px-3 rounded-xl bg-background text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
               >
                 <option value="pending">Chờ duyệt</option>
                 <option value="approved">Đã duyệt</option>
@@ -140,13 +140,13 @@ export function ReviewerApplicationsContent({ initialApplications }: ReviewerApp
                     onClick={() => setSelectedId(app.id)}
                     className={cn(
                       "flex items-center gap-3 p-3 rounded-xl text-left transition-colors border",
-                      selected?.id === app.id ? "bg-soft-blue border-primary-blue/40" : "border-border hover:bg-cream",
+                      selected?.id === app.id ? "bg-primary-soft border-primary/40" : "border-border hover:bg-background",
                     )}
                   >
                     {isAllowedImageHost(app.applicant.avatarUrl) ? (
                       <Image src={app.applicant.avatarUrl as string} alt={app.applicant.name} width={36} height={36} className="size-9 rounded-full object-cover" />
                     ) : (
-                      <span className="size-9 rounded-full bg-surface text-primary-blue font-semibold flex items-center justify-center text-sm shrink-0">
+                      <span className="size-9 rounded-full bg-surface text-primary font-semibold flex items-center justify-center text-sm shrink-0">
                         {app.applicant.name.charAt(0).toUpperCase()}
                       </span>
                     )}
@@ -165,7 +165,7 @@ export function ReviewerApplicationsContent({ initialApplications }: ReviewerApp
             <Card className="p-5 space-y-4">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <h3 className="font-subheading font-semibold text-text-primary">{selected.applicant.name}</h3>
+                  <h3 className="font-heading font-semibold text-text-primary">{selected.applicant.name}</h3>
                   <p className="text-sm text-text-secondary">{selected.applicant.email}</p>
                 </div>
                 <Badge variant={STATUS_VARIANT[selected.status]}>{STATUS_LABEL[selected.status]}</Badge>
@@ -189,7 +189,7 @@ export function ReviewerApplicationsContent({ initialApplications }: ReviewerApp
                     onChange={(e) => setReason(e.target.value)}
                     placeholder="Ghi chú/lý do (bắt buộc khi từ chối)..."
                     rows={3}
-                    className="w-full px-3 py-2 rounded-xl bg-cream text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-blue/40 resize-none"
+                    className="w-full px-3 py-2 rounded-xl bg-background text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
                   />
                   <div className="flex gap-2">
                     <Button
@@ -235,7 +235,7 @@ function ProfileBlock({ title, children }: { title: string; children: React.Reac
 function ApplicationProfile({ profile }: { profile: AdminReviewerApplicationRow["profile"] }) {
   if (!profile) {
     return (
-      <p className="text-sm text-text-secondary p-3 rounded-xl bg-cream">
+      <p className="text-sm text-text-secondary p-3 rounded-xl bg-background">
         Đơn này được tạo trước khi có form ứng tuyển nên không có hồ sơ chi tiết.
       </p>
     );
@@ -259,7 +259,7 @@ function ApplicationProfile({ profile }: { profile: AdminReviewerApplicationRow[
       <ProfileBlock title="Khu vực xác minh thực địa">
         <div className="flex flex-wrap gap-1.5">
           {profile.activeAreas.map((area) => (
-            <span key={area} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-soft-blue text-primary-blue text-xs font-medium">
+            <span key={area} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-soft text-primary text-xs font-medium">
               <MapPin className="size-3" aria-hidden />
               {area}
             </span>
@@ -271,7 +271,7 @@ function ApplicationProfile({ profile }: { profile: AdminReviewerApplicationRow[
           <ul className="space-y-1">
             {profile.socialLinks.map((link) => (
               <li key={link.url}>
-                <a href={link.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary-blue hover:underline">
+                <a href={link.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
                   {PLATFORM_LABEL[link.platform] ?? link.platform}
                   <ExternalLink className="size-3" aria-hidden />
                 </a>
@@ -292,7 +292,7 @@ function ApplicationProfile({ profile }: { profile: AdminReviewerApplicationRow[
         </div>
       </ProfileBlock>
       <ProfileBlock title="Bài trả lời tình huống">
-        <p className="whitespace-pre-line p-3 rounded-xl bg-cream">{profile.scenarioAnswer || "—"}</p>
+        <p className="whitespace-pre-line p-3 rounded-xl bg-background">{profile.scenarioAnswer || "—"}</p>
       </ProfileBlock>
       {profile.agreedAt && (
         <p className="text-xs text-text-secondary">Đã đồng ý cam kết đạo đức lúc {formatDateTime(profile.agreedAt)}.</p>

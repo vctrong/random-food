@@ -18,12 +18,12 @@ export function ContributorLevelCard({ levelProgress, achievements }: Contributo
   return (
     <div className="bg-surface rounded-2xl border border-border shadow-sm p-5 flex flex-col gap-5">
       <div className="flex items-center gap-3">
-        <div className="size-12 rounded-full bg-primary-blue text-white flex items-center justify-center shadow-sm shrink-0">
+        <div className="size-12 rounded-full bg-primary-strong text-white flex items-center justify-center shadow-sm shrink-0">
           <LevelIcon className="size-6" aria-hidden />
         </div>
         <div className="min-w-0">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-primary-blue">Cấp {current.level} · Đóng góp</span>
-          <h3 className="text-lg font-subheading font-semibold text-text-primary leading-tight">{current.title}</h3>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Cấp {current.level} · Đóng góp</span>
+          <h3 className="text-lg font-heading font-semibold text-text-primary leading-tight">{current.title}</h3>
           <p className="text-xs text-text-secondary mt-0.5">{current.description}</p>
         </div>
       </div>
@@ -31,7 +31,7 @@ export function ContributorLevelCard({ levelProgress, achievements }: Contributo
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between text-xs font-semibold">
           <span className="text-text-primary">{next ? `Tiến độ lên “${next.title}”` : "Bạn đã đạt cấp cao nhất"}</span>
-          <span className="text-primary-blue">
+          <span className="text-primary">
             {approvedCount}
             {next ? ` / ${next.minApproved}` : ""} món được duyệt
           </span>
@@ -41,9 +41,9 @@ export function ContributorLevelCard({ levelProgress, achievements }: Contributo
           aria-valuenow={percent}
           aria-valuemin={0}
           aria-valuemax={100}
-          className="w-full h-2.5 rounded-full bg-soft-blue overflow-hidden"
+          className="w-full h-2.5 rounded-full bg-primary-soft overflow-hidden"
         >
-          <div className="h-full rounded-full bg-primary-blue transition-all duration-500" style={{ width: `${percent}%` }} />
+          <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${percent}%` }} />
         </div>
         {next && (
           <p className="text-xs text-text-secondary">
@@ -69,13 +69,13 @@ export function ContributorLevelCard({ levelProgress, achievements }: Contributo
                 key={achievement.id}
                 className={cn(
                   "flex items-center gap-3 p-2.5 rounded-xl border transition-colors",
-                  unlocked ? "bg-soft-pink border-primary-pink/20" : "bg-cream border-transparent",
+                  unlocked ? "bg-accent-soft border-accent/20" : "bg-background border-transparent",
                 )}
               >
                 <span
                   className={cn(
                     "size-9 rounded-full flex items-center justify-center shrink-0",
-                    unlocked ? "bg-primary-pink text-white" : "bg-border text-text-secondary",
+                    unlocked ? "bg-accent-strong text-white" : "bg-border text-text-secondary",
                   )}
                 >
                   {unlocked ? <Icon className="size-4" aria-hidden /> : <Lock className="size-4" aria-hidden />}

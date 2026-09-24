@@ -12,7 +12,7 @@ export default async function NewsPage() {
   return (
     <div className="w-full max-w-5xl mx-auto px-4 md:px-6 lg:px-8 py-10">
       <div className="mb-8 pb-6 border-b border-border">
-        <div className="flex items-center gap-1.5 text-primary-blue text-xs font-bold uppercase tracking-wider mb-2">
+        <div className="flex items-center gap-1.5 text-primary text-xs font-bold uppercase tracking-wider mb-2">
           <Newspaper className="size-4" aria-hidden />
           <span>Tin tức ẩm thực</span>
         </div>
@@ -44,7 +44,7 @@ export default async function NewsPage() {
                 </div>
               )}
               <div className="p-5">
-                <h2 className="font-subheading font-semibold text-lg text-text-primary mb-1.5">
+                <h2 className="font-heading font-semibold text-lg text-text-primary mb-1.5">
                   {article.title}
                 </h2>
                 <p className="text-sm text-text-secondary leading-relaxed">{article.excerpt}</p>

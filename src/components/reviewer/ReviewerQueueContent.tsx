@@ -133,7 +133,7 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
                 onClick={() => setTypeFilter(tab.id)}
                 className={cn(
                   "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors",
-                  typeFilter === tab.id ? "bg-primary-blue text-white" : "text-text-secondary hover:bg-soft-blue",
+                  typeFilter === tab.id ? "bg-primary-strong text-white" : "text-text-secondary hover:bg-primary-soft",
                 )}
               >
                 {tab.label}
@@ -146,7 +146,7 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Tìm theo tên món, quán, người gửi..."
-              className="w-full h-9 pl-9 pr-3 rounded-xl bg-cream text-sm text-text-primary placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
+              className="w-full h-9 pl-9 pr-3 rounded-xl bg-background text-sm text-text-primary placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
         </div>
@@ -168,8 +168,8 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
           <EmptyState icon={ClipboardList} title="Chọn 1 hồ sơ" description="Chọn 1 mục ở danh sách bên trái để xem chi tiết." />
         ) : (
           <div className="flex flex-col bg-surface border border-border rounded-3xl shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3.5 bg-soft-blue/50">
-              <span className="text-xs font-bold uppercase tracking-wider text-deep-blue">
+            <div className="flex items-center justify-between px-5 py-3.5 bg-primary-soft/50">
+              <span className="text-xs font-bold uppercase tracking-wider text-secondary-strong dark:text-text-primary">
                 {selected.targetType === "food" ? "Thẩm định món ăn" : "Thẩm định quán ăn mới"}
               </span>
               <span className="text-xs text-text-secondary">
@@ -180,26 +180,26 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
             <div className="p-5 flex flex-col gap-4">
               {selected.images.length > 0 ? (
                 <div className="grid grid-cols-4 gap-2">
-                  <div className="col-span-4 relative h-64 rounded-2xl overflow-hidden bg-soft-blue">
+                  <div className="col-span-4 relative h-64 rounded-2xl overflow-hidden bg-primary-soft">
                     <Image src={selected.images[0]} alt={selected.name} fill className="object-cover" sizes="600px" />
                   </div>
                   {selected.images.slice(1, 5).map((src) => (
-                    <div key={src} className="relative h-16 rounded-xl overflow-hidden bg-soft-blue">
+                    <div key={src} className="relative h-16 rounded-xl overflow-hidden bg-primary-soft">
                       <Image src={src} alt="" fill className="object-cover" sizes="120px" />
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="h-40 rounded-2xl bg-soft-blue flex items-center justify-center text-primary-blue/60">
+                <div className="h-40 rounded-2xl bg-primary-soft flex items-center justify-center text-primary/60">
                   <UtensilsCrossed className="size-10" aria-hidden />
                 </div>
               )}
 
               <div className="flex flex-col gap-2.5">
                 <div className="flex items-baseline justify-between flex-wrap gap-2">
-                  <h2 className="text-xl font-subheading font-bold text-text-primary">{selected.name}</h2>
+                  <h2 className="text-xl font-heading font-bold text-text-primary">{selected.name}</h2>
                   {selected.priceMin !== null && selected.priceMax !== null && (
-                    <span className="text-lg font-bold text-primary-blue">
+                    <span className="text-lg font-bold text-primary">
                       {formatPriceRange(selected.priceMin, selected.priceMax)}
                     </span>
                   )}
@@ -226,7 +226,7 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
                 </div>
 
                 {selected.description && (
-                  <div className="p-4 rounded-2xl bg-cream flex flex-col gap-1.5">
+                  <div className="p-4 rounded-2xl bg-background flex flex-col gap-1.5">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary">
                       Mô tả từ người gửi
                     </span>
@@ -235,7 +235,7 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
                 )}
 
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-2xl bg-surface border border-border">
-                  <div className="size-11 rounded-full bg-soft-pink flex items-center justify-center text-primary-pink shrink-0">
+                  <div className="size-11 rounded-full bg-accent-soft flex items-center justify-center text-accent-ink shrink-0">
                     <MapPin className="size-5" aria-hidden />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -247,7 +247,7 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
                       href={getGoogleMapsUrl(selected.location, selected.address ?? selected.name)}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-primary-blue hover:underline shrink-0"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline shrink-0"
                     >
                       Mở Google Maps <ExternalLink className="size-3" aria-hidden />
                     </a>
@@ -274,7 +274,7 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
                         type="button"
                         disabled={!selected.canDecide}
                         onClick={() => setNote((prev) => (prev.trim() ? `${prev}\n${preset.text}` : preset.text))}
-                        className="px-3 py-1 rounded-full bg-soft-blue hover:bg-soft-blue/70 text-primary-blue text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-3 py-1 rounded-full bg-primary-soft hover:bg-primary-soft/70 text-primary text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {preset.label}
                       </button>
@@ -293,7 +293,7 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
                     value={note}
                     onChange={(event) => setNote(event.target.value)}
                     placeholder="Bắt buộc khi Từ chối hoặc Yêu cầu sửa..."
-                    className="w-full p-3.5 rounded-2xl bg-cream text-sm text-text-primary placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-primary-blue/40 disabled:opacity-60"
+                    className="w-full p-3.5 rounded-2xl bg-background text-sm text-text-primary placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
                   />
                 </div>
 
@@ -321,7 +321,7 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
                     disabled={!selected.canDecide}
                     isLoading={isSubmitting === "rejected"}
                     onClick={() => handleDecision("rejected")}
-                    leftIcon={<XCircle className="size-4 text-primary-pink" aria-hidden />}
+                    leftIcon={<XCircle className="size-4 text-accent-ink" aria-hidden />}
                   >
                     Từ chối
                   </Button>

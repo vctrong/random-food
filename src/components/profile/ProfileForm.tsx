@@ -208,7 +208,7 @@ export function ProfileForm({
       <div id="tai-khoan" className="scroll-mt-24 flex flex-col gap-4">
         <Card className="p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6">
           <div className="relative shrink-0">
-            <div className="size-24 rounded-full overflow-hidden bg-soft-blue flex items-center justify-center text-primary-blue text-2xl font-bold">
+            <div className="size-24 rounded-full overflow-hidden bg-primary-soft flex items-center justify-center text-primary text-2xl font-bold">
               {avatarUrl ? (
                 <Image src={avatarUrl} alt="Ảnh đại diện" width={96} height={96} className="object-cover size-24" />
               ) : (
@@ -220,7 +220,7 @@ export function ProfileForm({
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploadingAvatar}
               aria-label="Đổi ảnh đại diện"
-              className="absolute -bottom-1 -right-1 size-8 rounded-full bg-primary-blue text-white flex items-center justify-center shadow-md hover:bg-[#4a8ddb] transition-colors disabled:opacity-60"
+              className="absolute -bottom-1 -right-1 size-8 rounded-full bg-primary-strong text-white flex items-center justify-center shadow-md hover:bg-primary-strong-hover transition-colors disabled:opacity-60"
             >
               {isUploadingAvatar ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -240,7 +240,7 @@ export function ProfileForm({
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
               placeholder="Tên bạn muốn hiển thị"
-              className="w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+              className="w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
             />
           </div>
         </Card>
@@ -298,7 +298,7 @@ export function ProfileForm({
       <Card className="p-6">
         <h2 className="font-semibold text-text-primary mb-1">Khoảng giá ưa thích</h2>
         <p className="text-sm text-text-secondary mb-4">Ưu tiên món trong khoảng giá này khi random.</p>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-1.5 rounded-2xl bg-soft-blue/40">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-1.5 rounded-2xl bg-primary-soft/40">
           {PRICE_RANGE_OPTIONS.map((option) => (
             <button
               key={option.id}
@@ -306,7 +306,7 @@ export function ProfileForm({
               onClick={() => setPriceRangePreset(option.id)}
               className={cn(
                 "text-center py-2.5 px-2 rounded-xl text-sm font-semibold transition-all",
-                priceRangePreset === option.id ? "bg-surface text-primary-blue shadow-sm" : "text-text-secondary",
+                priceRangePreset === option.id ? "bg-surface text-primary shadow-sm" : "text-text-secondary",
               )}
             >
               {option.label}
@@ -326,7 +326,7 @@ export function ProfileForm({
               onClick={() => setSpicePreference((prev) => (prev === option.id ? null : option.id))}
               className={cn(
                 "p-3.5 rounded-xl transition-all flex flex-col items-center justify-center text-center",
-                spicePreference === option.id ? "bg-soft-blue text-primary-blue shadow-sm" : "bg-soft-blue/30 text-text-secondary",
+                spicePreference === option.id ? "bg-primary-soft text-primary shadow-sm" : "bg-primary-soft/30 text-text-secondary",
               )}
             >
               <span className="font-semibold text-text-primary">{option.label}</span>
@@ -353,7 +353,7 @@ export function ProfileForm({
       <Card className="p-6 flex items-center justify-between">
         <div className="space-y-0.5 pr-4">
           <div className="font-semibold text-text-primary flex items-center gap-2">
-            <History className="size-4 text-primary-blue" aria-hidden />
+            <History className="size-4 text-primary" aria-hidden />
             <span>Cho phép trùng lặp món trong 24 giờ</span>
           </div>
           <p className="text-sm text-text-secondary">
@@ -373,7 +373,7 @@ export function ProfileForm({
         <p className="text-sm text-text-secondary mb-4">Chọn các nhóm món bạn hay ăn nhất.</p>
         {categories.length === 0 ? (
           <p className="text-sm text-text-secondary">
-            Chưa có danh mục nào — chạy <code className="text-xs bg-soft-blue px-1.5 py-0.5 rounded">npm run seed:categories</code> để nạp danh mục.
+            Chưa có danh mục nào — chạy <code className="text-xs bg-primary-soft px-1.5 py-0.5 rounded">npm run seed:categories</code> để nạp danh mục.
           </p>
         ) : (
           <div className="flex flex-wrap gap-2">
@@ -387,7 +387,7 @@ export function ProfileForm({
                   className={cn(
                     "inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors",
                     isActive
-                      ? "bg-soft-blue border-primary-blue text-primary-blue"
+                      ? "bg-primary-soft border-primary text-primary"
                       : "bg-surface border-border text-text-secondary hover:text-text-primary",
                   )}
                 >

@@ -31,7 +31,7 @@ export function MultiSelectFilterBar({ options, values, onToggle, className }: M
             className={cn(
               "inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium shadow-sm transition-all active:scale-95",
               isActive
-                ? "bg-primary-blue text-white shadow-[0_4px_12px_rgba(91,158,235,0.28)]"
+                ? "bg-primary-strong text-white shadow-[0_4px_12px_color-mix(in_oklab,var(--color-primary)_28%,transparent)]"
                 : "bg-surface text-text-secondary hover:text-text-primary hover:shadow-md",
             )}
           >

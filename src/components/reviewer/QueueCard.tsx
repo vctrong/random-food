@@ -22,13 +22,13 @@ export function QueueCard({ item, isActive, onSelect }: QueueCardProps) {
       onKeyDown={(event) => (event.key === "Enter" || event.key === " ") && onSelect()}
       className={cn(
         "relative flex flex-col p-4 rounded-2xl bg-surface border transition-all cursor-pointer group",
-        isActive ? "border-primary-blue shadow-md" : "border-border hover:shadow-sm",
+        isActive ? "border-primary shadow-md" : "border-border hover:shadow-sm",
         item.isSelfSubmitted && !isActive && "opacity-80",
       )}
     >
-      {isActive && <div className="absolute left-0 top-3 bottom-3 w-1 bg-primary-blue rounded-r-full" aria-hidden />}
+      {isActive && <div className="absolute left-0 top-3 bottom-3 w-1 bg-primary rounded-r-full" aria-hidden />}
       <div className={cn("flex items-start gap-3", isActive && "pl-2")}>
-        <div className="relative size-16 rounded-xl overflow-hidden shrink-0 bg-soft-blue flex items-center justify-center">
+        <div className="relative size-16 rounded-xl overflow-hidden shrink-0 bg-primary-soft flex items-center justify-center">
           {thumbnail ? (
             <Image
               src={thumbnail}
@@ -38,7 +38,7 @@ export function QueueCard({ item, isActive, onSelect }: QueueCardProps) {
               className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
-            <UtensilsCrossed className="size-6 text-primary-blue/60" aria-hidden />
+            <UtensilsCrossed className="size-6 text-primary/60" aria-hidden />
           )}
           {item.isSelfSubmitted && (
             <div className="absolute inset-0 bg-text-primary/40 flex items-center justify-center">
@@ -49,7 +49,7 @@ export function QueueCard({ item, isActive, onSelect }: QueueCardProps) {
 
         <div className="flex flex-col flex-1 min-w-0 gap-1">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wide text-primary-blue">
+            <span className="text-[11px] font-bold uppercase tracking-wide text-primary">
               {item.targetType === "food" ? "Món ăn" : "Quán ăn mới"}
             </span>
             <span className="text-[11px] text-text-secondary whitespace-nowrap">{formatRelativeTime(item.createdAt)}</span>

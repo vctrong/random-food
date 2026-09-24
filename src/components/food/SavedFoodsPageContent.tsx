@@ -48,7 +48,7 @@ export function SavedFoodsPageContent({ initialRecords, allFoods }: SavedFoodsPa
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-soft-pink text-primary-pink text-xs font-bold uppercase tracking-wider mb-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-soft text-accent-ink text-xs font-bold uppercase tracking-wider mb-2">
             <Heart className="size-3.5" fill="currentColor" aria-hidden />
             <span>Bộ sưu tập ẩm thực riêng bạn</span>
           </div>
@@ -63,7 +63,7 @@ export function SavedFoodsPageContent({ initialRecords, allFoods }: SavedFoodsPa
           <button
             type="button"
             onClick={openRandomModal}
-            className="group inline-flex items-center gap-2 h-12 px-5 rounded-full bg-primary-blue text-white font-semibold shadow-md hover:shadow-xl hover:bg-[#4a8ddb] transition-all active:scale-95 self-start md:self-auto"
+            className="group inline-flex items-center gap-2 h-12 px-5 rounded-full bg-primary-strong text-white font-semibold shadow-md hover:shadow-xl hover:bg-primary-strong-hover transition-all active:scale-95 self-start md:self-auto"
           >
             <Dices className="size-5 group-hover:rotate-180 transition-transform duration-500" aria-hidden />
             <span>Random từ danh sách đã lưu</span>
@@ -110,7 +110,7 @@ export function SavedFoodsPageContent({ initialRecords, allFoods }: SavedFoodsPa
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Tìm món trong danh sách lưu..."
-                  className="w-full h-11 pl-10 pr-4 rounded-xl bg-soft-blue/40 text-text-primary placeholder:text-text-secondary text-sm focus:outline-none focus:bg-soft-blue transition-colors"
+                  className="w-full h-11 pl-10 pr-4 rounded-xl bg-primary-soft/40 text-text-primary placeholder:text-text-secondary text-sm focus:outline-none focus:bg-primary-soft transition-colors"
                 />
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -121,7 +121,7 @@ export function SavedFoodsPageContent({ initialRecords, allFoods }: SavedFoodsPa
                   id="saved-sort"
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
-                  className="h-11 px-3 rounded-xl bg-soft-blue/40 text-text-primary text-sm appearance-none focus:outline-none cursor-pointer"
+                  className="h-11 px-3 rounded-xl bg-primary-soft/40 text-text-primary text-sm appearance-none focus:outline-none cursor-pointer"
                 >
                   <option value="recent">Mới lưu gần đây</option>
                   <option value="name-asc">Tên A → Z</option>
@@ -198,7 +198,7 @@ function MiniStat({
     <div className="bg-surface rounded-xl p-4 shadow-sm flex items-center gap-3">
       <div
         className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
-          tone === "pink" ? "bg-soft-pink text-primary-pink" : "bg-soft-blue text-primary-blue"
+          tone === "pink" ? "bg-accent-soft text-accent-ink" : "bg-primary-soft text-primary"
         }`}
       >
         <Icon className="size-5" aria-hidden />
@@ -226,8 +226,8 @@ function CategoryPill({
       onClick={onClick}
       className={
         active
-          ? "shrink-0 px-4 py-2 rounded-full text-sm font-semibold bg-primary-blue text-white shadow-sm transition-all"
-          : "shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-soft-blue/50 text-text-secondary hover:bg-soft-blue transition-all"
+          ? "shrink-0 px-4 py-2 rounded-full text-sm font-semibold bg-primary-strong text-white shadow-sm transition-all"
+          : "shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-primary-soft/50 text-text-secondary hover:bg-primary-soft transition-all"
       }
     >
       {children}

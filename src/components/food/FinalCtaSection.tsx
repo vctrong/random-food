@@ -1,39 +1,52 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Dice5, Heart, UtensilsCrossed } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import Link from "next/link";
+import { Dice5, Heart } from "lucide-react";
+import { useLandingRandom } from "@/features/random-food/LandingRandomProvider";
+import { Reveal } from "@/components/ui/Reveal";
 
 export function FinalCtaSection() {
+  const { scrollToMachineAndSpin, isRandomizing } = useLandingRandom();
+
   return (
-    <section className="relative py-16 text-center overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-full bg-gradient-to-b from-soft-blue/70 to-transparent -z-10 rounded-3xl"
-      />
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-60px" }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="max-w-2xl mx-auto px-4 space-y-6"
-      >
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-soft-pink text-primary-pink">
-          <UtensilsCrossed className="size-7" aria-hidden />
+    <section aria-labelledby="final-cta-title" className="mx-auto w-full max-w-6xl px-4 pb-4 md:px-6 lg:px-8">
+      <Reveal>
+        <div className="relative overflow-hidden rounded-3xl border-2 border-secondary bg-secondary px-6 py-12 text-center shadow-chunky sm:px-12 sm:py-16 dark:border-white/10">
+          <div aria-hidden className="pointer-events-none absolute -top-24 -left-20 size-72 rounded-full bg-primary/35 blur-3xl" />
+          <div aria-hidden className="pointer-events-none absolute -right-20 -bottom-24 size-72 rounded-full bg-primary/20 blur-3xl" />
+
+          <div className="relative mx-auto max-w-2xl">
+            <span className="inline-block rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-widest text-white">
+              Miễn phí · Dùng ngay trên web
+            </span>
+            <h2 id="final-cta-title" className="text-display-sm mt-4 text-white">
+              Sẵn sàng để số phận chọn món cho bạn?
+            </h2>
+            <p className="mt-3 text-base sm:text-lg text-white/85">
+              Dứt điểm câu hỏi “Ăn gì ta?”. Một cú gạt cần — trúng ngay món ngon đúng gu.
+            </p>
+
+            <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <button
+                type="button"
+                onClick={scrollToMachineAndSpin}
+                disabled={isRandomizing}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-secondary bg-warning px-7 py-3.5 font-heading text-base font-bold text-secondary-strong shadow-[0_4px_0_0_rgba(0,0,0,0.35)] transition-transform hover:-translate-y-0.5 active:translate-y-1 disabled:opacity-70"
+              >
+                <Dice5 className="size-5" aria-hidden />
+                Random ngay bây giờ
+              </button>
+              <Link
+                href="/da-luu"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-white/30 bg-white/10 px-7 py-3.5 font-heading text-base font-bold text-white transition-colors hover:bg-white/20"
+              >
+                <Heart className="size-5 text-accent-ink" aria-hidden />
+                Xem món đã lưu
+              </Link>
+            </div>
+          </div>
         </div>
-        <h2 className="text-display-sm text-text-primary">Sẵn sàng tìm món ngon cho hôm nay?</h2>
-        <p className="text-text-secondary max-w-xl mx-auto">
-          Một cú nhấn. Một gợi ý bất ngờ. Một bữa ăn ngon miệng đang chờ bạn ở Cần Thơ.
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-          <Button href="/random" size="lg" leftIcon={<Dice5 className="size-5" aria-hidden />}>
-            Khám phá món ngẫu nhiên ngay
-          </Button>
-          <Button href="/mon-an" variant="secondary" size="lg" leftIcon={<Heart className="size-5 text-primary-pink" aria-hidden />}>
-            Xem món yêu thích
-          </Button>
-        </div>
-      </motion.div>
+      </Reveal>
     </section>
   );
 }

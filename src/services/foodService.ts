@@ -22,3 +22,14 @@ export async function getFoodById(id: string): Promise<Food | undefined> {
   const foods = await getAllFoods();
   return foods.find((food) => food.id === id);
 }
+
+/** Bản gọi từ trình duyệt (URL tương đối) — vd mini random ở footer. */
+export async function getAllFoodsFromClient(): Promise<Food[]> {
+  try {
+    const response = await fetch("/api/foods");
+    if (!response.ok) return [];
+    return (await response.json()) as Food[];
+  } catch {
+    return [];
+  }
+}

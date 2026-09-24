@@ -24,9 +24,9 @@ const TOAST_DURATION_MS = 2800;
 
 const TOAST_ICONS: Record<ToastType, { icon: typeof CheckCircle2; className: string }> = {
   success: { icon: CheckCircle2, className: "text-success" },
-  error: { icon: XCircle, className: "text-primary-pink" },
+  error: { icon: XCircle, className: "text-accent-ink" },
   warning: { icon: AlertTriangle, className: "text-warning" },
-  info: { icon: Info, className: "text-primary-blue" },
+  info: { icon: Info, className: "text-primary" },
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {

@@ -57,7 +57,7 @@ export function HistoryPageContent({
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-soft-blue text-primary-blue text-xs font-bold uppercase tracking-wider mb-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-soft text-primary text-xs font-bold uppercase tracking-wider mb-2">
             <UtensilsCrossed className="size-3.5" aria-hidden />
             <span>Nhật ký ẩm thực cá nhân</span>
           </div>
@@ -139,14 +139,14 @@ export function HistoryPageContent({
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Tìm kiếm món đã ăn (vd: Cơm tấm, Phở, Trà sữa)..."
-                  className="w-full h-11 pl-10 pr-4 rounded-xl bg-soft-blue/40 text-text-primary placeholder:text-text-secondary text-sm focus:outline-none focus:bg-soft-blue transition-colors"
+                  className="w-full h-11 pl-10 pr-4 rounded-xl bg-primary-soft/40 text-text-primary placeholder:text-text-secondary text-sm focus:outline-none focus:bg-primary-soft transition-colors"
                 />
               </div>
               <div className="md:col-span-4 relative">
                 <select
                   value={eatingLevel}
                   onChange={(e) => setEatingLevel(e.target.value as typeof eatingLevel)}
-                  className="w-full h-11 px-4 rounded-xl bg-soft-blue/40 text-text-primary text-sm appearance-none focus:outline-none cursor-pointer"
+                  className="w-full h-11 px-4 rounded-xl bg-primary-soft/40 text-text-primary text-sm appearance-none focus:outline-none cursor-pointer"
                 >
                   <option value="all">Tất cả chế độ</option>
                   {EATING_LEVELS.map((level) => (
@@ -160,7 +160,7 @@ export function HistoryPageContent({
                 <select
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
-                  className="w-full h-11 px-3 rounded-xl bg-soft-blue/40 text-text-primary text-sm appearance-none focus:outline-none cursor-pointer"
+                  className="w-full h-11 px-3 rounded-xl bg-primary-soft/40 text-text-primary text-sm appearance-none focus:outline-none cursor-pointer"
                 >
                   <option value="newest">Mới nhất trước</option>
                   <option value="oldest">Cũ nhất trước</option>
@@ -202,10 +202,10 @@ export function HistoryPageContent({
                   <div key={group.dateKey} className="space-y-3">
                     <div className="flex items-center justify-between pb-1">
                       <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-primary-blue" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-primary" />
                         <h2 className="text-lg font-semibold text-text-primary">{group.label}</h2>
                       </div>
-                      <span className="px-2.5 py-0.5 rounded-full bg-soft-blue text-primary-blue text-xs font-semibold">
+                      <span className="px-2.5 py-0.5 rounded-full bg-primary-soft text-primary text-xs font-semibold">
                         {group.entries.length} lần random
                       </span>
                     </div>
@@ -262,7 +262,7 @@ function StatCard({
     <div className="p-4 rounded-xl bg-surface shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-sm text-text-secondary">{label}</span>
-        <div className="w-8 h-8 rounded-full bg-soft-blue flex items-center justify-center text-primary-blue">
+        <div className="w-8 h-8 rounded-full bg-primary-soft flex items-center justify-center text-primary">
           <Icon className="size-4" aria-hidden />
         </div>
       </div>
@@ -290,8 +290,8 @@ function QuickFilterChip({
       onClick={onClick}
       className={
         active
-          ? "px-3 py-1 rounded-full bg-primary-blue text-white text-xs font-semibold shadow-sm transition-all"
-          : "px-3 py-1 rounded-full bg-soft-blue/50 text-text-secondary hover:bg-soft-blue text-xs font-medium transition-all"
+          ? "px-3 py-1 rounded-full bg-primary-strong text-white text-xs font-semibold shadow-sm transition-all"
+          : "px-3 py-1 rounded-full bg-primary-soft/50 text-text-secondary hover:bg-primary-soft text-xs font-medium transition-all"
       }
     >
       {label}

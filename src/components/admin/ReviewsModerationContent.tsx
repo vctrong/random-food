@@ -57,7 +57,7 @@ export function ReviewsModerationContent({ initialReviews }: ReviewsModerationCo
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <h1 className="text-2xl md:text-3xl font-subheading font-semibold text-text-primary tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-heading font-semibold text-text-primary tracking-tight">
           Kiểm duyệt đánh giá &amp; bình luận
         </h1>
         <p className="text-sm text-text-secondary">{reviews.length} đánh giá trong hệ thống</p>
@@ -71,13 +71,13 @@ export function ReviewsModerationContent({ initialReviews }: ReviewsModerationCo
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo người đánh giá, món ăn, nội dung..."
-              className="w-full h-11 pl-10 pr-4 rounded-xl bg-cream text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
+              className="w-full h-11 pl-10 pr-4 rounded-xl bg-background text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="h-11 px-3 rounded-xl bg-cream text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
+            className="h-11 px-3 rounded-xl bg-background text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             <option value="all">Tất cả trạng thái</option>
             <option value="visible">Đang hiển thị</option>
@@ -115,7 +115,7 @@ export function ReviewsModerationContent({ initialReviews }: ReviewsModerationCo
                     </td>
                     <td className="px-4 py-3 text-text-primary">{review.user.name}</td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1 font-semibold text-primary-blue">
+                      <span className="inline-flex items-center gap-1 font-semibold text-primary">
                         <Star className="size-3.5 fill-current" aria-hidden />
                         {review.rating.toFixed(1)}
                       </span>

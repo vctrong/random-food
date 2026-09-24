@@ -92,7 +92,7 @@ export function SecuritySection({ authProvider }: SecuritySectionProps) {
       {authProvider === "local" ? (
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <KeyRound className="size-5 text-primary-blue" aria-hidden />
+            <KeyRound className="size-5 text-primary" aria-hidden />
             <h2 className="font-semibold text-text-primary">Đổi mật khẩu</h2>
           </div>
           <form onSubmit={handleChangePassword} className="flex flex-col gap-3 max-w-sm">
@@ -102,7 +102,7 @@ export function SecuritySection({ authProvider }: SecuritySectionProps) {
               value={currentPassword}
               onChange={(event) => setCurrentPassword(event.target.value)}
               placeholder="Mật khẩu hiện tại"
-              className="h-11 px-4 rounded-xl border border-border bg-surface focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+              className="h-11 px-4 rounded-xl border border-border bg-surface focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
             />
             <input
               type="password"
@@ -111,7 +111,7 @@ export function SecuritySection({ authProvider }: SecuritySectionProps) {
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
               placeholder="Mật khẩu mới (8+ ký tự, có chữ, số, ký tự đặc biệt)"
-              className="h-11 px-4 rounded-xl border border-border bg-surface focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue"
+              className="h-11 px-4 rounded-xl border border-border bg-surface focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
             />
             <p className="text-xs text-text-secondary -mt-1">{PASSWORD_POLICY_MESSAGE}</p>
             {passwordError && <p className="text-sm text-red-600 dark:text-red-400">{passwordError}</p>}
@@ -122,7 +122,7 @@ export function SecuritySection({ authProvider }: SecuritySectionProps) {
         </Card>
       ) : (
         <Card className="p-6 flex items-center gap-3">
-          <ShieldCheck className="size-5 text-primary-blue shrink-0" aria-hidden />
+          <ShieldCheck className="size-5 text-primary shrink-0" aria-hidden />
           <p className="text-sm text-text-secondary">
             Tài khoản đăng nhập bằng Google — mật khẩu được quản lý bởi Google, không đổi được tại đây.
           </p>
@@ -132,7 +132,7 @@ export function SecuritySection({ authProvider }: SecuritySectionProps) {
       <Card className="p-6 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <LogOut className="size-5 text-primary-blue" aria-hidden />
+            <LogOut className="size-5 text-primary" aria-hidden />
             <h2 className="font-semibold text-text-primary">Phiên đăng nhập</h2>
           </div>
           <p className="text-sm text-text-secondary">

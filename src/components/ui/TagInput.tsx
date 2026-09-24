@@ -21,7 +21,7 @@ export function TagInput({ tags, onAdd, onRemove, placeholder, tone }: TagInputP
 
   const tagClasses =
     tone === "blue"
-      ? "bg-soft-blue text-primary-blue"
+      ? "bg-primary-soft text-primary"
       : "bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400";
 
   return (
@@ -54,13 +54,13 @@ export function TagInput({ tags, onAdd, onRemove, placeholder, tone }: TagInputP
             }
           }}
           placeholder={placeholder}
-          className="h-8 px-3 rounded-full bg-soft-blue/40 text-text-primary text-sm focus:bg-surface focus:ring-2 focus:ring-primary-blue focus:outline-none placeholder:text-text-secondary w-44 transition-all"
+          className="h-8 px-3 rounded-full bg-primary-soft/40 text-text-primary text-sm focus:bg-surface focus:ring-2 focus:ring-primary focus:outline-none placeholder:text-text-secondary w-44 transition-all"
         />
         <button
           type="button"
           onClick={submit}
           aria-label="Thêm"
-          className="ml-1 inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary-blue text-white shadow-sm hover:scale-105 active:scale-95 transition-transform"
+          className="ml-1 inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary-strong text-white shadow-sm hover:scale-105 active:scale-95 transition-transform"
         >
           <Plus className="size-4" aria-hidden />
         </button>

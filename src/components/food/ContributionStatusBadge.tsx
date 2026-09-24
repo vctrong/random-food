@@ -8,9 +8,9 @@ export const CONTRIBUTION_STATUS_CONFIG: Record<
   { label: string; className: string; icon: LucideIcon }
 > = {
   approved: { label: "Đã duyệt & lên thực đơn", className: "bg-success/15 text-success", icon: CheckCircle2 },
-  pending: { label: "Đang kiểm duyệt", className: "bg-soft-blue text-primary-blue", icon: Clock },
+  pending: { label: "Đang kiểm duyệt", className: "bg-primary-soft text-primary", icon: Clock },
   needs_revision: { label: "Cần chỉnh sửa", className: "bg-warning/20 text-[#8a690b]", icon: PenLine },
-  rejected: { label: "Bị từ chối", className: "bg-primary-pink/15 text-primary-pink", icon: XCircle },
+  rejected: { label: "Bị từ chối", className: "bg-accent/15 text-accent-ink", icon: XCircle },
   hidden: { label: "Đang bị ẩn", className: "bg-border text-text-secondary", icon: EyeOff },
 };
 

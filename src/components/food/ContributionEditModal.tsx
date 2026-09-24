@@ -33,7 +33,7 @@ interface ImageDraft {
 }
 
 const INPUT_CLASS =
-  "w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue";
+  "w-full h-11 px-4 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary";
 
 export function ContributionEditModal({ contribution, categories, onClose, onSubmitted }: ContributionEditModalProps) {
   return (
@@ -164,7 +164,7 @@ function EditForm({
   return (
     <div className="max-h-[90vh] overflow-y-auto rounded-3xl p-5 sm:p-6 flex flex-col gap-5">
       <div className="pr-10">
-        <h3 className="text-xl font-subheading font-semibold text-text-primary">Chỉnh sửa & nộp lại</h3>
+        <h3 className="text-xl font-heading font-semibold text-text-primary">Chỉnh sửa & nộp lại</h3>
         <p className="text-sm text-text-secondary mt-0.5">Sau khi gửi, đóng góp quay lại trạng thái chờ duyệt.</p>
       </div>
 
@@ -184,7 +184,7 @@ function EditForm({
 
       {canEditFood && (
         <section className="flex flex-col gap-4">
-          <h4 className="font-subheading font-semibold text-text-primary">Thông tin món ăn</h4>
+          <h4 className="font-heading font-semibold text-text-primary">Thông tin món ăn</h4>
 
           <div className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-text-primary">
@@ -201,7 +201,7 @@ function EditForm({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="size-24 rounded-xl border-2 border-dashed border-border text-text-secondary hover:text-primary-blue hover:border-primary-blue flex flex-col items-center justify-center gap-1 transition-colors shrink-0"
+                  className="size-24 rounded-xl border-2 border-dashed border-border text-text-secondary hover:text-primary hover:border-primary flex flex-col items-center justify-center gap-1 transition-colors shrink-0"
                 >
                   <ImagePlus className="size-5" aria-hidden />
                   <span className="text-xs font-medium">Thêm ảnh</span>
@@ -223,7 +223,7 @@ function EditForm({
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               rows={3}
-              className="w-full px-4 py-2.5 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/40 focus:border-primary-blue resize-none"
+              className="w-full px-4 py-2.5 rounded-xl border border-border bg-surface text-text-primary shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary resize-none"
             />
           </div>
 
@@ -250,7 +250,7 @@ function EditForm({
                     onClick={() => setEatingLevels((prev) => toggle(prev, level.id))}
                     className={cn(
                       "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium border transition-colors",
-                      active ? "bg-primary-blue border-primary-blue text-white shadow-sm" : "bg-surface border-border text-text-secondary hover:text-text-primary",
+                      active ? "bg-primary-strong border-primary text-white shadow-sm" : "bg-surface border-border text-text-secondary hover:text-text-primary",
                     )}
                   >
                     {active && <Check className="size-3.5" aria-hidden />}
@@ -273,7 +273,7 @@ function EditForm({
                     onClick={() => setCategoryIds((prev) => toggle(prev, category.id))}
                     className={cn(
                       "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium border transition-colors",
-                      active ? "bg-soft-pink border-primary-pink text-primary-pink" : "bg-surface border-border text-text-secondary hover:text-text-primary",
+                      active ? "bg-accent-soft border-accent text-accent-ink" : "bg-surface border-border text-text-secondary hover:text-text-primary",
                     )}
                   >
                     {active && <Check className="size-3.5" aria-hidden />}
@@ -288,7 +288,7 @@ function EditForm({
 
       {canEditRestaurant && (
         <section className="flex flex-col gap-4">
-          <h4 className="font-subheading font-semibold text-text-primary">Thông tin quán ăn</h4>
+          <h4 className="font-heading font-semibold text-text-primary">Thông tin quán ăn</h4>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="edit-restaurant-name" className="text-sm font-medium text-text-primary">Tên quán</label>
             <input id="edit-restaurant-name" value={restaurantName} onChange={(event) => setRestaurantName(event.target.value)} className={INPUT_CLASS} />
@@ -299,7 +299,7 @@ function EditForm({
           </div>
           <div className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-text-primary flex items-center gap-1.5">
-              <MapPin className="size-4 text-primary-pink" aria-hidden />
+              <MapPin className="size-4 text-accent-ink" aria-hidden />
               Vị trí trên bản đồ
             </span>
             <LocationPicker value={restaurantLocation} onChange={setRestaurantLocation} />

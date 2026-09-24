@@ -28,7 +28,7 @@ export function DataStorageSection({
     <section id="du-lieu" className="bg-surface rounded-2xl p-6 shadow-sm space-y-6 scroll-mt-24">
       <div className="flex items-center justify-between pb-3 border-b border-border flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          <span className="inline-flex p-2 rounded-xl bg-soft-blue text-primary-blue">
+          <span className="inline-flex p-2 rounded-xl bg-primary-soft text-primary">
             <Database className="size-5" aria-hidden />
           </span>
           <div>
@@ -40,7 +40,7 @@ export function DataStorageSection({
             </p>
           </div>
         </div>
-        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-soft-blue/50 text-text-primary text-xs font-medium">
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-soft/50 text-text-primary text-xs font-medium">
           <CloudCheck className="size-3.5 text-success" aria-hidden />
           <span>
             Dung lượng cài đặt giao diện đã lưu: <strong>{storageSize}</strong>
@@ -51,10 +51,10 @@ export function DataStorageSection({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {isAuthenticated && (
           <>
-            <div className="p-4 rounded-xl bg-soft-blue/30 flex flex-col justify-between gap-4">
+            <div className="p-4 rounded-xl bg-primary-soft/30 flex flex-col justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 font-semibold text-text-primary">
-                  <Download className="size-4 text-primary-blue" aria-hidden />
+                  <Download className="size-4 text-primary" aria-hidden />
                   <span>Xuất dữ liệu lịch sử</span>
                 </div>
                 <p className="text-sm text-text-secondary">Tải nhật ký các món bạn đã random.</p>
@@ -63,7 +63,7 @@ export function DataStorageSection({
                 <button
                   type="button"
                   onClick={onExportHistoryJson}
-                  className="px-4 py-2 rounded-full bg-surface text-primary-blue hover:bg-primary-blue hover:text-white text-sm font-medium shadow-sm transition-all flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-full bg-surface text-primary hover:bg-primary-strong hover:text-white text-sm font-medium shadow-sm transition-all flex items-center gap-1.5"
                 >
                   <Code2 className="size-4" aria-hidden />
                   <span>File JSON</span>
@@ -71,7 +71,7 @@ export function DataStorageSection({
                 <button
                   type="button"
                   onClick={onExportHistoryCsv}
-                  className="px-4 py-2 rounded-full bg-surface text-primary-blue hover:bg-primary-blue hover:text-white text-sm font-medium shadow-sm transition-all flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-full bg-surface text-primary hover:bg-primary-strong hover:text-white text-sm font-medium shadow-sm transition-all flex items-center gap-1.5"
                 >
                   <FileSpreadsheet className="size-4" aria-hidden />
                   <span>File CSV / Excel</span>
@@ -79,10 +79,10 @@ export function DataStorageSection({
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-soft-blue/30 flex flex-col justify-between gap-4">
+            <div className="p-4 rounded-xl bg-primary-soft/30 flex flex-col justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 font-semibold text-text-primary">
-                  <Download className="size-4 text-primary-blue" aria-hidden />
+                  <Download className="size-4 text-primary" aria-hidden />
                   <span>Sao lưu món đã lưu</span>
                 </div>
                 <p className="text-sm text-text-secondary">Tải file JSON danh sách món yêu thích.</p>
@@ -90,17 +90,17 @@ export function DataStorageSection({
               <button
                 type="button"
                 onClick={onBackupSaved}
-                className="w-full sm:w-auto px-4 py-2 rounded-full bg-surface text-text-primary hover:bg-primary-blue hover:text-white text-sm font-medium shadow-sm transition-all flex items-center justify-center gap-1.5"
+                className="w-full sm:w-auto px-4 py-2 rounded-full bg-surface text-text-primary hover:bg-primary-strong hover:text-white text-sm font-medium shadow-sm transition-all flex items-center justify-center gap-1.5"
               >
                 <Download className="size-4" aria-hidden />
                 <span>Tạo bản sao lưu ngay</span>
               </button>
             </div>
 
-            <div className="p-4 rounded-xl bg-soft-blue/30 flex flex-col justify-between gap-4 md:col-span-2">
+            <div className="p-4 rounded-xl bg-primary-soft/30 flex flex-col justify-between gap-4 md:col-span-2">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 font-semibold text-text-primary">
-                  <History className="size-4 text-primary-pink" aria-hidden />
+                  <History className="size-4 text-accent-ink" aria-hidden />
                   <span>Xoá lịch sử random</span>
                 </div>
                 <p className="text-sm text-text-secondary">
@@ -109,7 +109,7 @@ export function DataStorageSection({
               </div>
               <Link
                 href="/lich-su"
-                className="w-full sm:w-auto text-center px-4 py-2 rounded-full bg-surface text-text-primary hover:bg-primary-blue hover:text-white text-sm font-medium shadow-sm transition-all"
+                className="w-full sm:w-auto text-center px-4 py-2 rounded-full bg-surface text-text-primary hover:bg-primary-strong hover:text-white text-sm font-medium shadow-sm transition-all"
               >
                 Đến trang Lịch sử
               </Link>

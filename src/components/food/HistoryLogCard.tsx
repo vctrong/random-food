@@ -27,13 +27,13 @@ export function HistoryLogCard({ entry, food }: HistoryLogCardProps) {
             {formatClockTime(entry.timestamp)} ({isToday ? "Hôm nay" : "Hôm qua"})
           </span>
           {entry.isSaved && (
-            <span className="font-bold text-primary-blue">Đã lưu</span>
+            <span className="font-bold text-primary">Đã lưu</span>
           )}
         </div>
         <h4 className="font-semibold text-text-primary">{food.name}</h4>
         <div className="flex items-center gap-2 mt-2 flex-wrap">
           {eatingLevelLabel && <Badge variant="blue">{eatingLevelLabel}</Badge>}
-          <span className="text-sm font-semibold text-primary-blue">
+          <span className="text-sm font-semibold text-primary">
             {food.priceMin !== null && food.priceMax !== null
               ? formatPriceRange(food.priceMin, food.priceMax)
               : "Chưa cập nhật giá"}
@@ -48,7 +48,7 @@ export function HistoryLogCard({ entry, food }: HistoryLogCardProps) {
         <button
           type="button"
           aria-label="Random lại món này"
-          className="w-7 h-7 rounded-full bg-soft-blue flex items-center justify-center text-text-secondary hover:text-primary-blue transition-colors shrink-0"
+          className="w-7 h-7 rounded-full bg-primary-soft flex items-center justify-center text-text-secondary hover:text-primary transition-colors shrink-0"
         >
           <RefreshCw className="size-3.5" aria-hidden />
         </button>

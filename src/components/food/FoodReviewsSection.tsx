@@ -73,12 +73,12 @@ export function FoodReviewsSection({ foodId, avgRating, ratingCount }: FoodRevie
     <div className="bg-surface rounded-2xl p-4 md:p-6 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border mb-4">
         <div className="flex items-center gap-2">
-          <MessageSquareText className="size-5 text-primary-blue" aria-hidden />
-          <h2 className="font-subheading text-lg font-bold text-text-primary">Đánh giá từ thực khách</h2>
+          <MessageSquareText className="size-5 text-primary" aria-hidden />
+          <h2 className="font-heading text-lg font-bold text-text-primary">Đánh giá từ thực khách</h2>
         </div>
         {ratingCount > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-primary-blue">{avgRating.toFixed(1)}</span>
+            <span className="text-2xl font-bold text-primary">{avgRating.toFixed(1)}</span>
             <div className="flex items-center gap-0.5">
               {[1, 2, 3, 4, 5].map((value) => (
                 <Star
@@ -98,7 +98,7 @@ export function FoodReviewsSection({ foodId, avgRating, ratingCount }: FoodRevie
       {reviews === null ? (
         <div className="space-y-3">
           {[1, 2].map((i) => (
-            <div key={i} className="h-20 rounded-xl bg-soft-blue/40 animate-pulse" />
+            <div key={i} className="h-20 rounded-xl bg-primary-soft/40 animate-pulse" />
           ))}
         </div>
       ) : reviews.length === 0 ? (
@@ -120,7 +120,7 @@ export function FoodReviewsSection({ foodId, avgRating, ratingCount }: FoodRevie
                 type="button"
                 onClick={loadMore}
                 disabled={isLoadingMore}
-                className="px-5 py-2 rounded-full border border-border bg-surface hover:bg-soft-blue text-primary-blue text-sm font-semibold shadow-sm transition-all disabled:opacity-60"
+                className="px-5 py-2 rounded-full border border-border bg-surface hover:bg-primary-soft text-primary text-sm font-semibold shadow-sm transition-all disabled:opacity-60"
               >
                 {isLoadingMore ? "Đang tải..." : `Xem thêm đánh giá (còn ${total - reviews.length})`}
               </button>
@@ -148,7 +148,7 @@ function ReviewItem({ review }: { review: ReviewApiRecord }) {
               className="w-10 h-10 rounded-full object-cover border border-border"
             />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-soft-blue text-primary-blue font-bold flex items-center justify-center text-sm border border-border">
+            <div className="w-10 h-10 rounded-full bg-primary-soft text-primary font-bold flex items-center justify-center text-sm border border-border">
               {initials}
             </div>
           )}

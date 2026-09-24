@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Sedgwick_Ave, Lexend, Mulish } from "next/font/google";
+import localFont from "next/font/local";
+import { Quicksand } from "next/font/google";
 import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "@/components/ui/ThemeProvider";
 import { ThemeDbSync } from "@/components/ui/ThemeDbSync";
@@ -10,38 +11,46 @@ import { SessionProvider } from "@/components/auth/SessionProvider";
 import { SessionErrorGuard } from "@/components/auth/SessionErrorGuard";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { FoodQuickActionsBubble } from "@/components/food/FoodQuickActionsBubble";
+import { BRAND } from "@/constants/brand";
 import "./globals.css";
 
 /**
- * Hệ 3 font (thay hoàn toàn Montserrat/Open Sans cũ) — xem docs/design-system.md
- * cho bảng ánh xạ "thành phần → font" đầy đủ.
- * - Sedgwick Ave: display/hero, chỉ 1 weight (400, static) — KHÔNG dùng font-bold.
- * - Lexend: heading phụ (H2-H4, card/modal/stat).
- * - Mulish: body/UI mặc định toàn app.
- * Cả 3 đều confirm hỗ trợ subset "vietnamese" qua metadata chính thức Google Fonts.
+ * Hệ font — xem docs/design-system.md cho bảng ánh xạ "thành phần → font".
+ * - Fredoka One (bản Việt hoá DVN, file local, 1 weight 700): MỌI tiêu đề.
+ * - Quicksand (Google, subset vietnamese): body/UI mặc định toàn app.
+ * Sedgwick Ave (--font-handwriting) KHÔNG load ở đây — chỉ load trong
+ * src/app/ve-chung-toi/layout.tsx.
  */
-const sedgwickAve = Sedgwick_Ave({
+const fredoka = localFont({
+  src: "./fonts/DVN-Fredoka-Bold.ttf",
   variable: "--font-heading",
-  weight: "400",
-  subsets: ["latin", "vietnamese"],
+  weight: "700",
   display: "swap",
 });
 
-const lexend = Lexend({
-  variable: "--font-subheading",
-  subsets: ["latin", "vietnamese"],
-  display: "swap",
-});
-
-const mulish = Mulish({
+const quicksand = Quicksand({
   variable: "--font-body",
   subsets: ["latin", "vietnamese"],
   display: "swap",
 });
 
+/**
+ * Icon/ảnh chia sẻ dùng file convention của Next: src/app/favicon.ico, icon.png,
+ * apple-icon.png (linh vật nền xanh) và opengraph-image.png (logo vuông có chữ) —
+ * Next tự sinh thẻ <link>/<meta>. Manifest PWA ở src/app/manifest.ts.
+ */
 export const metadata: Metadata = {
-  title: "Hôm Nay Ăn Gì?",
-  description: "Trợ lý random món ăn cho sinh viên và người trẻ ở Cần Thơ.",
+  metadataBase: new URL(process.env.NEXTAUTH_URL ?? "http://localhost:3000"),
+  title: { default: BRAND.name, template: `%s | ${BRAND.name}` },
+  description: BRAND.description,
+  applicationName: BRAND.name,
+  openGraph: {
+    siteName: BRAND.name,
+    title: BRAND.name,
+    description: BRAND.description,
+    locale: "vi_VN",
+    type: "website",
+  },
   verification: {
     google: "rrF8L3nUmBA8oDvnlbVxHfWi0Aq9Y_2x8l6X7sRelZg",
   },
@@ -52,9 +61,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="vi"
       suppressHydrationWarning
-      className={`${sedgwickAve.variable} ${lexend.variable} ${mulish.variable} h-full antialiased`}
+      className={`${fredoka.variable} ${quicksand.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-cream font-body text-text-primary">
+      <body className="min-h-full flex flex-col bg-background font-body text-text-primary">
         <ThemeProvider>
           <MotionConfig reducedMotion="user">
             <SessionProvider>
@@ -62,7 +71,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 <SessionErrorGuard />
                 <ThemeDbSync />
                 <Header />
-                <main className="flex-1 pt-16">{children}</main>
+                <main className="flex-1 pt-(--header-h)">{children}</main>
                 <Footer />
                 <MobileNav />
                 <FoodQuickActionsBubble />

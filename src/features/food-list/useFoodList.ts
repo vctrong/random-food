@@ -5,15 +5,16 @@ import type { EatingLevel, Food } from "@/types/food";
 
 interface UseFoodListArgs {
   initialFoods: Food[];
+  initialEatingLevel?: EatingLevel;
 }
 
 function normalize(text: string): string {
   return text.toLowerCase().trim();
 }
 
-export function useFoodList({ initialFoods }: UseFoodListArgs) {
+export function useFoodList({ initialFoods, initialEatingLevel }: UseFoodListArgs) {
   const [search, setSearch] = useState("");
-  const [eatingLevel, setEatingLevel] = useState<EatingLevel | "all">("all");
+  const [eatingLevel, setEatingLevel] = useState<EatingLevel | "all">(initialEatingLevel ?? "all");
   const [categoryId, setCategoryId] = useState<string | "all">("all");
 
   const categoryOptions = useMemo(() => {

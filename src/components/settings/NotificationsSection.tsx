@@ -144,7 +144,7 @@ export function NotificationsSection({ initialPrefs, hasAppliedReviewer, onChang
   return (
     <section id="thong-bao" className="bg-surface rounded-2xl p-6 shadow-sm space-y-4 scroll-mt-24">
       <div className="flex items-center gap-3 pb-3 border-b border-border">
-        <span className="inline-flex p-2 rounded-xl bg-soft-pink text-primary-pink">
+        <span className="inline-flex p-2 rounded-xl bg-accent-soft text-accent-ink">
           <Bell className="size-5" aria-hidden />
         </span>
         <div>
@@ -163,14 +163,14 @@ export function NotificationsSection({ initialPrefs, hasAppliedReviewer, onChang
             <div key={group.id} className="rounded-xl border border-border overflow-hidden">
               {/* 2 button riêng biệt (không lồng nhau — <button> không được chứa <button> theo spec HTML):
                   vùng label mở rộng/thu gọn, Toggle + nút mũi tên nằm ngoài. */}
-              <div className="w-full flex items-center justify-between gap-3 p-4 hover:bg-soft-blue/20 transition-colors">
+              <div className="w-full flex items-center justify-between gap-3 p-4 hover:bg-primary-soft/20 transition-colors">
                 <button
                   type="button"
                   onClick={() => toggleExpanded(group.id)}
                   aria-expanded={isExpanded}
                   className="flex items-center gap-3 min-w-0 flex-1 text-left"
                 >
-                  <group.icon className="size-4.5 text-primary-blue shrink-0" aria-hidden />
+                  <group.icon className="size-4.5 text-primary shrink-0" aria-hidden />
                   <div className="min-w-0">
                     <p className="font-semibold text-text-primary">{group.title}</p>
                     <p className="text-xs text-text-secondary truncate">{group.description}</p>
@@ -196,12 +196,12 @@ export function NotificationsSection({ initialPrefs, hasAppliedReviewer, onChang
                 <div className="divide-y divide-border border-t border-border">
                   {group.items.map((item) =>
                     item.locked ? (
-                      <div key={item.type} className="flex items-center justify-between gap-3 py-3 px-4 bg-soft-blue/10">
+                      <div key={item.type} className="flex items-center justify-between gap-3 py-3 px-4 bg-primary-soft/10">
                         <div>
                           <p className="text-sm text-text-primary">{item.label}</p>
                           <p className="text-xs text-text-secondary">{item.description}</p>
                         </div>
-                        <span className="shrink-0 text-[11px] font-semibold px-2 py-1 rounded-full bg-soft-blue text-primary-blue">
+                        <span className="shrink-0 text-[11px] font-semibold px-2 py-1 rounded-full bg-primary-soft text-primary">
                           Bắt buộc
                         </span>
                       </div>
