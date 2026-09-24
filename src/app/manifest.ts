@@ -3,8 +3,8 @@ import { BRAND } from "@/constants/brand";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: BRAND.name,
-    short_name: BRAND.name,
+    name: BRAND.seoName,
+    short_name: BRAND.seoName,
     description: BRAND.description,
     start_url: "/",
     display: "standalone",
