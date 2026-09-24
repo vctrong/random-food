@@ -12,6 +12,7 @@ import { SessionErrorGuard } from "@/components/auth/SessionErrorGuard";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { FoodQuickActionsBubble } from "@/components/food/FoodQuickActionsBubble";
 import { BRAND } from "@/constants/brand";
+import { SITE_URL } from "@/config/env";
 import "./globals.css";
 
 /**
@@ -35,18 +36,19 @@ const quicksand = Quicksand({
 });
 
 /**
- * Icon/ảnh chia sẻ dùng file convention của Next: src/app/favicon.ico, icon.png,
- * apple-icon.png (linh vật nền xanh) và opengraph-image.png (logo vuông có chữ) —
+ * Icon/ảnh chia sẻ dùng file convention của Next: src/app/favicon.ico (16/32/48),
+ * icon.png (192x192 — bội số 48px theo chuẩn favicon của Google), apple-icon.png 180 (linh vật nền xanh) và opengraph-image.png (logo vuông có chữ) —
  * Next tự sinh thẻ <link>/<meta>. Manifest PWA ở src/app/manifest.ts.
  */
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXTAUTH_URL ?? "http://localhost:3000"),
-  title: { default: BRAND.name, template: `%s | ${BRAND.name}` },
+  // Domain công khai (không phải NEXTAUTH_URL) — canonical/og:url tương đối được tính theo đây.
+  metadataBase: new URL(SITE_URL),
+  title: { default: BRAND.seoName, template: `%s | ${BRAND.seoName}` },
   description: BRAND.description,
-  applicationName: BRAND.name,
+  applicationName: BRAND.seoName,
   openGraph: {
-    siteName: BRAND.name,
-    title: BRAND.name,
+    siteName: BRAND.seoName,
+    title: BRAND.seoName,
     description: BRAND.description,
     locale: "vi_VN",
     type: "website",

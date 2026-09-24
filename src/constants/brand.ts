@@ -1,6 +1,9 @@
-/** Nhận diện thương hiệu — tên hiển thị thống nhất "Nay Ăn Gì?" và bộ logo trong public/brand/. */
+/** Nhận diện thương hiệu — tên hiển thị "Nay Ăn Gì?", tên SEO "NayAnGi" và bộ logo trong public/brand/. */
 export const BRAND = {
+  /** Tên hiển thị trên giao diện (navbar, footer...). */
   name: "Nay Ăn Gì?",
+  /** Tên thương hiệu cho SEO: title, site name, JSON-LD, manifest — khớp domain nayangi.io.vn và logo "NAYANGI". */
+  seoName: "NayAnGi",
   tagline: "Chọn món khó? Có app lo!",
   description: "Không còn băn khoăn mỗi bữa ăn — trợ lý random món ăn cho sinh viên và người trẻ ở Cần Thơ.",
   /** Linh vật nền trong suốt — navbar, menu mobile, loading (hợp cả light/dark). */
