@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -14,6 +15,11 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
  * ban, token hết hạn) đều gọi notFound() — không phân biệt, không redirect,
  * không hiện thông báo "không có quyền" (sẽ lộ rằng /admin tồn tại).
  */
+/** Không liệt kê /admin trong robots.txt (tránh lộ đường dẫn) — chặn index bằng noindex. */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
+
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const session = await getServerSession(authOptions);
   const user = session?.user as { role?: string } | undefined;
