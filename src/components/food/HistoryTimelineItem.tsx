@@ -1,14 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { CheckCircle2, Clock, MessageSquareText, RefreshCw, Send, Star, Trash2, UtensilsCrossed, X } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  Hourglass,
+  Lock,
+  MessageSquareText,
+  Pencil,
+  RefreshCw,
+  Send,
+  Star,
+  Trash2,
+  UtensilsCrossed,
+  X,
+} from "lucide-react";
 import type { HistoryWithFood } from "@/features/history-log/historyLogic";
 import { EATING_LEVEL_LABELS } from "@/constants/categories";
 import { formatClockTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { MAX_REVIEW_COMMENT_LENGTH } from "@/constants/limits";
+import { MAX_REVIEW_COMMENT_LENGTH, REVIEW_CREATE_WINDOW_HOURS, REVIEW_EDIT_WINDOW_HOURS } from "@/constants/limits";
+import { useNow } from "@/features/history-log/useNow";
+import { formatRemainingTime, getCreateReviewRemainingMs, getEditReviewRemainingMs } from "@/lib/reviewWindow";
 
 interface HistoryTimelineItemProps {
   entry: HistoryWithFood;
@@ -16,7 +31,8 @@ interface HistoryTimelineItemProps {
   onToggleSaved: (id: string) => void;
   onRemove: (id: string) => void;
   onSubmitReview: (id: string, rating: number, comment: string) => Promise<boolean>;
-  onRemoveReview: (id: string) => void;
+  onUpdateReview: (id: string, rating: number, comment: string) => Promise<boolean>;
+  onRemoveReview: (id: string) => Promise<void>;
 }
 
 export function HistoryTimelineItem({
@@ -25,6 +41,7 @@ export function HistoryTimelineItem({
   onToggleSaved,
   onRemove,
   onSubmitReview,
+  onUpdateReview,
   onRemoveReview,
 }: HistoryTimelineItemProps) {
   const { food } = entry;
@@ -120,56 +137,169 @@ export function HistoryTimelineItem({
         </div>
       </div>
 
-      <ReviewSection entry={entry} onSubmitReview={onSubmitReview} onRemoveReview={onRemoveReview} />
+      <ReviewSection
+        entry={entry}
+        onSubmitReview={onSubmitReview}
+        onUpdateReview={onUpdateReview}
+        onRemoveReview={onRemoveReview}
+      />
     </div>
   );
 }
 
+/**
+ * Thời hạn đánh giá: viết trong 72h kể từ lần check-in này, sửa trong 24h kể từ
+ * lúc tạo review. Xoá sau 24h thì không thể đánh giá lại món này (server xoá mềm).
+ */
 function ReviewSection({
   entry,
   onSubmitReview,
+  onUpdateReview,
   onRemoveReview,
 }: {
   entry: HistoryWithFood;
   onSubmitReview: (id: string, rating: number, comment: string) => Promise<boolean>;
-  onRemoveReview: (id: string) => void;
+  onUpdateReview: (id: string, rating: number, comment: string) => Promise<boolean>;
+  onRemoveReview: (id: string) => Promise<void>;
 }) {
+  const now = useNow();
   const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  if (entry.review) {
+  // Chờ client có giờ thật mới hiển thị để trạng thái hạn đánh giá không lệch với SSR.
+  if (now === null) return null;
+
+  const { review } = entry;
+
+  if (review?.isDeleted) {
     return (
-      <div className="rounded-xl bg-primary-soft/40 p-3 flex flex-col gap-1.5">
+      <ReviewNotice>
+        Bạn đã xoá đánh giá món này sau {REVIEW_EDIT_WINDOW_HOURS} giờ nên không thể đánh giá lại.
+      </ReviewNotice>
+    );
+  }
+
+  if (review) {
+    const editRemainingMs = getEditReviewRemainingMs(review.createdAt, now);
+    const canEdit = editRemainingMs > 0;
+
+    if (isComposerOpen && canEdit) {
+      return (
+        <ReviewComposer
+          initialRating={review.rating}
+          initialComment={review.comment ?? ""}
+          submitLabel="Lưu thay đổi"
+          onCancel={() => setIsComposerOpen(false)}
+          onSubmit={async (rating, comment) => {
+            const ok = await onUpdateReview(entry.id, rating, comment);
+            if (ok) setIsComposerOpen(false);
+            return ok;
+          }}
+        />
+      );
+    }
+
+    return (
+      <div className="rounded-xl bg-primary-soft/40 p-3 flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((value) => (
               <Star
                 key={value}
                 className="size-4"
-                fill={value <= entry.review!.rating ? "#F4C95D" : "none"}
-                stroke={value <= entry.review!.rating ? "#F4C95D" : "currentColor"}
+                fill={value <= review.rating ? "#F4C95D" : "none"}
+                stroke={value <= review.rating ? "#F4C95D" : "currentColor"}
                 aria-hidden
               />
             ))}
             <span className="text-xs text-text-secondary ml-1">Đánh giá của bạn</span>
           </div>
-          <button
-            type="button"
-            onClick={() => onRemoveReview(entry.id)}
-            className="inline-flex items-center gap-1 text-xs text-text-secondary hover:text-red-600 transition-colors"
-          >
-            <Trash2 className="size-3.5" aria-hidden />
-            Xoá
-          </button>
+          {!isConfirmingDelete && (
+            <div className="flex items-center gap-3">
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => setIsComposerOpen(true)}
+                  className="inline-flex items-center gap-1 text-xs text-text-secondary hover:text-primary transition-colors"
+                >
+                  <Pencil className="size-3.5" aria-hidden />
+                  Sửa
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsConfirmingDelete(true)}
+                className="inline-flex items-center gap-1 text-xs text-text-secondary hover:text-red-600 transition-colors"
+              >
+                <Trash2 className="size-3.5" aria-hidden />
+                Xoá
+              </button>
+            </div>
+          )}
         </div>
-        {entry.review.comment && <p className="text-sm text-text-primary">{entry.review.comment}</p>}
+        {review.comment && <p className="text-sm text-text-primary">{review.comment}</p>}
+
+        {isConfirmingDelete ? (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg bg-surface border border-border p-2.5">
+            <p className="text-xs text-text-primary">
+              {canEdit
+                ? "Xoá đánh giá này? Bạn vẫn có thể viết lại nếu còn trong thời hạn đánh giá."
+                : `Xoá đánh giá này? Vì đã quá ${REVIEW_EDIT_WINDOW_HOURS} giờ nên sau khi xoá bạn sẽ không thể đánh giá lại món này.`}
+            </p>
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setIsConfirmingDelete(false)}
+                disabled={isDeleting}
+                className="px-3 py-1 rounded-full text-xs text-text-secondary hover:bg-primary-soft transition-colors disabled:opacity-60"
+              >
+                Huỷ
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsDeleting(true);
+                  await onRemoveReview(entry.id);
+                  setIsDeleting(false);
+                  setIsConfirmingDelete(false);
+                }}
+                disabled={isDeleting}
+                className="px-3 py-1 rounded-full text-xs font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-60"
+              >
+                {isDeleting ? "Đang xoá..." : "Xoá đánh giá"}
+              </button>
+            </div>
+          </div>
+        ) : canEdit ? (
+          <p className="inline-flex items-center gap-1 text-xs text-text-secondary">
+            <Hourglass className="size-3.5 shrink-0" aria-hidden />
+            Còn {formatRemainingTime(editRemainingMs)} để sửa đánh giá
+          </p>
+        ) : (
+          <p className="inline-flex items-center gap-1 text-xs text-text-secondary">
+            <Lock className="size-3.5 shrink-0" aria-hidden />
+            Đã khoá chỉnh sửa (quá {REVIEW_EDIT_WINDOW_HOURS} giờ kể từ lúc đánh giá)
+          </p>
+        )}
       </div>
+    );
+  }
+
+  const createRemainingMs = getCreateReviewRemainingMs(entry.timestamp, now);
+
+  if (createRemainingMs === 0) {
+    return (
+      <ReviewNotice>
+        Đã quá {REVIEW_CREATE_WINDOW_HOURS} giờ kể từ lúc ăn nên không thể đánh giá lần ăn này nữa.
+      </ReviewNotice>
     );
   }
 
   if (isComposerOpen) {
     return (
       <ReviewComposer
-        entryId={entry.id}
+        submitLabel="Gửi đánh giá"
         onCancel={() => setIsComposerOpen(false)}
         onSubmit={async (rating, comment) => {
           const ok = await onSubmitReview(entry.id, rating, comment);
@@ -181,28 +311,48 @@ function ReviewSection({
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => setIsComposerOpen(true)}
-      className="self-start inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-soft hover:bg-accent/20 text-accent-ink text-sm font-medium transition-colors"
-    >
-      <MessageSquareText className="size-4" aria-hidden />
-      Đánh giá món này
-    </button>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+      <button
+        type="button"
+        onClick={() => setIsComposerOpen(true)}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-soft hover:bg-accent/20 text-accent-ink text-sm font-medium transition-colors"
+      >
+        <MessageSquareText className="size-4" aria-hidden />
+        Đánh giá món này
+      </button>
+      <span className="inline-flex items-center gap-1 text-xs text-text-secondary">
+        <Hourglass className="size-3.5 shrink-0" aria-hidden />
+        Còn {formatRemainingTime(createRemainingMs)} để đánh giá
+      </span>
+    </div>
+  );
+}
+
+function ReviewNotice({ children }: { children: ReactNode }) {
+  return (
+    <p className="flex items-start gap-1.5 rounded-xl bg-primary-soft/40 px-3 py-2 text-xs text-text-secondary">
+      <Lock className="size-3.5 shrink-0 mt-px" aria-hidden />
+      <span>{children}</span>
+    </p>
   );
 }
 
 function ReviewComposer({
+  initialRating = 5,
+  initialComment = "",
+  submitLabel,
   onCancel,
   onSubmit,
 }: {
-  entryId: string;
+  initialRating?: number;
+  initialComment?: string;
+  submitLabel: string;
   onCancel: () => void;
   onSubmit: (rating: number, comment: string) => Promise<boolean>;
 }) {
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState(initialRating);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
-  const [comment, setComment] = useState("");
+  const [comment, setComment] = useState(initialComment);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -260,7 +410,7 @@ function ReviewComposer({
             className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary-strong hover:bg-primary-strong-hover text-white text-sm font-semibold shadow-sm transition-all disabled:opacity-60"
           >
             <Send className="size-4" aria-hidden />
-            {isSubmitting ? "Đang gửi..." : "Gửi đánh giá"}
+            {isSubmitting ? "Đang gửi..." : submitLabel}
           </button>
         </div>
       </div>

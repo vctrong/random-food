@@ -83,8 +83,11 @@ Ghi chú (kcal) chỉ mang tính ước lượng UX, **không phải dữ liệu
 | UC-G08 | Tìm kiếm món ăn/quán |
 | UC-G09 | Lọc món ăn (category, khu vực, khoảng giá) |
 | UC-G10 | Xem review công khai |
-| UC-G11 | Đăng ký tài khoản |
-| UC-G12 | Đăng nhập |
+| UC-G11 | Đăng ký tài khoản (BR-S09) |
+| UC-G12 | Đăng nhập (BR-S09) |
+| UC-G13 | Quên mật khẩu — đặt lại bằng OTP qua email (BR-S10, BR-S11, BR-S14, BR-S15) |
+| UC-G14 | Mở khoá tài khoản bị tạm khoá qua link trong email (BR-S12, BR-S13) |
+| UC-G15 | Đăng ký bằng email của tài khoản chỉ có Google → xác thực OTP để thêm đăng nhập bằng mật khẩu (BR-S16) |
 
 *(Map: mọi UC-Gxx liên kết BR-R01→R10, BR-U01/U02 — Guest không lưu trữ.)*
 
@@ -104,17 +107,19 @@ Ghi chú (kcal) chỉ mang tính ước lượng UX, **không phải dữ liệu
 | UC-U10 | Đóng góp Food + Restaurant mới | BR-C01→C06, BR-U08 |
 | UC-U11 | Xem trạng thái nội dung đã đóng góp | BR-U09 |
 | UC-U12 | Chỉnh sửa nội dung bị `needs_revision`/`rejected` | BR-U10 |
-| UC-U13 | Viết review (rating + comment) | BR-RV01→RV05, BR-U03, BR-U04 |
-| UC-U14 | Sửa review của chính mình | BR-U05 |
-| UC-U15 | Xóa review của chính mình | BR-U05, BR-U06 |
+| UC-U13 | Viết review (rating + comment) — trong 72h kể từ lần check-in | BR-RV01→RV05, BR-RV10, BR-RV11, BR-U03, BR-U04 |
+| UC-U14 | Sửa review của chính mình — trong 24h kể từ lúc tạo review | BR-U05, BR-RV09 |
+| UC-U15 | Xóa review của chính mình (xóa sau 24h thì không đánh giá lại được) | BR-U05, BR-U06, BR-RV11 |
 | UC-U16 | Report Food/Restaurant | BR-M01→M04 |
 | UC-U17 | Report Review | BR-M01→M04 |
-| UC-U18 | Đề xuất Category mới | BR-CA01, BR-CA02 |
+| UC-U18 | Đề xuất Category mới (kèm món đóng góp) | BR-CA01, BR-CA02, BR-CA04 |
 | UC-U19 | Nộp đơn ứng tuyển FoodReviewer | BR-03 |
 | UC-U20 | Xem trạng thái đơn ứng tuyển | — |
 | UC-U21 | Nhận notification | — |
 | UC-U22 | Chia sẻ món ăn (share link) | — |
 | UC-U23 | Gửi góp ý/báo lỗi hệ thống | — |
+| UC-U24 | Xác thực email bằng OTP trong trang Hồ sơ | BR-S15 |
+| UC-U25 | Tạo mật khẩu cho tài khoản Google (sau khi xác thực email, trong trang Hồ sơ) | BR-S15, BR-S16 |
 
 **Business Rules — User:**
 - **BR-U01**: Guest không lưu favorite/history lâu dài.
@@ -192,8 +197,8 @@ Ghi chú (kcal) chỉ mang tính ước lượng UX, **không phải dữ liệu
 
 - **BR-C01**: Food và Restaurant là 2 entity riêng biệt; 1 Restaurant có nhiều Food.
 - **BR-C02**: Food phải thuộc 1 Restaurant hợp lệ.
-- **BR-C03**: Restaurant tối thiểu cần: tên, địa chỉ, vị trí (tọa độ để hiển thị bản đồ).
-- **BR-C04**: Food tối thiểu cần: tên, hình ảnh, mô tả, giá tham khảo, category, mức độ ăn phù hợp.
+- **BR-C03** *(cập nhật 2026-09)*: Restaurant tối thiểu cần: tên, **địa chỉ chữ**. Toạ độ trên bản đồ **không bắt buộc**; luôn lưu kèm nguồn vị trí `locationSource` (`gps` / `pin_confirmed` / `geocoded` / `none`) để FoodReviewer biết độ tin cậy. Ảnh quán không bắt buộc (0–3 ảnh).
+- **BR-C04** *(cập nhật 2026-09)*: Food tối thiểu cần: tên, hình ảnh (≥ 1), giá tham khảo, category (1–3, **tính cả 1 danh mục đề xuất**), mức độ ăn phù hợp. **Mô tả không bắt buộc.**
 - **BR-C05**: Hạn chế tạo dữ liệu trùng lặp rõ ràng nếu hệ thống phát hiện được (trùng tên + gần vị trí).
 - **BR-C06**: Food/Restaurant do User tạo phải ở `pending` trước khi công khai.
 - **BR-C07** *(mới, giải quyết flow tạo mới)*: Khi User đóng góp Food tại Restaurant chưa tồn tại trong hệ thống, hệ thống tự tạo Restaurant kèm `status = pending` song song với Food. FoodReviewer thẩm định thực tế và duyệt **cả hai cùng lúc**. Nếu Restaurant đã `approved` sẵn từ trước, User chỉ cần đóng góp Food mới, không cần duyệt lại Restaurant.
@@ -232,6 +237,12 @@ stateDiagram-v2
 - **BR-RV06**: Review bị report → vào moderation queue.
 - **BR-RV07**: Admin có quyền Hide/Remove review vi phạm.
 - **BR-RV08**: Không hard-delete review ngay khi có report — chỉ xử lý sau khi Admin xem xét.
+- **BR-RV09 — Hạn sửa 24h**: User chỉ được **sửa** review (rating + comment) trong **24 giờ kể từ lúc tạo review** (`reviews.createdAt`). Quá 24h review bị khoá chỉnh sửa vĩnh viễn — sửa lại không làm mới mốc 24h.
+- **BR-RV10 — Hạn viết 72h**: User chỉ được **viết** review cho 1 lần check-in trong **72 giờ kể từ lúc check-in đó** (`experiences.createdAt`). Mốc tính **theo từng lần check-in**: ăn lại món đó (check-in mới) thì có cửa sổ 72h mới — với điều kiện chưa có review cho cặp (Food, Restaurant) và không bị khoá theo BR-RV11. Lần check-in đã quá 72h mà chưa đánh giá thì không đánh giá được nữa.
+- **BR-RV11 — Xóa review**: User luôn được xóa review của mình, nhưng:
+  - Xóa **trong 24h** kể từ lúc tạo → xóa hẳn; vẫn viết lại được nếu còn trong hạn 72h của một lần check-in (BR-RV10).
+  - Xóa **sau 24h** → xóa mềm (`reviews.deletedAt`): review biến mất khỏi mọi nơi hiển thị và không còn tính vào `avgRating`/`ratingCount`, nhưng User **không thể đánh giá lại** cặp (Food, Restaurant) đó nữa (kể cả khi check-in mới). UI phải cảnh báo rõ điều này trước khi xóa và thông báo sau khi xóa.
+- **BR-RV12 — Hiển thị thời hạn**: Trang Lịch sử hiển thị bộ đếm thời gian còn lại: "Còn … để đánh giá" (72h) khi chưa đánh giá, "Còn … để sửa đánh giá" (24h) khi đã đánh giá; hết hạn thì hiện thông báo khoá tương ứng. Server luôn kiểm tra lại thời hạn, không tin client.
 
 ---
 
@@ -239,7 +250,13 @@ stateDiagram-v2
 
 - **BR-CA01**: User không tạo Category chính thức.
 - **BR-CA02**: Category chính thức chỉ do Admin CRUD.
-- **BR-CA03**: Category proposal có trạng thái `pending / approved / rejected`, lưu riêng ở `categoryProposals` (không lẫn vào `categories`).
+- **BR-CA03** *(cập nhật)*: Category proposal có trạng thái `pending / approved / merged / rejected`, lưu riêng ở `categoryProposals` (không lẫn vào `categories`).
+- **BR-CA04** *(mới)*: User đề xuất danh mục **ngay trong form đóng góp món**, tối đa 1 đề xuất/món; danh mục đề xuất được tính là đã chọn danh mục (món không phải chờ). Nhiều user đề xuất cùng tên (sau khi bỏ dấu, lowercase) được gộp vào 1 proposal và tăng số lượt đề xuất. Tên trùng danh mục có sẵn thì dùng luôn danh mục đó.
+- **BR-CA05** *(mới)*: FoodReviewer khi duyệt món có danh mục đề xuất **chỉ được**: (a) gộp vào danh mục có sẵn, hoặc (b) từ chối đề xuất. FoodReviewer **không được tạo danh mục mới**. Quyết định áp dụng cho **mọi món** đang dùng đề xuất đó. BR-F02 áp dụng: không xử lý đề xuất trên món do chính mình đóng góp.
+- **BR-CA06** *(mới)*: FoodReviewer vẫn duyệt món được khi đề xuất chưa xử lý; khi đó món **chưa có danh mục nào khác** tạm nằm ở danh mục hệ thống **"Khác"**, proposal ở lại cho Admin.
+- **BR-CA07** *(mới)*: **Chỉ Admin** tạo danh mục mới từ proposal (được sửa tên, bắt buộc chọn nhóm cha khác "Khác"). Tạo xong: mọi món liên quan tự được gán danh mục mới và bỏ khỏi "Khác". Admin cũng gộp/từ chối được như FoodReviewer.
+- **BR-CA08** *(mới)*: Đề xuất bị từ chối → món giữ các danh mục khác user đã chọn, không còn danh mục nào thì về "Khác". "Khác" là danh mục hệ thống: user không tự chọn được, Admin không tắt được.
+- **BR-CA09** *(mới)*: Mọi kiểm tra quyền ở trên đều thực hiện ở API (`/api/reviewer/category-proposals/[id]` chỉ có merge/reject; tạo danh mục chỉ ở `/api/admin/category-proposals`), không chỉ ẩn nút trên UI. Mọi quyết định ghi AuditLog (`category_proposal_merge` / `_reject` / `_approve`).
 
 | ID | Use Case |
 |---|---|
@@ -316,6 +333,22 @@ Hành động bắt buộc log: approve/reject/needs_revision Food-Restaurant, b
 - **BR-S06**: Rate limit áp dụng cho hành vi dễ spam (submit, review, report, check-in).
 - **BR-S07**: Admin action quan trọng phải có Audit Log.
 - **BR-S08**: Không hard-delete dữ liệu cần truy vết nếu không bắt buộc (ưu tiên soft-delete qua `visibility`/`accountStatus`).
+- **BR-S09** *(mới)*: Giới hạn truy cập trang xác thực khi đã đăng nhập.
+  - Người dùng đã đăng nhập **không** được truy cập các trang chỉ dành cho khách (guest-only): `/dang-nhap`, `/dang-ky` (và các trang quên/đặt lại mật khẩu khi được bổ sung sau này).
+  - Khi cố truy cập, hệ thống tự chuyển hướng về trang chủ (hoặc `callbackUrl` hợp lệ nếu có), không hiển thị nội dung trang đăng nhập dù chỉ thoáng qua.
+  - Sau khi đăng nhập/đăng ký thành công, người dùng được chuyển về trang dự định truy cập trước đó (`callbackUrl`); nếu không có thì về trang chủ. Chỉ chấp nhận đường dẫn nội bộ (bắt đầu bằng `/`, không phải `//`); giá trị không hợp lệ hoặc trỏ về chính trang guest-only → về trang chủ. Nút Back không quay lại trang đăng nhập.
+  - Người dùng chưa đăng nhập truy cập trang cần xác thực bị chuyển về `/dang-nhap?callbackUrl=<trang dự định>`.
+  - Phiên hết hạn hoặc không hợp lệ (hết hạn do idle, bị thu hồi, tài khoản bị khoá) được xem là **chưa đăng nhập** và được phép vào trang đăng nhập.
+  - Đăng nhập thất bại: giữ nguyên trang, giữ email đã nhập, hiển thị thông báo lỗi dễ hiểu.
+- **BR-S10** *(mới)*: Quên mật khẩu bằng OTP qua email — OTP 6 số, hết hạn sau 5 phút, dùng 1 lần; gửi OTP mới thì OTP cũ vô hiệu ngay. Gửi lại: chờ 60 giây giữa 2 lần, tối đa 5 lần/giờ/email, kèm giới hạn theo IP. Chỉ áp dụng tài khoản đăng ký bằng email **và đã xác thực email** (BR-S15); tài khoản Google được báo đăng nhập bằng Google. Chi tiết: [`forgot-password.md`](forgot-password.md).
+- **BR-S11** *(cập nhật)*: Email không tồn tại, **chưa xác thực**, hoặc thuộc tài khoản bị Admin khoá → báo rõ "Không tìm thấy tài khoản hoặc tài khoản chưa xác thực email" và dừng ở bước nhập email (không gửi gì). Chấp nhận việc có thể dò được email đã xác thực để đổi lấy trải nghiệm rõ ràng; giảm thiểu bằng rate limit theo IP và thời gian phản hồi đều nhau.
+- **BR-S12** *(mới)*: Nhập sai OTP 5 lần → tài khoản bị **tạm khoá**: vô hiệu OTP, gửi email cảnh báo (thời điểm, IP, thiết bị, link mở khoá). Khi đang khoá: không đăng nhập được, không yêu cầu OTP được; được gửi lại email mở khoá (chờ 60 giây, tối đa 3 lần/giờ). Phiên đang đăng nhập ở thiết bị khác không bị đăng xuất.
+- **BR-S13** *(mới)*: Link mở khoá dùng 1 lần, hết hạn sau 24 giờ; gửi link mới thì link cũ vô hiệu. Mở khoá xong: reset bộ đếm sai, **mật khẩu giữ nguyên** — người dùng đăng nhập bằng email/mật khẩu như bình thường.
+- **BR-S14** *(mới)*: Sau khi xác thực OTP, người dùng có 15 phút (1 lần) để đặt mật khẩu mới theo chính sách mật khẩu chung và không trùng mật khẩu hiện tại. Đổi thành công: đăng xuất mọi thiết bị đang đăng nhập, xoá mọi OTP/token còn lại, gửi email xác nhận. Các sự kiện bảo mật (yêu cầu, sai OTP, khoá, mở khoá, đổi mật khẩu) được ghi log, không log OTP/token thô.
+- **BR-S15** *(mới)*: Xác thực email — tài khoản đăng ký bằng email được đăng nhập và dùng mọi tính năng ngay, nhưng ở trạng thái **chưa xác thực**; trang Hồ sơ hiển thị cảnh báo kèm nút "Xác thực email" (OTP 6 số qua email, hết hạn 10 phút, dùng 1 lần, chờ 60 giây giữa 2 lần gửi, tối đa 5 mã/giờ; nhập sai 5 lần thì mã bị huỷ, phải gửi mã mới — **không** khoá tài khoản). Chưa xác thực thì **không** dùng được Quên mật khẩu. Tài khoản Google **cũng** bắt đầu ở trạng thái chưa xác thực (áp dụng cho tài khoản tạo từ bản cập nhật 2026-09; tài khoản Google tạo trước đó giữ nguyên "đã xác thực", không migrate). Chi tiết: [`email-verification.md`](email-verification.md).
+- **BR-S16** *(mới)*: Tài khoản Google thêm được đăng nhập bằng mật khẩu (1 tài khoản, 2 cách đăng nhập), luôn qua OTP gửi tới chính email đó:
+  - Form Đăng ký kiểm tra email ngay ở bước 1: chưa có → đi tiếp; đã có tài khoản có mật khẩu → báo "Email đã được sử dụng"; chỉ có Google → màn "Email này đã được liên kết với tài khoản Google…" + gửi OTP. OTP đúng → gán mật khẩu vừa nhập vào tài khoản **cũ** (không tạo user mới, giữ nguyên tên/ảnh), bật "đã xác thực", tự đăng nhập và về trang định tới. Mật khẩu **không** được gán trước khi OTP đúng; trong lúc chờ chỉ lưu hash kèm hạn 1 giờ; phiên gắn với trình duyệt đã bắt đầu (cookie httpOnly). API tạo tài khoản vẫn kiểm tra trùng email lần cuối.
+  - Trang Hồ sơ: tài khoản Google đã xác thực mà chưa có mật khẩu thấy thẻ "Tạo mật khẩu" (cùng chính sách mật khẩu với Đăng ký, bỏ qua được bằng "Để sau"). Đã có mật khẩu thì dùng "Đổi mật khẩu" như tài khoản thường.
 
 ---
 
@@ -395,7 +428,7 @@ flowchart LR
 | Xem chi tiết / bản đồ / review công khai | ✅ | ✅ | ✅ | ✅ |
 | Lưu món yêu thích | ❌ | ✅ | ✅ | ✅ |
 | Check-in | ❌ | ✅ | ✅ | ✅ |
-| Viết/sửa/xóa review của mình | ❌ | ✅ | ✅ | ✅ |
+| Viết/sửa/xóa review của mình (viết ≤72h sau check-in, sửa ≤24h sau khi đánh giá — BR-RV09→RV11) | ❌ | ✅ | ✅ | ✅ |
 | Đóng góp Food/Restaurant | ❌ | ✅ | ✅ | ✅ |
 | Report nội dung | ❌ | ✅ | ✅ | ✅ |
 | Đề xuất Category | ❌ | ✅ | ✅ | ✅ |

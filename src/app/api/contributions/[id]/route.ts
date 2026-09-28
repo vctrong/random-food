@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/requireAuth";
+import { LOCATION_SOURCES } from "@/lib/models/Restaurant";
+import type { LocationSource } from "@/types/restaurant";
 import { updateContribution, type UpdateContributionError, type UpdateContributionInput } from "@/lib/contributions";
 
 const ERROR_MESSAGES: Record<UpdateContributionError, { message: string; status: number }> = {
@@ -7,9 +9,10 @@ const ERROR_MESSAGES: Record<UpdateContributionError, { message: string; status:
   NOT_FOUND: { message: "Không tìm thấy món ăn đã đóng góp của bạn.", status: 404 },
   NOTHING_TO_UPDATE: { message: "Không có thay đổi nào để gửi.", status: 400 },
   NOT_EDITABLE: { message: "Chỉ chỉnh sửa được khi đội kiểm duyệt yêu cầu bổ sung.", status: 409 },
-  INVALID_FOOD: { message: "Thiếu tên hoặc mô tả món ăn.", status: 400 },
+  INVALID_FOOD: { message: "Thiếu tên món ăn.", status: 400 },
   INVALID_PRICE: { message: "Giá tham khảo không hợp lệ.", status: 400 },
   INVALID_CATEGORY: { message: "Chọn ít nhất 1 danh mục hợp lệ.", status: 400 },
+  TOO_MANY_CATEGORIES: { message: "Mỗi món tối đa 3 danh mục, tính cả danh mục đề xuất.", status: 400 },
   INVALID_EATING_LEVEL: { message: "Chọn ít nhất 1 mức độ ăn hợp lệ.", status: 400 },
   INVALID_IMAGES: { message: "Cần 1–5 ảnh, mỗi ảnh là tệp hình dưới 5MB.", status: 400 },
   INVALID_RESTAURANT: { message: "Thiếu tên, địa chỉ hoặc vị trí quán ăn.", status: 400 },
@@ -40,11 +43,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   if (formData.has("restaurantName")) {
+    const hasLocation = formData.has("restaurantLat") && formData.has("restaurantLng");
+    const source = String(formData.get("restaurantLocationSource") ?? "pin_confirmed");
     input.restaurant = {
       name: String(formData.get("restaurantName") ?? ""),
       address: String(formData.get("restaurantAddress") ?? ""),
-      lat: Number(formData.get("restaurantLat")),
-      lng: Number(formData.get("restaurantLng")),
+      location: hasLocation
+        ? { lat: Number(formData.get("restaurantLat")), lng: Number(formData.get("restaurantLng")) }
+        : null,
+      locationSource: (LOCATION_SOURCES as readonly string[]).includes(source) ? (source as LocationSource) : "pin_confirmed",
     };
   }
 

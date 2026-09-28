@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
 import { Food } from "@/lib/models/Food";
-import { Restaurant } from "@/lib/models/Restaurant";
-import { Category } from "@/lib/models/Category";
-import { uploadImageFile } from "@/lib/cloudinary";
+// Đăng ký model để .populate() bên dưới hoạt động.
+import "@/lib/models/Restaurant";
+import "@/lib/models/Category";
+import { requireAuth } from "@/lib/requireAuth";
+import { foodSubmissionSchema, submitFood, type FoodSubmissionError } from "@/lib/foodSubmission";
 
 export async function GET() {
   await connectDB();
@@ -13,7 +13,7 @@ export async function GET() {
   const foods = await Food.find({ moderationStatus: "approved", visibility: "visible" })
     .sort({ createdAt: -1 })
     .populate("categoryIds", "name slug icon")
-    .populate("restaurantId", "name address location openingHours")
+    .populate("restaurantId", "name address location openingHours images")
     .lean();
 
   return NextResponse.json(
@@ -24,6 +24,7 @@ export async function GET() {
         address: string;
         location?: { coordinates?: [number, number] };
         openingHours?: string;
+        images?: string[];
       } | null;
       const categories = (food.categoryIds ?? []) as unknown as {
         _id: string;
@@ -60,6 +61,7 @@ export async function GET() {
               // GeoJSON lưu [lng, lat] — đổi sang {lat, lng} cho dễ dùng ở Leaflet.
               location: coordinates ? { lat: coordinates[1], lng: coordinates[0] } : null,
               openingHours: restaurant.openingHours?.trim() || null,
+              images: restaurant.images ?? [],
             }
           : null,
       };
@@ -67,118 +69,33 @@ export async function GET() {
   );
 }
 
-const EATING_LEVEL_VALUES = new Set(["snack", "normal", "hearty", "full"]);
+const SUBMISSION_ERRORS: Record<FoodSubmissionError, { message: string; status: number }> = {
+  RATE_LIMITED: { message: "Bạn gửi hơi nhiều món trong 1 giờ, nghỉ chút rồi gửi tiếp nha.", status: 429 },
+  INVALID_PRICE: { message: "Giá tham khảo không hợp lệ.", status: 400 },
+  INVALID_EATING_LEVEL: { message: "Chọn ít nhất 1 mức độ ăn hợp lệ.", status: 400 },
+  INVALID_CATEGORY: { message: "Chọn ít nhất 1 danh mục hợp lệ (hoặc đề xuất danh mục mới).", status: 400 },
+  TOO_MANY_CATEGORIES: { message: "Mỗi món tối đa 3 danh mục, tính cả danh mục đề xuất.", status: 400 },
+  INVALID_IMAGES: { message: "Ảnh tải lên không hợp lệ, thử tải lại ảnh nha.", status: 400 },
+  INVALID_RESTAURANT: { message: "Quán ăn không hợp lệ hoặc chưa được duyệt.", status: 400 },
+  INVALID_LOCATION: { message: "Vị trí quán không hợp lệ.", status: 400 },
+};
 
-/**
- * User đóng góp Food mới (UC-U10, BR-C01→C07). Food + (nếu quán chưa tồn tại)
- * Restaurant đều tạo ở trạng thái pending — FoodReviewer duyệt sau. Nếu chọn
- * quán đã approved sẵn thì chỉ tạo Food, không đụng tới Restaurant (BR-C07).
- */
+/** UC-U10: user đóng góp món (+ quán mới) — logic ở lib/foodSubmission.ts. */
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  const auth = await requireAuth();
+  if (!auth.ok) {
     return NextResponse.json({ error: "Vui lòng đăng nhập để đóng góp món ăn." }, { status: 401 });
   }
-  const userId = (session.user as { id: string }).id;
 
-  const formData = await request.formData();
-
-  const name = formData.get("name");
-  const description = formData.get("description");
-  const priceMin = formData.get("priceMin");
-  const priceMax = formData.get("priceMax");
-  const categoryIds = formData.getAll("categoryIds").map(String).filter(Boolean);
-  const eatingLevels = formData.getAll("eatingLevels").map(String).filter(Boolean);
-  const images = formData.getAll("images").filter((item): item is File => item instanceof File && item.size > 0);
-
-  const restaurantMode = formData.get("restaurantMode");
-  const restaurantId = formData.get("restaurantId");
-  const restaurantName = formData.get("restaurantName");
-  const restaurantAddress = formData.get("restaurantAddress");
-  const restaurantLat = formData.get("restaurantLat");
-  const restaurantLng = formData.get("restaurantLng");
-
-  if (typeof name !== "string" || !name.trim()) {
-    return NextResponse.json({ error: "Thiếu tên món ăn." }, { status: 400 });
-  }
-  if (typeof description !== "string" || !description.trim()) {
-    return NextResponse.json({ error: "Thiếu mô tả món ăn." }, { status: 400 });
-  }
-  if (images.length === 0) {
-    return NextResponse.json({ error: "Cần ít nhất 1 ảnh món ăn." }, { status: 400 });
-  }
-  const min = Number(priceMin);
-  const max = Number(priceMax);
-  if (typeof priceMin !== "string" || typeof priceMax !== "string" || !Number.isFinite(min) || !Number.isFinite(max) || min < 0 || max < min) {
-    return NextResponse.json({ error: "Giá tham khảo không hợp lệ." }, { status: 400 });
-  }
-  if (categoryIds.length === 0) {
-    return NextResponse.json({ error: "Chọn ít nhất 1 danh mục." }, { status: 400 });
-  }
-  if (eatingLevels.length === 0 || eatingLevels.some((level) => !EATING_LEVEL_VALUES.has(level))) {
-    return NextResponse.json({ error: "Chọn ít nhất 1 mức độ ăn hợp lệ." }, { status: 400 });
+  const parsed = foodSubmissionSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Thông tin món ăn chưa đầy đủ hoặc không hợp lệ." }, { status: 400 });
   }
 
-  await connectDB();
-
-  const validCategoryCount = await Category.countDocuments({ _id: { $in: categoryIds }, isActive: true });
-  if (validCategoryCount !== categoryIds.length) {
-    return NextResponse.json({ error: "Có danh mục không hợp lệ." }, { status: 400 });
+  const result = await submitFood(auth.id, parsed.data);
+  if (result.error) {
+    const { message, status } = SUBMISSION_ERRORS[result.error];
+    return NextResponse.json({ error: message }, { status });
   }
-
-  let finalRestaurantId: string;
-
-  if (restaurantMode === "existing") {
-    if (typeof restaurantId !== "string" || !restaurantId) {
-      return NextResponse.json({ error: "Thiếu quán ăn." }, { status: 400 });
-    }
-    const restaurant = await Restaurant.findOne({
-      _id: restaurantId,
-      moderationStatus: "approved",
-      visibility: "visible",
-    }).lean();
-    if (!restaurant) {
-      return NextResponse.json({ error: "Quán ăn không hợp lệ." }, { status: 400 });
-    }
-    finalRestaurantId = restaurantId;
-  } else {
-    const lat = Number(restaurantLat);
-    const lng = Number(restaurantLng);
-    if (
-      typeof restaurantName !== "string" ||
-      !restaurantName.trim() ||
-      typeof restaurantAddress !== "string" ||
-      !restaurantAddress.trim() ||
-      !Number.isFinite(lat) ||
-      !Number.isFinite(lng)
-    ) {
-      return NextResponse.json({ error: "Thiếu tên, địa chỉ hoặc vị trí quán ăn." }, { status: 400 });
-    }
-    const newRestaurant = await Restaurant.create({
-      name: restaurantName.trim(),
-      address: restaurantAddress.trim(),
-      location: { type: "Point", coordinates: [lng, lat] },
-      moderationStatus: "pending",
-      visibility: "visible",
-      createdBy: userId,
-    });
-    finalRestaurantId = String(newRestaurant._id);
-  }
-
-  const imageUrls = await Promise.all(images.map((file) => uploadImageFile(file, "nayangi/foods")));
-
-  const food = await Food.create({
-    restaurantId: finalRestaurantId,
-    name: name.trim(),
-    description: description.trim(),
-    categoryIds,
-    eatingLevels,
-    images: imageUrls,
-    priceRange: { min, max },
-    moderationStatus: "pending",
-    visibility: "visible",
-    createdBy: userId,
-  });
-
-  return NextResponse.json({ success: true, id: String(food._id) }, { status: 201 });
+  return NextResponse.json({ success: true, id: result.id }, { status: 201 });
 }

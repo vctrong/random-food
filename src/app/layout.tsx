@@ -11,6 +11,7 @@ import { SessionProvider } from "@/components/auth/SessionProvider";
 import { SessionErrorGuard } from "@/components/auth/SessionErrorGuard";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { FoodQuickActionsBubble } from "@/components/food/FoodQuickActionsBubble";
+import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { BRAND } from "@/constants/brand";
 import { SITE_URL } from "@/config/env";
 import "./globals.css";
@@ -77,6 +78,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 <Footer />
                 <MobileNav />
                 <FoodQuickActionsBubble />
+                <OnboardingModal />
               </ToastProvider>
             </SessionProvider>
           </MotionConfig>

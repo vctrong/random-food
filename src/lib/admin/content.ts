@@ -1,4 +1,5 @@
 import { connectDB } from "@/lib/mongodb";
+import { recountCategoriesOfFood } from "@/lib/categoryCounts";
 import { Food } from "@/lib/models/Food";
 import { Restaurant } from "@/lib/models/Restaurant";
 import { AuditLog } from "@/lib/models/AuditLog";
@@ -92,6 +93,7 @@ export async function setContentVisibility({
   item.visibility = visibility;
   item.updatedAt = new Date();
   await item.save();
+  if (targetType === "food") await recountCategoriesOfFood(targetId);
 
   await AuditLog.create({
     actorId: adminId,

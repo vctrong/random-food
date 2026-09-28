@@ -23,6 +23,8 @@ export interface FoodRestaurantSummary {
   location: FoodRestaurantLocation | null;
   /** Chuỗi tự do nhập tay (vd "06:00 - 21:00") — chỉ hiển thị nguyên văn, không suy ra "đang mở cửa". */
   openingHours?: string | null;
+  /** Ảnh quán (có thể rỗng) — hiển thị qua RestaurantImage để có ảnh mặc định. */
+  images?: string[];
 }
 
 /** Món ăn THẬT từ MongoDB (`GET /api/foods`) — đã duyệt & công khai. Đây là type Food DUY NHẤT trong app. */

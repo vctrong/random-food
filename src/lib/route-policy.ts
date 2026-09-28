@@ -41,6 +41,17 @@ export interface RoutePolicyInput {
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
+/**
+ * Trang CHỈ dành cho khách (BR-S09) — người đã đăng nhập bị chuyển hướng đi.
+ * Không chặn ở proxy (JWT còn hạn chưa chắc phiên còn hợp lệ: idle/thu hồi chỉ
+ * biết được qua callback session() có DB) — page tự gọi redirectIfAuthenticated().
+ */
+export const GUEST_ONLY_PAGES: ReadonlySet<string> = new Set(["/dang-nhap", "/dang-ky", "/quen-mat-khau"]);
+
+export function isGuestOnlyPage(pathname: string): boolean {
+  return GUEST_ONLY_PAGES.has(pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname);
+}
+
 /** Trang public — không cần đăng nhập. Dùng exact-match (không có route [dynamic] nào trong app). */
 const PUBLIC_PAGES = new Set([
   "/",
@@ -48,8 +59,9 @@ const PUBLIC_PAGES = new Set([
   "/random",
   "/ve-chung-toi",
   "/tin-tuc",
-  "/dang-nhap",
-  "/dang-ky",
+  ...GUEST_ONLY_PAGES,
+  // Link mở khoá trong email cảnh báo — mở được cả khi đang đăng nhập tài khoản khác.
+  "/mo-khoa-tai-khoan",
   "/cai-dat", // hoạt động cho cả guest, chỉ ẩn phần cần tài khoản ở tầng UI
 ]);
 
@@ -59,7 +71,6 @@ const PUBLIC_APIS = new Set([
   "/api/categories",
   "/api/articles",
   "/api/restaurants",
-  "/api/auth/register",
   // GET công khai (danh sách review của 1 món); POST vẫn tự 401 trong route
   // handler (lớp 2) đúng pattern /api/foods — CSRF (bước 3) vẫn áp dụng trước đó.
   "/api/reviews",
@@ -95,8 +106,25 @@ function isReviewerApi(pathname: string): boolean {
   return pathname === "/api/reviewer" || pathname.startsWith("/api/reviewer/");
 }
 
+/**
+ * API xác thực TỰ VIẾT nằm dưới /api/auth/ (không phải của NextAuth): public cho
+ * khách nhưng VẪN phải qua kiểm tra CSRF — khác route nội bộ NextAuth (có CSRF token riêng).
+ */
+const CUSTOM_AUTH_API_PREFIXES = [
+  "/api/auth/register",
+  "/api/auth/forgot-password",
+  "/api/auth/reset-password",
+  "/api/auth/unlock-account",
+  "/api/auth/check-email",
+  "/api/auth/link-password",
+];
+
+function isCustomAuthApi(pathname: string): boolean {
+  return CUSTOM_AUTH_API_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
+
 function isNextAuthApi(pathname: string): boolean {
-  return pathname.startsWith("/api/auth/");
+  return pathname.startsWith("/api/auth/") && !isCustomAuthApi(pathname);
 }
 
 /** So khớp Origin header với Host — CSRF theo pattern Next.js khuyến nghị cho Server Actions (data-security guide). */
@@ -148,8 +176,8 @@ export function evaluateRoute({ pathname, method, token, origin, host }: RoutePo
     return isAuthenticated ? { kind: "allow" } : { kind: "unauthorized" };
   }
 
-  // 6. Public.
-  if (PUBLIC_PAGES.has(pathname) || PUBLIC_APIS.has(pathname) || isFoodDetailPage(pathname)) {
+  // 6. Public (API auth tự viết đã qua CSRF ở bước 3).
+  if (PUBLIC_PAGES.has(pathname) || PUBLIC_APIS.has(pathname) || isCustomAuthApi(pathname) || isFoodDetailPage(pathname)) {
     return { kind: "allow" };
   }
 

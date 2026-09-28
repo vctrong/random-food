@@ -5,13 +5,15 @@ import { Food } from "@/lib/models/Food";
 import { Restaurant } from "@/lib/models/Restaurant";
 import { Favorite } from "@/lib/models/Favorite";
 import { AuditLog } from "@/lib/models/AuditLog";
-import { Category } from "@/lib/models/Category";
+import { getFallbackCategoryId } from "@/lib/categoryProposals";
+import { validateFoodCategories } from "@/lib/foodSubmission";
 // Đăng ký model User để .populate("verification.verifiedBy") hoạt động.
 import "@/lib/models/User";
 import { isEatingLevel } from "@/constants/categories";
 import { MAX_FOOD_IMAGES, MAX_FOOD_IMAGE_BYTES } from "@/constants/limits";
 import { deriveContributionStatus } from "@/features/contributions/contributionLogic";
 import type { Contribution, ContributionFeedback, ContributionStatus } from "@/types/contribution";
+import type { LocationSource } from "@/types/restaurant";
 
 /**
  * Lớp dữ liệu cho trang "Món đã đóng góp" (UC-U11, UC-U12). Không có model DB
@@ -170,7 +172,12 @@ export interface UpdateContributionInput {
     keepImages: string[];
     newImages: File[];
   };
-  restaurant?: { name: string; address: string; lat: number; lng: number };
+  restaurant?: {
+    name: string;
+    address: string;
+    location: { lat: number; lng: number } | null;
+    locationSource: LocationSource;
+  };
 }
 
 export type UpdateContributionError =
@@ -181,6 +188,7 @@ export type UpdateContributionError =
   | "INVALID_FOOD"
   | "INVALID_PRICE"
   | "INVALID_CATEGORY"
+  | "TOO_MANY_CATEGORIES"
   | "INVALID_EATING_LEVEL"
   | "INVALID_IMAGES"
   | "INVALID_RESTAURANT";
@@ -214,23 +222,27 @@ export async function updateContribution(
 
   // Kiểm tra phần quán trước khi upload ảnh để không tạo ảnh mồ côi trên Cloudinary khi input lỗi.
   if (input.restaurant) {
-    const { name, address, lat, lng } = input.restaurant;
-    const isValidCoordinate = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+    const { name, address, location } = input.restaurant;
+    const isValidCoordinate =
+      !location ||
+      (Number.isFinite(location.lat) && Number.isFinite(location.lng) && Math.abs(location.lat) <= 90 && Math.abs(location.lng) <= 180);
     if (!name.trim() || !address.trim() || !isValidCoordinate) return { error: "INVALID_RESTAURANT" };
   }
 
   if (input.food) {
     const { name, description, priceMin, priceMax, categoryIds, eatingLevels, keepImages, newImages } = input.food;
-    if (!name.trim() || !description.trim()) return { error: "INVALID_FOOD" };
+    if (!name.trim()) return { error: "INVALID_FOOD" };
     if (!Number.isFinite(priceMin) || !Number.isFinite(priceMax) || priceMin < 0 || priceMax < priceMin) {
       return { error: "INVALID_PRICE" };
     }
     if (eatingLevels.length === 0 || eatingLevels.some((level) => !isEatingLevel(level))) {
       return { error: "INVALID_EATING_LEVEL" };
     }
-    if (categoryIds.length === 0 || categoryIds.some((id) => !isValidObjectId(id))) return { error: "INVALID_CATEGORY" };
-    const validCategoryCount = await Category.countDocuments({ _id: { $in: categoryIds }, isActive: true });
-    if (validCategoryCount !== new Set(categoryIds).size) return { error: "INVALID_CATEGORY" };
+    // Luật danh mục chung với lúc tạo món (lib/foodSubmission.ts); "Khác" chỉ giữ lại được nếu món đang ở đó sẵn.
+    const fallbackId = await getFallbackCategoryId();
+    const hadFallback = (food.categoryIds ?? []).map(String).includes(fallbackId);
+    const categoryError = await validateFoodCategories(categoryIds, food.proposedCategoryId ? 1 : 0, hadFallback);
+    if (categoryError) return { error: categoryError };
 
     const currentImages = new Set<string>(food.images ?? []);
     const keptImages = keepImages.filter((url) => currentImages.has(url));
@@ -254,11 +266,12 @@ export async function updateContribution(
   }
 
   if (input.restaurant && restaurant) {
-    const { name, address, lat, lng } = input.restaurant;
+    const { name, address, location, locationSource } = input.restaurant;
 
     restaurant.name = name.trim();
     restaurant.address = address.trim();
-    restaurant.location = { type: "Point", coordinates: [lng, lat] };
+    restaurant.location = location ? { type: "Point", coordinates: [location.lng, location.lat] } : undefined;
+    restaurant.locationSource = location ? (locationSource === "none" ? "pin_confirmed" : locationSource) : "none";
     restaurant.moderationStatus = "pending";
     restaurant.moderationNote = undefined;
     restaurant.updatedAt = new Date();

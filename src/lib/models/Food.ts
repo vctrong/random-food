@@ -5,6 +5,8 @@ const foodSchema = new Schema({
   name: { type: String, required: true },
   description: { type: String },
   categoryIds: [{ type: Schema.Types.ObjectId, ref: "Category" }],
+  /** Danh mục user đề xuất kèm món (tối đa 1) — gỡ khi đề xuất được xử lý. */
+  proposedCategoryId: { type: Schema.Types.ObjectId, ref: "CategoryProposal" },
   eatingLevels: {
     type: [{ type: String, enum: ["snack", "normal", "hearty", "full"] }],
     required: true,

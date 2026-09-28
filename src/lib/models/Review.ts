@@ -10,6 +10,8 @@ const reviewSchema = new Schema({
   status: { type: String, enum: ["visible", "hidden"], default: "visible" },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
+  // Xoá mềm khi user xoá review đã quá 24h — giữ lại bản ghi để unique index chặn viết lại (BR-RV11).
+  deletedAt: { type: Date },
 });
 
 reviewSchema.index({ userId: 1, foodId: 1, restaurantId: 1 }, { unique: true });

@@ -1,37 +1,23 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
-import { Restaurant } from "@/lib/models/Restaurant";
+import { listRestaurants } from "@/lib/restaurantSearch";
 
 /**
- * Tìm quán đã tồn tại để User chọn khi đóng góp món mới (BR-C07: nếu Restaurant
- * đã approved sẵn, không cần tạo/duyệt lại). Chỉ trả quán approved + visible —
- * không lộ quán pending/hidden của người khác.
+ * Danh sách/tìm quán đã duyệt để chọn khi đóng góp món (BR-C07) — chỉ quán
+ * approved + visible, không lộ quán pending/hidden của người khác.
+ * Query: `q` (từ khoá), `cursor` (trang kế), `lat`/`lng` (ưu tiên gần nhất).
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const q = searchParams.get("q")?.trim();
+  const q = (searchParams.get("q") ?? "").slice(0, 100);
+  const lat = Number(searchParams.get("lat"));
+  const lng = Number(searchParams.get("lng"));
+  const hasLocation =
+    searchParams.has("lat") && searchParams.has("lng") && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
 
-  await connectDB();
-
-  const filter: Record<string, unknown> = {
-    moderationStatus: "approved",
-    visibility: "visible",
-  };
-  if (q) {
-    filter.name = { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
-  }
-
-  const restaurants = await Restaurant.find(filter).sort({ name: 1 }).limit(20).lean();
-
-  return NextResponse.json(
-    restaurants.map((restaurant) => {
-      const coordinates = restaurant.location?.coordinates as [number, number] | undefined;
-      return {
-        id: String(restaurant._id),
-        name: restaurant.name,
-        address: restaurant.address,
-        location: coordinates ? { lat: coordinates[1], lng: coordinates[0] } : null,
-      };
-    }),
-  );
+  const page = await listRestaurants({
+    q,
+    cursor: searchParams.get("cursor"),
+    near: hasLocation ? { lat, lng } : null,
+  });
+  return NextResponse.json(page);
 }

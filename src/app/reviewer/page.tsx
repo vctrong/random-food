@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getPendingQueue } from "@/lib/reviewerData";
+import { getSelectableCategories } from "@/lib/categoryOptions";
 import { ReviewerQueueContent } from "@/components/reviewer/ReviewerQueueContent";
 
 /** UC-F01/F02: hàng chờ kiểm duyệt + xem chi tiết nội dung cần duyệt. */
@@ -12,7 +13,7 @@ export default async function ReviewerQueuePage() {
   // để không crash khi session null (layout sẽ thay thế bằng màn "không có quyền").
   if (!reviewerId) return null;
 
-  const items = await getPendingQueue(reviewerId);
+  const [items, categories] = await Promise.all([getPendingQueue(reviewerId), getSelectableCategories()]);
 
-  return <ReviewerQueueContent initialItems={items} />;
+  return <ReviewerQueueContent initialItems={items} categories={categories} />;
 }

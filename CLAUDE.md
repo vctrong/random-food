@@ -267,17 +267,20 @@ Token đặt theo **vai trò**, khai báo trong `@theme` của `src/app/globals.
 
 > Chi tiết mở rộng, ví dụ dữ liệu thật, hoặc các quyết định nghiệp vụ liên quan đến các model này (nếu có cập nhật) nên được ghi trong `/docs`, không sửa trực tiếp bảng trên trừ khi đó là thay đổi đã chốt và xác nhận với Ttong.
 
-### 7.3 Quy tắc riêng cho field `location` (Food)
+### 7.3 Quy tắc riêng cho field `location` (Restaurant — toạ độ quán)
 
 ```js
-location: {
+location: {                       // subdocument, default: undefined — KHÔNG bắt buộc
   type: { type: String, enum: ["Point"], default: "Point" },
   coordinates: { type: [Number], required: true } // LUÔN [lng, lat] — không phải [lat, lng]
-}
+},
+locationSource: "gps" | "pin_confirmed" | "geocoded" | "none"
 ```
-- Bắt buộc tạo index: `foodSchema.index({ location: "2dsphere" })`.
-- Khi thêm món mới: lấy toạ độ bằng cách cho user click lên bản đồ Leaflet (`LocationPicker`), không tự bịa toạ độ hoặc suy ra từ địa chỉ text nếu chưa có kết quả geocode thật.
-- `address` (string hiển thị) và `location` (toạ độ dùng cho bản đồ + query khoảng cách) luôn đi cùng nhau, không được thiếu 1 trong 2 khi tạo Food mới.
+- Bắt buộc có index: `restaurantSchema.index({ location: "2dsphere" })`.
+- **Địa chỉ chữ (`address`) bắt buộc; toạ độ KHÔNG bắt buộc.** Quán chưa có toạ độ thì **không có field `location`** (không để lại `{ type: "Point" }` thiếu coordinates — index 2dsphere sẽ lỗi) và `locationSource = "none"`.
+- Luôn lưu `locationSource` cùng toạ độ: `gps` (nút "Tôi đang ở quán này"), `pin_confirmed` (user kéo bản đồ/xác nhận ghim), `geocoded` (suy từ địa chỉ qua Nominatim, user chưa chỉnh), `none`.
+- Không tự bịa toạ độ; chỉ lấy từ bản đồ Leaflet, GPS của user, hoặc kết quả geocode thật (Nominatim qua proxy `/api/geocode`).
+- Chi tiết luồng: `docs/contribute-food.md`.
 
 ### 7.4 Nguyên tắc mở rộng schema về sau
 

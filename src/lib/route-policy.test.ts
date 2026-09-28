@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluateRoute, type RoutePolicyToken } from "./route-policy";
+import { evaluateRoute, isGuestOnlyPage, type RoutePolicyToken } from "./route-policy";
 
 const GUEST: RoutePolicyToken | null = null;
 const USER: RoutePolicyToken = { id: "u1", role: "user" };
@@ -208,5 +208,63 @@ describe("route-policy: CSRF Origin/Host cho method thay đổi dữ liệu trê
     expect(
       evaluateRoute({ pathname: "/api/admin/users", method: "PATCH", token: GUEST, origin: CROSS_ORIGIN, host: HOST }),
     ).toEqual({ kind: "notFound" });
+  });
+});
+
+describe("route-policy: trang chỉ dành cho khách (BR-S09)", () => {
+  it("nhận diện /dang-nhap, /dang-ky (kể cả dấu / cuối)", () => {
+    expect(isGuestOnlyPage("/dang-nhap")).toBe(true);
+    expect(isGuestOnlyPage("/dang-ky/")).toBe(true);
+    expect(isGuestOnlyPage("/")).toBe(false);
+    expect(isGuestOnlyPage("/lich-su")).toBe(false);
+  });
+
+  it("guest vẫn vào được trang khách (proxy không chặn)", () => {
+    expect(evalGet("/dang-nhap", GUEST)).toEqual({ kind: "allow" });
+    expect(evalGet("/dang-ky", GUEST)).toEqual({ kind: "allow" });
+  });
+});
+
+describe("route-policy: Quên mật khẩu / mở khoá tài khoản", () => {
+  const post = (pathname: string, origin: string | null) =>
+    evaluateRoute({ pathname, method: "POST", token: GUEST, origin, host: HOST });
+
+  it("/quen-mat-khau là trang chỉ dành cho khách; guest vào được", () => {
+    expect(isGuestOnlyPage("/quen-mat-khau")).toBe(true);
+    expect(evalGet("/quen-mat-khau", GUEST)).toEqual({ kind: "allow" });
+  });
+
+  it("/mo-khoa-tai-khoan công khai (không bị đẩy về đăng nhập)", () => {
+    expect(evalGet("/mo-khoa-tai-khoan", GUEST)).toEqual({ kind: "allow" });
+  });
+
+  for (const pathname of [
+    "/api/auth/register",
+    "/api/auth/forgot-password",
+    "/api/auth/forgot-password/resend",
+    "/api/auth/forgot-password/verify-otp",
+    "/api/auth/reset-password",
+    "/api/auth/unlock-account",
+    "/api/auth/unlock-account/resend",
+    "/api/auth/check-email",
+    "/api/auth/link-password",
+    "/api/auth/link-password/resend",
+    "/api/auth/link-password/confirm",
+  ]) {
+    it(`POST ${pathname} — guest cùng origin → allow`, () => {
+      expect(post(pathname, SAME_ORIGIN)).toEqual({ kind: "allow" });
+    });
+    it(`POST ${pathname} — khác origin / thiếu Origin → forbiddenOrigin (không lọt qua nhánh NextAuth)`, () => {
+      expect(post(pathname, CROSS_ORIGIN)).toEqual({ kind: "forbiddenOrigin" });
+      expect(post(pathname, null)).toEqual({ kind: "forbiddenOrigin" });
+    });
+  }
+
+  it("POST /api/account/set-password — guest → unauthorized (cần đăng nhập)", () => {
+    expect(post("/api/account/set-password", SAME_ORIGIN)).toEqual({ kind: "unauthorized" });
+  });
+
+  it("GET /api/auth/reset-password (trạng thái phiên) — guest → allow", () => {
+    expect(evalGet("/api/auth/reset-password", GUEST)).toEqual({ kind: "allow" });
   });
 });

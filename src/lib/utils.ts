@@ -102,3 +102,18 @@ export function getGoogleMapsUrl(
   const query = location ? `${location.lat},${location.lng}` : address;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
+
+/** "120 m" / "1,4 km" — khoảng cách hiển thị trong danh sách quán. */
+export function formatDistance(meters: number): string {
+  if (meters < 1000) return `${Math.max(1, Math.round(meters / 10) * 10)} m`;
+  return `${(meters / 1000).toLocaleString("vi-VN", { maximumFractionDigits: 1 })} km`;
+}
+
+/** Rút gọn địa chỉ: bỏ phần "Việt Nam"/mã bưu chính ở cuối, giữ tối đa 3 phần đầu. */
+export function shortenAddress(address: string): string {
+  const parts = address
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part && !/^\d{5,6}$/.test(part) && !/^vi[eệ]t nam$/i.test(part));
+  return parts.slice(0, 3).join(", ");
+}

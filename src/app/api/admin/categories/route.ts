@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiNotFound } from "@/lib/http404";
 import { requireAdminSession } from "@/lib/admin/session";
+import { isCategoryGroup } from "@/constants/categoryGroups";
 import { createCategory, getCategories, updateCategory } from "@/lib/admin/categories";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
     name,
     icon: typeof body?.icon === "string" ? body.icon : undefined,
     description: typeof body?.description === "string" ? body.description : undefined,
+    group: typeof body?.group === "string" && isCategoryGroup(body.group) ? body.group : undefined,
   });
 
   if (result.error) return NextResponse.json({ error: ERROR_MESSAGES[result.error] }, { status: 400 });
@@ -54,6 +56,7 @@ export async function PATCH(request: Request) {
     icon: typeof body?.icon === "string" ? body.icon : undefined,
     description: typeof body?.description === "string" ? body.description : undefined,
     isActive: typeof body?.isActive === "boolean" ? body.isActive : undefined,
+    group: typeof body?.group === "string" && isCategoryGroup(body.group) ? body.group : undefined,
   });
 
   if (result.error) return NextResponse.json({ error: ERROR_MESSAGES[result.error] }, { status: 400 });

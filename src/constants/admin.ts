@@ -47,6 +47,9 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   category_create: "Tạo danh mục",
   category_update: "Cập nhật danh mục",
   category_delete: "Xoá danh mục",
+  category_proposal_merge: "Gộp đề xuất danh mục",
+  category_proposal_reject: "Từ chối đề xuất danh mục",
+  category_proposal_approve: "Tạo danh mục từ đề xuất",
   handle_report: "Xử lý báo cáo",
 };
 

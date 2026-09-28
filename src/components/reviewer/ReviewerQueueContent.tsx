@@ -20,12 +20,18 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useToast } from "@/components/ui/ToastProvider";
 import { QueueCard } from "@/components/reviewer/QueueCard";
+import { LocationConfidenceBadge } from "@/components/reviewer/LocationConfidenceBadge";
+import { ProposalReviewPanel } from "@/components/reviewer/ProposalReviewPanel";
+import { RestaurantImage } from "@/components/restaurant/RestaurantImage";
+import { RestaurantMap } from "@/components/map/RestaurantMap";
 import { EATING_LEVEL_LABELS, isEatingLevel } from "@/constants/categories";
 import { cn, formatPriceRange, formatRelativeTime, getGoogleMapsUrl } from "@/lib/utils";
 import type { ModerationDecision, ReviewQueueItem } from "@/types/reviewer";
+import type { CategoryOption } from "@/types/category";
 
 interface ReviewerQueueContentProps {
   initialItems: ReviewQueueItem[];
+  categories: CategoryOption[];
 }
 
 type TypeFilter = "all" | "food" | "restaurant";
@@ -37,7 +43,7 @@ const NOTE_PRESETS = [
   { label: "- Địa chỉ chưa rõ", text: "Địa chỉ/toạ độ chưa đủ chi tiết để xác minh." },
 ];
 
-export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps) {
+export function ReviewerQueueContent({ initialItems, categories }: ReviewerQueueContentProps) {
   const router = useRouter();
   const { showToast } = useToast();
   const [items, setItems] = useState(initialItems);
@@ -97,6 +103,24 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
     } finally {
       setIsSubmitting(null);
     }
+  }
+
+  /** Đề xuất đã gộp/từ chối — cập nhật mọi món trong hàng chờ dùng chung đề xuất đó. */
+  function handleProposalResolved({ proposalId, mergedCategory }: { proposalId: string; mergedCategory: CategoryOption | null }) {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.proposal?.id !== proposalId
+          ? item
+          : {
+              ...item,
+              proposal: null,
+              categoryNames:
+                mergedCategory && !item.categoryNames.includes(mergedCategory.name)
+                  ? [...item.categoryNames, mergedCategory.name]
+                  : item.categoryNames,
+            },
+      ),
+    );
   }
 
   function selectItem(item: ReviewQueueItem) {
@@ -189,6 +213,17 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
                     </div>
                   ))}
                 </div>
+              ) : selected.targetType === "restaurant" ? (
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-3 relative h-56 rounded-2xl overflow-hidden bg-primary-soft">
+                    <RestaurantImage images={selected.restaurantImages} alt={selected.name} sizes="600px" />
+                  </div>
+                  {selected.restaurantImages.slice(1, 3).map((src) => (
+                    <div key={src} className="relative h-16 rounded-xl overflow-hidden bg-primary-soft">
+                      <RestaurantImage images={src} alt="" sizes="160px" />
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <div className="h-40 rounded-2xl bg-primary-soft flex items-center justify-center text-primary/60">
                   <UtensilsCrossed className="size-10" aria-hidden />
@@ -206,9 +241,14 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
                 </div>
 
                 {selected.restaurantName && (
-                  <p className="text-sm text-text-secondary">
-                    Thuộc quán: <span className="font-medium text-text-primary">{selected.restaurantName}</span>
-                  </p>
+                  <div className="flex items-center gap-2.5 text-sm text-text-secondary min-w-0">
+                    <span className="relative size-9 shrink-0 overflow-hidden rounded-lg bg-primary-soft">
+                      <RestaurantImage images={selected.restaurantImages} alt={selected.restaurantName} sizes="36px" />
+                    </span>
+                    <span className="truncate">
+                      Thuộc quán: <span className="font-medium text-text-primary">{selected.restaurantName}</span>
+                    </span>
+                  </div>
                 )}
 
                 <div className="flex items-center gap-2 flex-wrap">
@@ -234,25 +274,48 @@ export function ReviewerQueueContent({ initialItems }: ReviewerQueueContentProps
                   </div>
                 )}
 
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-2xl bg-surface border border-border">
-                  <div className="size-11 rounded-full bg-accent-soft flex items-center justify-center text-accent-ink shrink-0">
-                    <MapPin className="size-5" aria-hidden />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-text-primary truncate">{selected.address ?? "Chưa có địa chỉ"}</p>
-                    <p className="text-xs text-text-secondary">Gửi lúc: {formatRelativeTime(selected.createdAt)}</p>
-                  </div>
-                  {selected.location && (
+                <div className="flex flex-col gap-3 p-4 rounded-2xl bg-surface border border-border">
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                    <div className="size-11 rounded-full bg-accent-soft flex items-center justify-center text-accent-ink shrink-0">
+                      <MapPin className="size-5" aria-hidden />
+                    </div>
+                    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                      <p className="text-sm font-semibold text-text-primary break-words">{selected.address ?? "Chưa có địa chỉ"}</p>
+                      <LocationConfidenceBadge source={selected.locationSource} showHint />
+                      <p className="text-xs text-text-secondary">Gửi lúc: {formatRelativeTime(selected.createdAt)}</p>
+                    </div>
                     <a
                       href={getGoogleMapsUrl(selected.location, selected.address ?? selected.name)}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline shrink-0"
+                      className="inline-flex items-center gap-1 min-h-10 text-xs font-semibold text-primary hover:underline shrink-0"
                     >
-                      Mở Google Maps <ExternalLink className="size-3" aria-hidden />
+                      Mở trên Google Maps <ExternalLink className="size-3" aria-hidden />
                     </a>
+                  </div>
+                  {selected.location && (
+                    <div className="h-48 rounded-xl overflow-hidden border border-border">
+                      <RestaurantMap
+                        key={selected.id}
+                        location={selected.location}
+                        name={selected.restaurantName ?? selected.name}
+                        address={selected.address ?? ""}
+                        className="h-full"
+                      />
+                    </div>
                   )}
                 </div>
+
+                {selected.targetType === "food" && selected.proposal?.status === "pending" && (
+                  <ProposalReviewPanel
+                    key={selected.proposal.id}
+                    foodId={selected.id}
+                    proposal={selected.proposal}
+                    categories={categories}
+                    disabled={!selected.canDecide}
+                    onResolved={handleProposalResolved}
+                  />
+                )}
               </div>
 
               {selected.lockReason && (

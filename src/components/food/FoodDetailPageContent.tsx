@@ -18,6 +18,7 @@ import type { Food } from "@/types/food";
 import { EATING_LEVEL_LABELS } from "@/constants/categories";
 import { formatPriceRange } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
+import { RestaurantImage } from "@/components/restaurant/RestaurantImage";
 import { RestaurantMap } from "@/components/map/RestaurantMap";
 import { LoginGateModal } from "@/components/auth/LoginGateModal";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -202,11 +203,16 @@ export function FoodDetailPageContent({ food, similarFoods }: FoodDetailPageCont
 
             {food.restaurant && (
               <div className="space-y-2">
-                <div className="flex items-start gap-1.5 text-sm text-text-primary">
-                  <MapPin className="size-4 shrink-0 mt-0.5 text-primary" aria-hidden />
-                  <span>
-                    <span className="font-semibold">{food.restaurant.name}</span>
-                    <span className="text-text-secondary"> · {food.restaurant.address}</span>
+                <div className="flex items-center gap-3 text-sm text-text-primary">
+                  <span className="relative size-12 shrink-0 overflow-hidden rounded-xl bg-primary-soft">
+                    <RestaurantImage images={food.restaurant.images} alt={food.restaurant.name} sizes="48px" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="flex items-center gap-1.5 font-semibold">
+                      <MapPin className="size-4 shrink-0 text-primary" aria-hidden />
+                      <span className="truncate">{food.restaurant.name}</span>
+                    </span>
+                    <span className="block text-text-secondary break-words">{food.restaurant.address}</span>
                   </span>
                 </div>
                 <div className="h-56 rounded-xl overflow-hidden">

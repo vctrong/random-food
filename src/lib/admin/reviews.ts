@@ -6,7 +6,8 @@ import type { AdminReviewRow } from "@/types/admin";
 
 export async function getReviews(statusFilter?: "visible" | "hidden"): Promise<AdminReviewRow[]> {
   await connectDB();
-  const query = statusFilter ? { status: statusFilter } : {};
+  // Review user đã tự xoá (xoá mềm) không còn là nội dung cần kiểm duyệt.
+  const query = statusFilter ? { status: statusFilter, deletedAt: null } : { deletedAt: null };
 
   const reviews = await Review.find(query)
     .sort({ createdAt: -1 })

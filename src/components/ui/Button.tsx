@@ -56,7 +56,7 @@ export function Button(props: ButtonProps) {
     fullWidth = false,
     className,
     children,
-    href: _href,
+    href,
     ...rest
   } = props as BaseProps & { href?: string } & Omit<
       ButtonHTMLAttributes<HTMLButtonElement>,
@@ -83,9 +83,9 @@ export function Button(props: ButtonProps) {
     </>
   );
 
-  if ("href" in props && props.href) {
+  if (href) {
     return (
-      <Link href={props.href} className={classes}>
+      <Link href={href} className={classes}>
         {content}
       </Link>
     );
