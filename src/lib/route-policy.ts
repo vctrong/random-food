@@ -110,6 +110,15 @@ function isPublicAnnouncementApi(pathname: string): boolean {
   return pathname !== "/api/announcements/seen";
 }
 
+/**
+ * Cron của Vercel (/api/cron/*) — không có session/Origin; route handler tự xác thực
+ * bằng `Authorization: Bearer <CRON_SECRET>` (sai/thiếu → 401). Chỉ mở GET — method
+ * thay đổi dữ liệu vẫn qua CSRF + đăng nhập như route thường.
+ */
+function isCronApi(pathname: string, method: string): boolean {
+  return method.toUpperCase() === "GET" && pathname.startsWith("/api/cron/");
+}
+
 function isAdminPath(pathname: string): boolean {
   return pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/api/admin" || pathname.startsWith("/api/admin/");
 }
@@ -199,7 +208,8 @@ export function evaluateRoute({ pathname, method, token, origin, host }: RoutePo
     isCustomAuthApi(pathname) ||
     isFoodDetailPage(pathname) ||
     isNewsDetailPage(pathname) ||
-    isPublicAnnouncementApi(pathname)
+    isPublicAnnouncementApi(pathname) ||
+    isCronApi(pathname, method)
   ) {
     return { kind: "allow" };
   }

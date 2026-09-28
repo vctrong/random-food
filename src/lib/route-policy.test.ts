@@ -104,6 +104,16 @@ describe("route-policy: route công khai", () => {
     expect(evalGet("/api/announcements/seen", GUEST)).toEqual({ kind: "unauthorized" });
   });
 
+  it("/api/cron/* — GET qua proxy (route tự kiểm CRON_SECRET), method khác vẫn bị chặn", () => {
+    expect(evalGet("/api/cron/cleanup-images", GUEST)).toEqual({ kind: "allow" });
+    expect(evaluateRoute({ pathname: "/api/cron/cleanup-images", method: "POST", token: GUEST, origin: null, host: HOST })).toEqual({
+      kind: "forbiddenOrigin",
+    });
+    expect(
+      evaluateRoute({ pathname: "/api/cron/cleanup-images", method: "POST", token: GUEST, origin: SAME_ORIGIN, host: HOST }),
+    ).toEqual({ kind: "unauthorized" });
+  });
+
   it("/mon-an/dong-gop — path tĩnh, KHÔNG bị coi là id món, vẫn cần đăng nhập", () => {
     expect(evalGet("/mon-an/dong-gop", GUEST)).toEqual({
       kind: "redirectLogin",

@@ -111,5 +111,5 @@ Mọi request đi qua proxy Next.js (`/api/geocode`, `/api/geocode/reverse`, `li
 
 ## 7. Việc cần làm sau
 
-- **Script dọn ảnh mồ côi** trên Cloudinary: xoá ảnh còn tag `unattached` quá N ngày (user bỏ ngang form). Chưa viết.
+- ~~Script dọn ảnh mồ côi~~ — đã có (2026-09): cron + `/admin/don-anh` + `npm run cleanup:images`, xem [`database.md`](database.md) mục 12b. Còn thiếu: ảnh cũ bị thay khi sửa đóng góp / xoá món chưa được gắn lại tag `unattached` (gọi `markImagesUnattached`).
 - Áp dụng `CategoryPicker`, bản đồ mới và ảnh quán cho `ContributionEditModal` (sửa đóng góp `needs_revision`) — làm sau khi form chính được test xong. **Validate phía server đã áp dụng chung** (`lib/contributions.ts` dùng `validateFoodCategories`, mô tả không bắt buộc, toạ độ không bắt buộc).

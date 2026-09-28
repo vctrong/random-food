@@ -420,7 +420,7 @@ Dữ liệu dạng cũ (`userId` + `message`) đã chốt **xoá, không migrate
 
 ## 11b. `announcements` (`src/lib/models/Announcement.ts`) — mới 2026-09
 
-Thông báo chính thức (Tin tức). `status` chỉ `draft` | `published`; "đã lên lịch / đang hiển thị / hết hạn" tính từ `publishAt` + `expireAt` lúc truy vấn. `content` là TipTap JSON đã sanitize; `highlights` tối đa 3 ô `{ label, value, note? }`; `targetRoles` `["all"]` hoặc tập con `user|foodreviewer|admin`. Schema đầy đủ: [`notifications.md`](notifications.md) mục 2.2. Thao tác Admin ghi `auditLogs` (`announcement_create|update|publish|delete`, `targetType: "announcement"`).
+Thông báo chính thức (Tin tức). `status` chỉ `draft` | `published`; "đã lên lịch / đang hiển thị / hết hạn" tính từ `publishAt` + `expireAt` lúc truy vấn. `content` là TipTap JSON đã sanitize (ảnh nằm trong node `gallery` — `attrs.images = [{ src, alt, width, height }]`, tối đa 20 ảnh/bài; node `image` cũ vẫn hợp lệ); `highlights` tối đa 3 ô `{ label, value, note? }`; `targetRoles` `["all"]` hoặc tập con `user|foodreviewer|admin`. Schema đầy đủ: [`notifications.md`](notifications.md) mục 2.2. Thao tác Admin ghi `auditLogs` (`announcement_create|update|publish|delete`, `targetType: "announcement"`).
 
 ## 11c. `deviceTokens` (`src/lib/models/DeviceToken.ts`) — mới 2026-09, chưa dùng
 
@@ -433,7 +433,7 @@ Thông báo chính thức (Tin tức). `status` chỉ `draft` | `published`; "đ
 ```js
 {
   _id: ObjectId,
-  actorId: ObjectId,                // ref users (FoodReviewer/Admin), required
+  actorId: ObjectId,                // ref users (FoodReviewer/Admin) — KHÔNG bắt buộc từ 2026-09: trống = việc tự động (cron dọn ảnh / script)
   action: "approve_food",           // required — xem enum đầy đủ trong AuditLog.ts:
                                      // approve_food | reject_food | needs_revision | ban_user | unban_user |
                                      // hide_review | delete_food | assign_reviewer | remove_reviewer |
@@ -441,8 +441,10 @@ Thông báo chính thức (Tin tức). `status` chỉ `draft` | `published`; "đ
                                      // category_create | category_update | category_delete | handle_report |
                                      // category_proposal_merge | category_proposal_reject | category_proposal_approve |
                                      // report_case_resolve | report_case_dismiss | restaurant_close | restaurant_reopen |
-                                     // restaurant_merge | content_edit (metadata.changes = [{ field, before, after }])
-  targetType: "food",               // "food" | "restaurant" | "review" | "user" | "category" | "report", required
+                                     // restaurant_merge | content_edit (metadata.changes = [{ field, before, after }]) |
+                                     // announcement_create | announcement_update | announcement_publish | announcement_delete |
+                                     // media_cleanup (targetId = _id của mediacleanupruns; metadata { trigger, deleted, retagged, failed, bytesFreed, remaining })
+  targetType: "food",               // "food" | "restaurant" | "review" | "user" | "category" | "report" | "announcement" | "media", required
   targetId: ObjectId,               // required
   reason: "Đã kiểm tra tại chỗ, thông tin đúng",
   metadata: {},                     // Mixed, default {}
@@ -451,6 +453,36 @@ Thông báo chính thức (Tin tức). `status` chỉ `draft` | `published`; "đ
 ```
 
 **Index:** `{ createdAt: -1 }` · `{ actorId: 1 }` · `{ targetType: 1, targetId: 1 }`
+
+---
+
+## 12b. `mediacleanupruns` (`src/lib/models/MediaCleanupRun.ts`) — mới 2026-09
+
+Lịch sử các lần dọn ảnh rác trên Cloudinary (trang `/admin/don-anh`, cron, script).
+
+```js
+{
+  _id: ObjectId,
+  trigger: "manual" | "cron" | "script",   // required
+  actorId: ObjectId,                        // ref users — chỉ có khi trigger = "manual"
+  mode: "selected" | "all",                 // Admin chọn từng ảnh / mọi ảnh rác
+  days: 3,                                  // ngưỡng tuổi ảnh rác của lần chạy
+  folder: "announcements",                  // tuỳ chọn — thư mục con của nayangi/ (script --folder)
+  status: "running" | "completed" | "partial",
+  deletedCount: 0, retaggedCount: 0, failedCount: 0, bytesFreed: 0,
+  errorSamples: [String],                   // tối đa 20 lỗi đầu
+  startedAt: ISODate, finishedAt: ISODate
+}
+```
+
+**Index:** `{ startedAt: -1 }`. Lần dọn từ trang Admin chạy nhiều lô (mỗi request ≤ 15 giây) → các lô `$inc` vào cùng bản ghi. Mỗi lượt có thao tác thật ghi thêm 1 `auditLogs` `media_cleanup` (lượt không xoá/gỡ gì chỉ ghi lịch sử, không ghi AuditLog).
+
+**Quy tắc dọn ảnh rác** (`src/lib/media/cleanupService.ts`, dùng chung cho cả 3 cách chạy):
+- Ảnh rác = ảnh trong `nayangi/*` còn tag `unattached`, đã "bỏ" quá **3 ngày**. Mốc tuổi = context `unattached_at` (ghi khi ảnh bị gỡ khỏi nội dung — Cloudinary không lưu thời điểm gắn tag), không có thì ngày upload.
+- Trước khi xoá luôn kiểm tra lại DB (`src/lib/media/imageUsage.ts` — `foods.images`, `restaurants.images`, `users.avatarUrl`, `userProfiles.avatarUrl`, `foodReviewerApplications.portfolioImages`, nội dung `announcements`): còn dùng → gỡ tag thay vì xoá. **Thêm field lưu URL ảnh mới phải thêm vào `imageUsage.ts`.**
+- Xoá theo lô 100 ảnh (`delete_resources`), dừng trước hạn chót; ảnh còn lại để lần sau. Idempotent: ảnh đã xoá → `not_found`, bỏ qua.
+- Cách chạy: `npm run cleanup:images` (dry-run mặc định; `-- --apply`, `--days=N`, `--folder=foods`) · trang Admin `/admin/don-anh` · Vercel Cron `GET /api/cron/cleanup-images` (`vercel.json`, `0 20 * * *` ≈ 3:00 sáng giờ VN, Hobby chạy lệch trong khung 1 giờ; header `Authorization: Bearer <CRON_SECRET>`; `maxDuration = 60`, dọn trong 45 giây; lượt cron trùng trong 60 giây bị bỏ qua).
+- **Việc cần làm sau:** các luồng bỏ ảnh cũ ngoài thông báo (xoá/ẩn món, gộp quán, thay ảnh khi sửa đóng góp `lib/contributions.ts`, đổi avatar, đơn reviewer) chưa gắn lại tag → ảnh cũ nằm lại Cloudinary mãi. Chỉ cần gọi `markImagesUnattached(publicIds)` (`src/lib/cloudinary.ts`) cho ảnh cũ là cron tự dọn sau 3 ngày. Ảnh upload qua server (avatar, đơn reviewer, ảnh mới khi sửa đóng góp) hiện không mang tag `unattached` nên không bao giờ bị dọn nhầm.
 
 ---
 
@@ -606,5 +638,5 @@ Adapter tạo document `users` cho tài khoản Google bằng field riêng (`nam
 8. **`notificationPreferences` (userProfiles)** chỉ chứa lựa chọn email cho các loại email tuỳ chọn — thông báo trong app luôn bật (docs/notifications.md).
 9. **`articles` là collection độc lập, mới, chưa nằm trong bản thiết kế nghiệp vụ gốc** — phục vụ mục Tin tức, hiện không có moderation/owner.
 10. **Restaurant tạo kèm Food mới** (BR-C07): khi submit Food tại quán chưa có trong hệ thống, tạo đồng thời `restaurants` (status `pending`) — FoodReviewer duyệt cả hai cùng lúc. Đã có code: `POST /api/foods` (`lib/foodSubmission.ts`), chi tiết ở [`contribute-food.md`](contribute-food.md).
-11. **Ảnh (Cloudinary) upload thẳng từ trình duyệt** qua chữ ký `/api/uploads/signature`; ảnh mới gắn tag `unattached`, gỡ tag khi form gửi thành công. **Việc cần làm sau:** script dọn ảnh còn tag `unattached` quá N ngày (user bỏ ngang form).
+11. **Ảnh (Cloudinary) upload thẳng từ trình duyệt** qua chữ ký `/api/uploads/signature`; ảnh mới gắn tag `unattached`, gỡ tag khi form gửi thành công. Ảnh còn tag quá 3 ngày được dọn tự động (cron) / thủ công (`/admin/don-anh`, `npm run cleanup:images`) — quy tắc ở mục 12b.
 12. **Migration 2026-09:** `npm run migrate:contribution-flow` (dry-run) / `-- --apply` — thêm field chuẩn hoá, `group`, `foodCount`, `locationSource`, danh mục Chay + Khác, index mới. Idempotent, chỉ thêm field.

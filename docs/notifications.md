@@ -157,7 +157,17 @@ notify(recipientId, { type, payload, actorId?, email? })
 
 **File (giai đoạn 6):** model `lib/models/Announcement.ts` · dữ liệu `lib/announcements.ts` (truy vấn công khai theo role, CRUD Admin + zod + AuditLog) · hàm thuần `lib/announcementContent.ts` (sanitize TipTap JSON theo whitelist node/mark/attr, link chỉ `http(s)`/`mailto`/đường dẫn nội bộ, ảnh chỉ URL Cloudinary thư mục `nayangi/announcements` của app; mã bài; thời gian đọc) · `lib/announcementEditor.ts` (bộ extension TipTap dùng chung editor + render) · `lib/announcementRender.ts` (`generateHTML` từ `@tiptap/html/server`) · `lib/announcementStatus.ts` · `lib/viewerRole.ts` · UI `components/announcements/` (badge, thẻ, trang chi tiết, banner, nút chia sẻ + ghi lượt xem, `announcementProse.ts` style dùng chung) · Admin `components/admin/AnnouncementsContent.tsx`, `AnnouncementEditor.tsx`, `AnnouncementRichEditor.tsx` · test `lib/announcementContent.test.ts`.
 - Nội dung lưu dạng TipTap JSON **đã sanitize lúc lưu**, render HTML ở server lúc đọc (trình duyệt không bao giờ nhận HTML do người nhập viết tay).
-- Ảnh chèn trong bài upload thẳng Cloudinary (`/api/uploads/signature` kind `announcement` — chỉ Admin), lưu xong gỡ tag `unattached`. Gỡ bài **không** xoá ảnh trên Cloudinary (giống các luồng ảnh khác — dọn bằng script sau).
+- **Ảnh trong bài = node TipTap `gallery`** (`lib/announcementGallery.ts`, 1 node cho mọi số lượng ảnh; `attrs.images = [{ src, alt, width, height }]`), chèn ở bất kỳ vị trí nào. Node `image` cũ (ảnh lẻ) vẫn render để bài cũ hiển thị đúng, không migration; ảnh mới luôn vào `gallery`.
+  - **Tối đa 20 ảnh khác nhau / bài** (`ANNOUNCEMENT_LIMITS.imagesMax`) — kiểm cả client (modal + nút lưu) và server (`TOO_MANY_IMAGES`).
+  - Hiển thị (bố cục dùng chung editor/server: `lib/media/galleryLayout.ts`): 1 ảnh giữ tỉ lệ gốc (`w-full h-auto`), quá dọc thì giới hạn chiều cao `min(80vh, 720px)` và lấp hai bên bằng chính ảnh đó làm mờ; 2 ảnh 2 cột; 3 ảnh 1 lớn + 2 nhỏ; 4 ảnh lưới 2×2; 5+ ảnh 2 trên + 3 dưới, ô cuối "+N". Ô lưới `object-cover`.
+  - Tối ưu ảnh bằng URL transform Cloudinary (`c_limit,w_…,f_auto,q_auto` + `srcset`/`sizes`, `lib/media/cloudinaryUrl.ts`) — không dùng `next/image` (HTML bài render sẵn ở server; tránh quota tối ưu ảnh của Vercel Hobby).
+  - Bấm ảnh → lightbox (`components/ui/Lightbox.tsx` + `components/announcements/AnnouncementLightbox.tsx`, đọc danh sách đủ từ `data-images`): xem nguyên ảnh, trước/sau, phím ←/→, vuốt ngang, "3/8", chú thích (alt), Esc để đóng.
+  - Sanitize server: node `gallery` chỉ giữ ảnh Cloudinary của app thư mục `nayangi/announcements`, alt ≤ 200 ký tự, kích thước số nguyên dương; bộ rỗng bị bỏ.
+- **Modal "Bộ ảnh"** (`components/admin/GalleryManagerModal.tsx`): kéo-thả / chọn nhiều / dán (Ctrl+V) ảnh; **cắt ảnh phía client trước khi upload** (`GalleryCropPanel.tsx`, thư viện `react-image-crop`; tỉ lệ Tự do / Gốc / 16:9 / 4:3 / 1:1; bỏ qua được; GIF không qua bước cắt); upload ngầm ngay (tiến độ từng ảnh, lỗi → "Thử lại"); xem trước khổ lớn đúng bố cục khi đăng; sửa alt, thay ảnh (cũng qua bước cắt), xoá (xác nhận), sắp xếp bằng kéo-thả hoặc nút ←/→; đếm "7/20" trên toàn bài. Định dạng JPG/PNG/WebP/GIF, file gốc ≤ 20MB (nén về ≤ 5MB). Bấm bộ ảnh trong editor (hoặc chọn rồi Enter) để sửa.
+- **Vòng đời ảnh** (upload thẳng Cloudinary qua `/api/uploads/signature` kind `announcement` — chỉ Admin; ảnh mới mang tag `unattached`):
+  - Lưu bài: ảnh trong bài → gỡ tag `unattached`. Sửa bài: ảnh cũ không còn trong bản mới → **gắn lại** tag `unattached` + context `unattached_at` (`markImagesUnattached`), trừ ảnh bài khác vẫn dùng.
+  - Gỡ bài: gắn `unattached` cho mọi ảnh của bài (trừ ảnh bài khác vẫn dùng). Không xoá ngay — cron dọn ảnh xoá sau 3 ngày (xem [`database.md`](database.md) mục 12b).
+  - Xoá ảnh khi đang soạn: ảnh **chưa từng nằm trong bản đã lưu** → xoá ngay qua `POST /api/admin/announcements/images/discard` (chỉ Admin, chỉ `nayangi/announcements`, còn tag `unattached`, không nằm trong bài nào đã lưu); ảnh đã có trong bản đã lưu → chỉ gỡ khỏi editor, lúc lưu xử lý như trên. Huỷ modal → xoá các ảnh vừa upload trong lần đó. Ảnh bị xoá bằng Backspace không xoá ngay (tránh Hoàn tác đưa về ảnh đã mất) — để cron dọn; nếu Hoàn tác đưa ảnh đã xoá trở lại thì form chặn lưu.
 - Slug `seen`, `banner` bị cấm (trùng route con của `/api/announcements`); slug trùng tự thêm hậu tố `-2`, `-3`… khi để trống, còn tự gõ trùng thì báo lỗi.
 - Đăng: "Lưu nháp" (`draft`) · "Đăng ngay" (`published`, `publishAt` = lúc lưu; bài đang đăng giữ mốc cũ) · "Hẹn giờ" (`published` + `publishAt` tương lai). Nháp chuyển sang đăng với mốc quá khứ → lấy thời điểm hiện tại.
 - Route policy: `/tin-tuc/[slug]` và `/api/announcements*` công khai, trừ `/api/announcements/seen` (cần đăng nhập). Không đủ quyền xem → trang "Không tìm thấy" (noindex).
@@ -167,7 +177,7 @@ notify(recipientId, { type, payload, actorId?, email? })
 - Lượt xem: `POST /api/announcements/[slug]/view`, 1 lần / phiên trình duyệt (sessionStorage).
 - Banner trang chủ cho `important`/`maintenance` đang hiển thị (bài mới nhất), đóng được; id đã đóng lưu localStorage `nayangi:dismissed-announcements`.
 - Chuông: announcement đang hiển thị, hợp role, `publishAt > lastAnnouncementSeenAt` = chưa đọc → cộng vào số chuông, hiện đầu dropdown. **Đọc = bấm vào đúng bài đó**: bấm dòng thông báo chính thức trong dropdown hoặc mở trang chi tiết (đã đăng nhập, `AnnouncementReadMarker`) → `POST /api/announcements/seen { id }` → `$addToSet` vào `readAnnouncementIds` — **chỉ bài đó** là đã đọc, bài khác giữ nguyên; bài rời khỏi dropdown. "Đánh dấu đã đọc hết" → `POST` body rỗng → `lastAnnouncementSeenAt = now`, `readAnnouncementIds = []`. Chưa đọc = đang hiển thị + hợp role + `publishAt > lastAnnouncementSeenAt` + `_id ∉ readAnnouncementIds`. User chưa có mốc → dùng `users.createdAt`.
-- Admin `/admin/thong-bao`: bảng + lọc trạng thái tính toán, form tạo/sửa (TipTap, ảnh Cloudinary, summary, highlights, loại, đối tượng, ghim, Lưu nháp / Đăng ngay / Hẹn giờ, hết hạn), xem trước, gỡ (xác nhận), lượt xem. Ghi `AuditLog`: `announcement_create` · `announcement_update` · `announcement_publish` · `announcement_delete`, `targetType: "announcement"`.
+- Admin `/admin/thong-bao`: bảng + lọc trạng thái tính toán, form tạo/sửa (TipTap, bộ ảnh Cloudinary, summary, highlights, loại, đối tượng, ghim, Lưu nháp / Đăng ngay / Hẹn giờ, hết hạn), xem trước, gỡ (xác nhận), lượt xem. Ghi `AuditLog`: `announcement_create` · `announcement_update` · `announcement_publish` · `announcement_delete`, `targetType: "announcement"`.
 
 ## 7. API
 
@@ -189,8 +199,13 @@ Mọi route kiểm tra quyền ở server; route Admin dùng `requireAdminSessio
 | GET | `/api/announcements?unseen=1` | User | Bài chưa xem (≤ 5) cho dropdown chuông |
 | GET/POST | `/api/admin/announcements` | Admin | Danh sách / tạo |
 | GET/PATCH/DELETE | `/api/admin/announcements/[id]` | Admin | Chi tiết / sửa / gỡ |
+| POST | `/api/admin/announcements/images/discard` | Admin | `{ url }` — xoá ngay ảnh vừa upload rồi bỏ (chỉ ảnh chưa từng lưu) |
+| GET | `/api/admin/media/orphans` | Admin | Ảnh rác hiện tại (Cloudinary Search API) |
+| POST | `/api/admin/media/cleanup` | Admin | 1 lượt dọn: `{ runId?, publicIds (≤100) }` hoặc `{ runId?, all: true }` |
+| GET | `/api/admin/media/cleanup-runs` | Admin | Lịch sử dọn ảnh |
+| GET | `/api/cron/cleanup-images` | Vercel Cron | `Authorization: Bearer <CRON_SECRET>`, sai/thiếu → 401 |
 
-Client gọi qua `services/notificationService.ts`, `services/announcementService.ts`.
+Client gọi qua `services/notificationService.ts`, `services/announcementService.ts`, `services/mediaCleanupService.ts`.
 
 ## 8. UI/UX
 
@@ -246,5 +261,5 @@ SMTP dùng lại `SMTP_HOST/PORT/SECURE/USER/PASS`, `MAIL_FROM` (đã có từ l
 - Announcement không bắn realtime — số trên chuông cập nhật khi quay lại tab / polling 60s / tải trang.
 - `/thong-bao` chỉ liệt kê thông báo cá nhân; thông báo chính thức nằm ở chuông + `/tin-tuc`.
 - Lượt xem tính 1 lần / phiên trình duyệt + giới hạn 60 lượt / 10 phút / IP — không phải đếm người duy nhất.
-- Gỡ bài / gỡ nội dung không xoá ảnh trên Cloudinary (dọn bằng script sau, chung với ảnh `unattached`).
+- Gỡ bài / bỏ ảnh khỏi bài không xoá ảnh ngay — gắn lại tag `unattached`, cron `/api/cron/cleanup-images` xoá sau 3 ngày. Gỡ/ẩn nội dung ẩm thực (món, quán) **chưa** gắn lại tag cho ảnh cũ — xem [`database.md`](database.md) mục 12b "Việc cần làm sau".
 - Model Mongoose khai báo `models.X ?? model(...)` → **đổi schema phải khởi động lại `npm run dev`** (hot reload giữ schema cũ).
