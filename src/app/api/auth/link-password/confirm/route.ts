@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { getEmailVerificationService } from "@/lib/emailVerificationStore";
 import { confirmPasswordLinkResponse, enforceAccountLinkIpLimit, readPasswordLinkCookie } from "@/lib/emailVerificationHttp";
-import { createNotification } from "@/lib/notify";
+import { notify } from "@/lib/notifications/notify";
 import { getRequestContext, readJsonBody, serverErrorResponse, stringField } from "@/lib/passwordResetHttp";
 
 /** OTP đúng → gán mật khẩu đã lưu tạm vào tài khoản CŨ + đánh dấu email đã xác thực. */
@@ -16,11 +16,7 @@ export async function POST(request: NextRequest) {
       context,
     );
     if (result.kind === "linked") {
-      await createNotification({
-        userId: result.userId,
-        type: "password_changed",
-        message: "Tài khoản của bạn vừa được thêm đăng nhập bằng mật khẩu (đã xác thực qua mã gửi tới email).",
-      });
+      await notify(result.userId, { type: "password_changed", payload: { method: "link" } });
     }
     return confirmPasswordLinkResponse(result);
   } catch {

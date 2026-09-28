@@ -16,7 +16,7 @@ import {
   sendsRemaining,
 } from "@/features/password-reset/passwordResetLogic";
 import { isPasswordValid } from "@/lib/password";
-import type { EmailMessage } from "@/lib/email/mailer";
+import type { EmailMessage } from "@/lib/email/emailService";
 import {
   buildAccountLockedEmail,
   buildAccountUnlockedEmail,

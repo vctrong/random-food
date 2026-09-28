@@ -6,7 +6,7 @@ import { UPLOAD_MAX_DIMENSION, UPLOAD_QUALITY, MAX_FOOD_IMAGE_BYTES } from "@/co
  * Ảnh được nén bằng canvas trước — không cần thư viện ngoài.
  */
 
-export type UploadKind = "food" | "restaurant";
+export type UploadKind = "food" | "restaurant" | "announcement";
 
 interface UploadSignature {
   cloudName: string;

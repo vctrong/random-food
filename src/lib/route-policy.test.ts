@@ -93,6 +93,17 @@ describe("route-policy: route công khai", () => {
     expect(evalGet("/mon-an/6aab06549ecf6f67a3a618a4", GUEST)).toEqual({ kind: "allow" });
   });
 
+  it("/tin-tuc/[slug] — chi tiết thông báo chính thức công khai, guest → allow", () => {
+    expect(evalGet("/tin-tuc/bao-tri-he-thong", GUEST)).toEqual({ kind: "allow" });
+  });
+
+  it("/api/announcements* — đọc công khai, riêng /seen cần đăng nhập", () => {
+    expect(evalGet("/api/announcements", GUEST)).toEqual({ kind: "allow" });
+    expect(evalGet("/api/announcements/banner", GUEST)).toEqual({ kind: "allow" });
+    expect(evalGet("/api/announcements/bao-tri-he-thong", GUEST)).toEqual({ kind: "allow" });
+    expect(evalGet("/api/announcements/seen", GUEST)).toEqual({ kind: "unauthorized" });
+  });
+
   it("/mon-an/dong-gop — path tĩnh, KHÔNG bị coi là id món, vẫn cần đăng nhập", () => {
     expect(evalGet("/mon-an/dong-gop", GUEST)).toEqual({
       kind: "redirectLogin",

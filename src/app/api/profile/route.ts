@@ -7,24 +7,6 @@ import { UserProfile } from "@/lib/models/UserProfile";
 import { isAllowedImageHost } from "@/lib/utils";
 import { isValidObjectId } from "mongoose";
 
-const NOTIFICATION_PREF_KEYS = [
-  "food_approved",
-  "food_rejected",
-  "food_needs_revision",
-  "report_handled",
-  "reviewer_application_result",
-  "system",
-  "login_success",
-  "login_failed",
-  "account_banned",
-  "account_unbanned",
-  "password_changed",
-] as const;
-
-const notificationPrefsSchema = z
-  .object(Object.fromEntries(NOTIFICATION_PREF_KEYS.map((key) => [key, z.boolean().optional()])))
-  .strict();
-
 const SPICE_PREFERENCE_VALUES = ["khong-cay", "cay-nhe", "cay-vua", "sieu-cay"] as const;
 const THEME_VALUES = ["light", "dark", "system"] as const;
 
@@ -53,7 +35,6 @@ const putSchema = z
     vegetarianMode: z.boolean().optional(),
     allowRepeatWithin24h: z.boolean().optional(),
     theme: z.enum(THEME_VALUES).optional(),
-    notificationPrefs: notificationPrefsSchema.optional(),
   })
   .strict();
 
@@ -70,7 +51,6 @@ interface UserProfileLean {
     allowRepeatWithin24h?: boolean;
   };
   theme?: string;
-  notificationPrefs?: Record<string, boolean>;
 }
 
 const DEFAULT_PREFERENCES = {
@@ -99,7 +79,6 @@ export async function GET() {
       avatarUrl: session.user.image ?? null,
       preferences: DEFAULT_PREFERENCES,
       theme: null,
-      notificationPrefs: {},
     });
   }
 
@@ -116,7 +95,6 @@ export async function GET() {
       allowRepeatWithin24h: profile.preferences?.allowRepeatWithin24h ?? true,
     },
     theme: profile.theme ?? null,
-    notificationPrefs: profile.notificationPrefs ?? {},
   });
 }
 
@@ -142,20 +120,10 @@ export async function PUT(request: Request) {
     vegetarianMode,
     allowRepeatWithin24h,
     theme,
-    notificationPrefs,
   } = parsed.data;
 
   await connectDB();
   const userId = (session.user as { id: string }).id;
-
-  const notificationPrefsSet = notificationPrefs
-    ? Object.fromEntries(
-        Object.entries(notificationPrefs).map(([type, value]) => [
-          `notificationPrefs.${type}`,
-          value,
-        ]),
-      )
-    : {};
 
   // priceRange/spicePreference: null nghĩa là user bấm "Tất cả mức giá"/bỏ chọn độ
   // cay — $unset để xoá hẳn field thay vì lưu null (tránh lẫn với "chưa từng chọn").
@@ -168,7 +136,6 @@ export async function PUT(request: Request) {
     ...(vegetarianMode !== undefined && { "preferences.vegetarianMode": vegetarianMode }),
     ...(allowRepeatWithin24h !== undefined && { "preferences.allowRepeatWithin24h": allowRepeatWithin24h }),
     ...(theme !== undefined && { theme }),
-    ...notificationPrefsSet,
     updatedAt: new Date(),
   };
   const unsetFields: Record<string, ""> = {};

@@ -20,7 +20,8 @@ export const NEXT_PAGE_SIZE = 10;
 const FALLBACK_CANDIDATE_LIMIT = 300;
 const NEARBY_RADIUS_METERS = 300;
 
-const PUBLIC_FILTER = { moderationStatus: "approved", visibility: "visible" } as const;
+// Quán đã đóng cửa không xuất hiện trong chọn quán / quán gần (BR-M12). `$ne` khớp cả quán cũ chưa có field.
+const PUBLIC_FILTER = { moderationStatus: "approved", visibility: "visible", businessStatus: { $ne: "closed" } } as const;
 
 type Cursor =
   | { m: "near"; o: number }

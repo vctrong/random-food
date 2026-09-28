@@ -1,4 +1,8 @@
 import type { CategoryGroup } from "@/constants/categoryGroups";
+import type { ReportCaseAction, ReportCaseStatus, ReportReason, ReportTargetType } from "@/constants/reports";
+import type { LocationSource } from "@/types/restaurant";
+
+export type { ReportTargetType };
 /** Type cho toàn bộ khu vực Admin (src/app/admin, src/lib/admin, src/app/api/admin). */
 
 export interface AdminOverviewStats {
@@ -120,21 +124,78 @@ export interface AdminReviewRow {
   createdAt: string;
 }
 
-export type ReportTargetType = "food" | "review" | "restaurant";
-export type ReportAction = "keep" | "hide" | "remove" | "warn_user" | "ban_user";
-
-export interface AdminReportRow {
+/** Case báo cáo (gom mọi báo cáo của 1 đối tượng) — docs/report-flow.md. */
+export interface AdminReportCaseRow {
   id: string;
   targetType: ReportTargetType;
   targetId: string;
+  /** Tên món/quán hoặc trích đoạn đánh giá; null nếu đối tượng đã bị xoá. */
   targetLabel: string | null;
-  reason: string;
-  status: "pending" | "reviewed";
-  action: ReportAction | null;
-  reporter: { id: string; name: string; avatarUrl: string | null };
-  handledBy: { id: string; name: string } | null;
-  handledAt: string | null;
+  reportCount: number;
+  reasonCounts: { reason: ReportReason; count: number }[];
+  status: ReportCaseStatus;
+  action: ReportCaseAction | null;
+  resolutionNote: string | null;
+  resolvedBy: { id: string; name: string } | null;
+  resolvedAt: string | null;
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminReportEntry {
+  id: string;
+  reason: ReportReason;
+  note: string | null;
+  reporter: { id: string; name: string };
+  duplicateOf: { id: string; name: string; address: string } | null;
+  createdAt: string;
+}
+
+export interface AdminReportCaseAuthor {
+  id: string;
+  name: string;
+  warningCount: number;
+  accountStatus: AccountStatus;
+}
+
+export type AdminReportCaseTarget =
+  | {
+      type: "review";
+      id: string;
+      rating: number;
+      comment: string | null;
+      status: "visible" | "hidden" | "hidden_pending_review";
+      food: { id: string; name: string } | null;
+      author: AdminReportCaseAuthor | null;
+    }
+  | {
+      type: "food";
+      id: string;
+      name: string;
+      description: string;
+      images: string[];
+      priceMin: number | null;
+      priceMax: number | null;
+      restaurant: { id: string; name: string } | null;
+      author: AdminReportCaseAuthor | null;
+    }
+  | {
+      type: "restaurant";
+      id: string;
+      name: string;
+      address: string;
+      location: { lat: number; lng: number } | null;
+      locationSource: LocationSource | null;
+      openingHours: string | null;
+      images: string[];
+      businessStatus: "open" | "closed";
+      foodCount: number;
+      author: AdminReportCaseAuthor | null;
+    };
+
+export interface AdminReportCaseDetail extends AdminReportCaseRow {
+  reports: AdminReportEntry[];
+  target: AdminReportCaseTarget | null;
 }
 
 export interface AdminAuditLogRow {

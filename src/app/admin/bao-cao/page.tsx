@@ -1,7 +1,8 @@
-import { getReports } from "@/lib/admin/reports";
-import { ReportsContent } from "@/components/admin/ReportsContent";
+import { listReportCases } from "@/lib/admin/reportCases";
+import { ReportCasesContent } from "@/components/admin/ReportCasesContent";
 
+/** CHỈ Admin xử lý báo cáo (BR-A09) — layout /admin đã chặn role khác. */
 export default async function AdminReportsPage() {
-  const reports = await getReports();
-  return <ReportsContent initialReports={reports} />;
+  const cases = await listReportCases({ status: "pending" });
+  return <ReportCasesContent initialCases={cases} />;
 }

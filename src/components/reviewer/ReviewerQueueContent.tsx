@@ -22,6 +22,7 @@ import { useToast } from "@/components/ui/ToastProvider";
 import { QueueCard } from "@/components/reviewer/QueueCard";
 import { LocationConfidenceBadge } from "@/components/reviewer/LocationConfidenceBadge";
 import { ProposalReviewPanel } from "@/components/reviewer/ProposalReviewPanel";
+import { FactEditPanel } from "@/components/reviewer/FactEditPanel";
 import { RestaurantImage } from "@/components/restaurant/RestaurantImage";
 import { RestaurantMap } from "@/components/map/RestaurantMap";
 import { EATING_LEVEL_LABELS, isEatingLevel } from "@/constants/categories";
@@ -305,6 +306,15 @@ export function ReviewerQueueContent({ initialItems, categories }: ReviewerQueue
                     </div>
                   )}
                 </div>
+
+                <FactEditPanel
+                  key={`facts-${selected.id}`}
+                  item={selected}
+                  disabled={!selected.canDecide}
+                  onSaved={(changes) =>
+                    setItems((prev) => prev.map((item) => (item.id === selected.id ? { ...item, ...changes } : item)))
+                  }
+                />
 
                 {selected.targetType === "food" && selected.proposal?.status === "pending" && (
                   <ProposalReviewPanel

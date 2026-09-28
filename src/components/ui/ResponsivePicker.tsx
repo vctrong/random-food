@@ -53,6 +53,8 @@ interface ResponsivePickerProps {
   maxHeight?: number;
   /** Bottom sheet cao cố định (danh sách dài có ô tìm kiếm). */
   tallSheet?: boolean;
+  /** Trigger nằm sát mép phải (vd nút "⋯") thì dùng "bottom-end" để popover mở về bên trái. */
+  align?: "start" | "end";
 }
 
 /**
@@ -72,6 +74,7 @@ export function ResponsivePicker({
   minWidth = 0,
   maxHeight = 420,
   tallSheet = false,
+  align = "start",
 }: ResponsivePickerProps) {
   const isMobile = useIsMobile();
   const desktopOpen = open && !isMobile;
@@ -79,17 +82,17 @@ export function ResponsivePicker({
   // Dùng state làm callback ref (không đọc `refs` của floating-ui trong lúc render).
   const [referenceEl, setReferenceEl] = useState<HTMLElement | null>(null);
   const [floatingEl, setFloatingEl] = useState<HTMLElement | null>(null);
-  const { floatingStyles, context, isPositioned } = useFloating({
+  const { floatingStyles, context, isPositioned, update } = useFloating({
     elements: { reference: referenceEl, floating: floatingEl },
     open: desktopOpen,
     onOpenChange,
-    placement: "bottom-start",
+    placement: align === "end" ? "bottom-end" : "bottom-start",
     // fixed: vị trí tạm (0,0) trước khi tính xong nằm trong viewport → focus không làm trang cuộn.
     strategy: "fixed",
     whileElementsMounted: autoUpdate,
     middleware: [
       offset(6),
-      flip({ padding: VIEWPORT_PADDING, fallbackPlacements: ["top-start"] }),
+      flip({ padding: VIEWPORT_PADDING, fallbackPlacements: [align === "end" ? "top-end" : "top-start"] }),
       shift({ padding: VIEWPORT_PADDING }),
       size({
         padding: VIEWPORT_PADDING,
@@ -100,9 +103,16 @@ export function ResponsivePicker({
             maxHeight: `${Math.max(180, Math.min(availableHeight, maxHeight))}px`,
           });
         },
-      }),
+        // floating-ui so sánh hàm `apply` theo toString nên phải khai deps, nếu không
+        // minWidth mới (vd menu "⋯" chuyển sang form) sẽ bị bỏ qua.
+      }, [minWidth, maxHeight]),
     ],
   });
+
+  // Nội dung đổi kích thước (vd menu "⋯" chuyển sang form) → tính lại vị trí/độ rộng ngay.
+  useEffect(() => {
+    if (desktopOpen) update();
+  }, [desktopOpen, minWidth, maxHeight, update]);
 
   // Focus phần tử đầu tiên (ô tìm kiếm / listbox) chỉ SAU KHI đã định vị — focus sớm hơn sẽ kéo trang cuộn.
   useEffect(() => {
@@ -117,7 +127,9 @@ export function ResponsivePicker({
   const { isMounted, styles } = useTransitionStyles(context, {
     duration: { open: 170, close: 130 },
     initial: { opacity: 0, transform: "scale(0.97)" },
-    common: ({ side }) => ({ transformOrigin: side === "top" ? "bottom left" : "top left" }),
+    common: ({ side }) => ({
+      transformOrigin: `${side === "top" ? "bottom" : "top"} ${align === "end" ? "right" : "left"}`,
+    }),
   });
 
   return (

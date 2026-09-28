@@ -12,7 +12,7 @@ import {
   sendsRemaining,
   type SendPolicy,
 } from "@/features/password-reset/passwordResetLogic";
-import type { EmailMessage } from "@/lib/email/mailer";
+import type { EmailMessage } from "@/lib/email/emailService";
 import { buildEmailVerificationOtpEmail, buildPasswordLinkOtpEmail } from "@/lib/email/templates";
 import { isPasswordValid } from "@/lib/password";
 import {

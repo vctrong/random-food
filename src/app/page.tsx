@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getAllFoods } from "@/services/foodService";
+import { getOpenFoods } from "@/services/foodService";
 import { BRAND } from "@/constants/brand";
 import { SITE_URL } from "@/config/env";
 import { getLandingStats, getLatestReviewQuotes } from "@/lib/landing";
@@ -13,6 +13,7 @@ import { TopRatedPolaroidSection } from "@/components/food/TopRatedPolaroidSecti
 import { FeatureBentoGrid } from "@/components/food/FeatureBentoGrid";
 import { StatsSection } from "@/components/food/StatsSection";
 import { FinalCtaSection } from "@/components/food/FinalCtaSection";
+import { AnnouncementBanner } from "@/components/announcements/AnnouncementBanner";
 
 const HOME_TITLE = `${BRAND.seoName} – Hôm nay ăn gì? Random món ngon Cần Thơ`;
 const HOME_DESCRIPTION =
@@ -35,7 +36,7 @@ const WEBSITE_JSON_LD = {
 };
 
 export default async function Home() {
-  const [allFoods, stats] = await Promise.all([getAllFoods(), getLandingStats()]);
+  const [allFoods, stats] = await Promise.all([getOpenFoods(), getLandingStats()]);
 
   const topRatedPerLevel = pickTopRatedPerLevel(allFoods);
   const reviewQuotes = await getLatestReviewQuotes(topRatedPerLevel.map(({ food }) => food.id));
@@ -43,6 +44,7 @@ export default async function Home() {
   return (
     <div className="w-full overflow-x-clip">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_JSON_LD) }} />
+      <AnnouncementBanner />
       <LandingRandomProvider allFoods={allFoods}>
         <HeroSection foodCount={stats.foodCount} />
         <FoodTicker

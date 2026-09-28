@@ -25,6 +25,9 @@ import { useToast } from "@/components/ui/ToastProvider";
 import { addSavedFood, getSavedFoodRecords, removeSavedFood } from "@/services/savedFoodService";
 import { addHistoryEntry } from "@/services/historyService";
 import { FoodReviewsSection } from "./FoodReviewsSection";
+import { PlaceReportLink } from "./PlaceReportLink";
+import { InfoNotice } from "@/components/ui/InfoNotice";
+import { INFO_NOTICE_FULL } from "@/constants/infoNotice";
 
 interface FoodDetailPageContentProps {
   food: Food;
@@ -208,9 +211,10 @@ export function FoodDetailPageContent({ food, similarFoods }: FoodDetailPageCont
                     <RestaurantImage images={food.restaurant.images} alt={food.restaurant.name} sizes="48px" />
                   </span>
                   <span className="min-w-0">
-                    <span className="flex items-center gap-1.5 font-semibold">
+                    <span className="flex flex-wrap items-center gap-1.5 font-semibold">
                       <MapPin className="size-4 shrink-0 text-primary" aria-hidden />
                       <span className="truncate">{food.restaurant.name}</span>
+                      {food.restaurant.isClosed && <Badge variant="neutral">Quán đã đóng cửa</Badge>}
                     </span>
                     <span className="block text-text-secondary break-words">{food.restaurant.address}</span>
                   </span>
@@ -236,6 +240,11 @@ export function FoodDetailPageContent({ food, similarFoods }: FoodDetailPageCont
                 </Link>
                 .
               </p>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <InfoNotice tone="accent">{INFO_NOTICE_FULL}</InfoNotice>
+              <PlaceReportLink foodId={food.id} restaurantId={food.restaurant?.id ?? null} />
             </div>
           </div>
         </div>

@@ -8,6 +8,20 @@ import { signOut, useSession } from "next-auth/react";
 import { BadgeCheck, Bookmark, ChefHat, ChevronDown, ClipboardCheck, History, LogOut, Settings, ShieldCheck, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/ToastProvider";
+import { useNotificationCenter } from "@/components/notifications/NotificationCenterProvider";
+
+/** Badge hàng chờ — đếm thẳng từ DB (docs/notifications.md mục 1), không phải thông báo. */
+function PendingBadge({ count, label }: { count: number | null | undefined; label: string }) {
+  if (!count) return null;
+  return (
+    <span
+      aria-label={`${count} ${label}`}
+      className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-accent-strong px-1.5 text-[11px] font-bold leading-none text-white tabular-nums"
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
 
 export function UserMenu() {
   const { data: session, status } = useSession();
@@ -15,6 +29,9 @@ export function UserMenu() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
   const router = useRouter();
+  const { unread } = useNotificationCenter();
+  const pending = unread?.pending ?? null;
+  const pendingTotal = (pending?.reviewQueue ?? 0) + (pending?.reportCases ?? 0);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -62,8 +79,11 @@ export function UserMenu() {
         onClick={() => setIsOpen((prev) => !prev)}
         aria-expanded={isOpen}
         aria-haspopup="menu"
-        className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full bg-surface border border-border hover:bg-primary-soft transition-colors"
+        className="relative flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full bg-surface border border-border hover:bg-primary-soft transition-colors"
       >
+        {pendingTotal > 0 && (
+          <span aria-hidden className="absolute left-7 top-1 size-2.5 rounded-full border-2 border-surface bg-accent-strong" />
+        )}
         {image ? (
           <Image
             src={image}
@@ -104,6 +124,7 @@ export function UserMenu() {
             >
               <ShieldCheck className="size-4" aria-hidden />
               Quản trị hệ thống
+              <PendingBadge count={pending?.reportCases} label="báo cáo đang chờ xử lý" />
             </Link>
           )}
           {isReviewer && (
@@ -115,6 +136,7 @@ export function UserMenu() {
             >
               <ClipboardCheck className="size-4" aria-hidden />
               Không gian thẩm định
+              <PendingBadge count={pending?.reviewQueue} label="mục đang chờ duyệt" />
             </Link>
           )}
           <Link

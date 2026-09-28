@@ -25,6 +25,8 @@ export interface FoodRestaurantSummary {
   openingHours?: string | null;
   /** Ảnh quán (có thể rỗng) — hiển thị qua RestaurantImage để có ảnh mặc định. */
   images?: string[];
+  /** Quán đã ngừng hoạt động (businessStatus = "closed") — ẩn khỏi random, /mon-an, tìm kiếm; trang chi tiết hiện badge. */
+  isClosed?: boolean;
 }
 
 /** Món ăn THẬT từ MongoDB (`GET /api/foods`) — đã duyệt & công khai. Đây là type Food DUY NHẤT trong app. */

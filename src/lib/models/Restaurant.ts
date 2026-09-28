@@ -27,6 +27,11 @@ const restaurantSchema = new Schema({
   nameNormalized: { type: String },
   addressNormalized: { type: String },
   openingHours: { type: String },
+  /** Quán đã ngừng hoạt động: ẩn khỏi random, danh sách món, chọn quán — không xoá dữ liệu (BR-M12). */
+  businessStatus: { type: String, enum: ["open", "closed"], default: "open" },
+  closedAt: { type: Date },
+  /** Quán này là bản trùng đã được gộp vào quán gốc (visibility = "deleted"). */
+  mergedIntoRestaurantId: { type: Schema.Types.ObjectId, ref: "Restaurant" },
   moderationStatus: {
     type: String,
     enum: ["pending", "approved", "rejected", "needs_revision"],

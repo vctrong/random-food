@@ -25,19 +25,21 @@ const userProfileSchema = new Schema({
   // "light" | "dark" | "system" — nguồn phụ để đồng bộ theme giữa các thiết bị;
   // cookie/localStorage (next-themes) vẫn là nguồn nhanh chống nháy sáng lúc tải trang.
   theme: { type: String, enum: ["light", "dark", "system"] },
-  notificationPrefs: {
-    food_approved: { type: Boolean, default: true },
-    food_rejected: { type: Boolean, default: true },
-    food_needs_revision: { type: Boolean, default: true },
-    report_handled: { type: Boolean, default: true },
-    reviewer_application_result: { type: Boolean, default: true },
-    system: { type: Boolean, default: true },
-    login_success: { type: Boolean, default: false },
-    login_failed: { type: Boolean, default: true },
-    account_banned: { type: Boolean, default: true },
-    account_unbanned: { type: Boolean, default: true },
-    password_changed: { type: Boolean, default: true },
+  // Chỉ loại email TUỲ CHỌN có key (constants/notifications.ts). Thông báo trong app
+  // luôn lưu và luôn hiện; loại email bắt buộc do server quyết định, không đọc ở đây.
+  notificationPreferences: {
+    email: {
+      food_approved: { type: Boolean, default: true },
+      food_rejected: { type: Boolean, default: true },
+      food_needs_revision: { type: Boolean, default: true },
+      content_removed: { type: Boolean, default: false },
+    },
   },
+  // Announcement chưa đọc = publishAt mới hơn mốc này VÀ không nằm trong readAnnouncementIds.
+  // Mốc chỉ đổi khi "Đánh dấu đã đọc hết"; trống → dùng users.createdAt.
+  lastAnnouncementSeenAt: { type: Date },
+  // Bài đọc lẻ (bấm vào từng bài) sau mốc trên — "đọc hết" thì dọn sạch mảng này.
+  readAnnouncementIds: { type: [{ type: Schema.Types.ObjectId, ref: "Announcement" }], default: undefined },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

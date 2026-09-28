@@ -8,6 +8,8 @@ import { FooterMiniRandom } from "@/components/footer/FooterMiniRandom";
 import { RiverScene } from "@/components/footer/RiverScene";
 import { ScrollTopButton } from "@/components/footer/ScrollTopButton";
 import { BrandLogo } from "@/components/ui/BrandLogo";
+import { InfoNotice } from "@/components/ui/InfoNotice";
+import { INFO_NOTICE_SHORT } from "@/constants/infoNotice";
 
 const COLUMN_ICONS: LucideIcon[] = [Compass, Wrench, Sailboat];
 const COLUMN_ICON_TONES = ["text-primary", "text-accent-ink", "text-secondary"];
@@ -121,6 +123,9 @@ export function Footer() {
           >
             {BRAND.name}
           </p>
+          <InfoNotice size="xs" className="mx-auto mt-4 max-w-3xl text-center">
+            {INFO_NOTICE_SHORT}
+          </InfoNotice>
           <div className="mx-auto mt-4 flex max-w-6xl flex-col items-center justify-between gap-4 border-t border-primary/20 pt-5 text-xs text-text-secondary sm:flex-row">
             <p className="flex items-center gap-1.5">
               © 2026 {BRAND.name} — Làm bằng cả trái tim ở Cần Thơ

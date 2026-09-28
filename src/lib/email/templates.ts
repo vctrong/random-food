@@ -1,7 +1,9 @@
 import { BRAND, CONTACTS } from "@/constants/brand";
 import { SITE_URL } from "@/config/env";
 import { describeUserAgent, formatVietnamDateTime } from "@/features/password-reset/passwordResetLogic";
-import type { EmailMessage } from "@/lib/email/mailer";
+import type { EmailMessage } from "@/lib/email/emailService";
+import { buildNotificationContent } from "@/features/notifications/notificationContent";
+import type { NotificationType } from "@/constants/notifications";
 
 /**
  * Template email giao dịch — bố cục theo example/mail (pill thương hiệu, card
@@ -342,4 +344,111 @@ export function buildAccountUnlockedEmail(input: { to: string; name: string; unl
   });
   const text = `Chào ${name},\n\nTài khoản NayAnGi của bạn đã được mở khoá lúc ${unlockedText}. Mật khẩu không thay đổi — bạn đăng nhập như trước.\nĐăng nhập: ${loginUrl}\n\nKhông phải bạn? Hãy đổi mật khẩu ngay và liên hệ ${CONTACTS.email}.${textFooter()}`;
   return { to, subject: "Tài khoản NayAnGi của bạn đã được mở khoá", html, text };
+}
+
+/* ------------------------------------------------------------------ */
+/* Email thông báo (docs/notifications.md mục 5)                        */
+/* ------------------------------------------------------------------ */
+
+const NOTIFICATION_BADGES: Partial<Record<NotificationType, string>> = {
+  food_approved: "Đóng góp của bạn",
+  food_rejected: "Đóng góp của bạn",
+  food_needs_revision: "Cần bạn chỉnh sửa",
+  content_removed: "Nội dung bị gỡ",
+  account_banned: "Tài khoản",
+  account_unbanned: "Tài khoản",
+  role_changed: "Vai trò tài khoản",
+  reviewer_application_result: "Ứng tuyển FoodReviewer",
+  password_changed: "Bảo mật tài khoản",
+};
+
+const ACCENT_TYPES: ReadonlySet<NotificationType> = new Set<NotificationType>([
+  "food_needs_revision",
+  "content_removed",
+  "account_banned",
+  "password_changed",
+]);
+
+/** Khối "Lý do/Góp ý" nổi bật — tách khỏi đoạn nội dung để người đọc không bỏ sót. */
+function detailBoxOf(type: NotificationType, payload: Record<string, unknown>): [string, string] | null {
+  const read = (key: string) => (typeof payload[key] === "string" ? (payload[key] as string).trim() : "");
+  if (type === "food_needs_revision" && read("feedback")) return ["Góp ý từ đội kiểm duyệt", read("feedback")];
+  if ((type === "food_rejected" || type === "content_removed" || type === "account_banned") && read("reason")) {
+    return ["Lý do", read("reason")];
+  }
+  return null;
+}
+
+/** Câu giải thích thêm theo loại — thay cho body mặc định khi đã có khối lý do. */
+function followUpOf(type: NotificationType, payload: Record<string, unknown>): string | null {
+  switch (type) {
+    case "food_needs_revision":
+      return "Bạn sửa lại theo góp ý rồi gửi lại, tụi mình sẽ duyệt tiếp ngay nha.";
+    case "food_rejected":
+      return "Bạn có thể xem lại đóng góp trong mục Đóng góp của bạn.";
+    case "content_removed":
+      return typeof payload.warningCount === "number"
+        ? `Đây là lần nhắc nhở thứ ${payload.warningCount} — mong bạn giúp tụi mình giữ không gian văn minh nha.`
+        : "Mong bạn thông cảm và tiếp tục đồng hành cùng tụi mình nha.";
+    case "account_banned":
+      return "Bạn sẽ không đăng nhập được cho tới khi tài khoản được mở khoá.";
+    default:
+      return null;
+  }
+}
+
+export function buildNotificationEmail(input: {
+  to: string;
+  name: string;
+  type: NotificationType;
+  payload: Record<string, unknown>;
+  /** URL tuyệt đối tới nội dung liên quan (null = không có nút). */
+  actionUrl: string | null;
+  /** URL tuyệt đối tới Cài đặt → Thông báo — chỉ cho email tuỳ chọn. */
+  settingsUrl: string | null;
+}): EmailMessage {
+  const { to, name, type, payload, actionUrl, settingsUrl } = input;
+  const content = buildNotificationContent(type, payload);
+  const detail = detailBoxOf(type, payload);
+  const bodyText = detail ? followUpOf(type, payload) : content.body;
+  const actionLabel = content.actionLabel ?? (type === "account_unbanned" ? "Đăng nhập" : "Xem chi tiết");
+  const needsContactBox = type === "account_banned" || type === "password_changed";
+  const reasonLine = settingsUrl
+    ? `Bạn nhận email này vì đang bật thông báo qua email cho loại này. <a href="${escapeHtml(settingsUrl)}" style="color:${COLOR.primaryStrong};">Tắt trong Cài đặt → Thông báo</a>.`
+    : "Đây là email bắt buộc về tài khoản của bạn nên không thể tắt.";
+
+  const html = renderLayout({
+    preheader: content.title,
+    badge: NOTIFICATION_BADGES[type] ?? "Thông báo",
+    tone: ACCENT_TYPES.has(type) ? "accent" : "primary",
+    title: content.title,
+    name,
+    contentHtml: [
+      detail ? noticeBox(detail[0], escapeHtml(detail[1]), "primary") : "",
+      bodyText ? paragraph(escapeHtml(bodyText)) : "",
+      actionUrl ? button(actionLabel, actionUrl) : "",
+      needsContactBox
+        ? noticeBox(
+            type === "account_banned" ? "Bạn nghĩ đây là nhầm lẫn?" : "Không phải bạn?",
+            `Hãy liên hệ tụi mình qua ${escapeHtml(CONTACTS.email)} hoặc ${escapeHtml(CONTACTS.phoneDisplay)} để được hỗ trợ.`,
+          )
+        : "",
+      paragraph(reasonLine, { muted: true }),
+    ].join(""),
+  });
+
+  const text = [
+    `Chào ${name},`,
+    "",
+    content.title,
+    detail ? `${detail[0]}: ${detail[1]}` : null,
+    bodyText,
+    actionUrl ? `${actionLabel}: ${actionUrl}` : null,
+    needsContactBox ? `Cần hỗ trợ? Liên hệ ${CONTACTS.email} hoặc ${CONTACTS.phoneDisplay}.` : null,
+    settingsUrl ? `Tắt loại email này trong Cài đặt → Thông báo: ${settingsUrl}` : "Đây là email bắt buộc về tài khoản của bạn.",
+  ]
+    .filter((line): line is string => line !== null)
+    .join("\n");
+
+  return { to, subject: `${content.title} · NayAnGi`, html, text: `${text}${textFooter()}` };
 }

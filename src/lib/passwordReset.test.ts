@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import bcrypt from "bcryptjs";
 import { PASSWORD_RESET_CONFIG } from "@/constants/passwordReset";
-import type { EmailMessage } from "@/lib/email/mailer";
+import type { EmailMessage } from "@/lib/email/emailService";
 import {
   createPasswordResetService,
   type PasswordResetRepository,

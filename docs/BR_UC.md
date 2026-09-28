@@ -159,6 +159,7 @@ Ghi chú (kcal) chỉ mang tính ước lượng UX, **không phải dữ liệu
 - **BR-F06**: Reject bắt buộc có lý do.
 - **BR-F07**: `needs_revision` bắt buộc có lý do/yêu cầu bổ sung rõ ràng.
 - **BR-F08**: Không được sửa nội dung của User theo cách thay đổi ý nghĩa đóng góp mà không qua quy trình phù hợp (chỉ được yêu cầu sửa, không tự sửa hộ nội dung mô tả/tên món).
+  - *Ngoại lệ (cập nhật 2026-09)*: khi **duyệt đóng góp đang `pending`**, FoodReviewer được sửa trực tiếp **dữ kiện thực tế**: giá món; địa chỉ, vị trí (toạ độ) và giờ mở cửa của quán. **Không** được sửa ảnh, tên món, mô tả, danh mục hay thông tin khác — những mục này phải gửi feedback và chuyển `needs_revision` để User tự sửa (ContributionEditModal). Không áp dụng cho đóng góp của chính mình (BR-F02). Mỗi lần sửa ghi AuditLog `content_edit` kèm giá trị trước/sau và gửi thông báo `content_corrected` cho User biết mục nào đã được chỉnh. API: `POST /api/reviewer/contribution-edit` (chặn field ngoài danh sách ở server).
 - **BR-F09**: Mọi thao tác Approve/Reject/NeedsRevision đều ghi Audit Log.
 
 ### 3.4 Admin (toàn quyền)
@@ -188,7 +189,7 @@ Ghi chú (kcal) chỉ mang tính ước lượng UX, **không phải dữ liệu
 - **BR-A04→A05**: Admin toàn quyền quản lý Food/Restaurant, có quyền ẩn/xóa nội dung vi phạm.
 - **BR-A06**: Admin là role duy nhất CRUD Category chính thức.
 - **BR-A07→A08**: Admin approve/reject đơn ứng tuyển FoodReviewer, có quyền thu hồi role bất cứ lúc nào.
-- **BR-A09**: Admin xử lý toàn bộ Report.
+- **BR-A09**: Admin xử lý toàn bộ Report. FoodReviewer **không** có quyền gì với báo cáo (không xem, không xử lý) — kiểm ở API `/api/admin/report-cases` (fail-as-404). Chi tiết luồng: [`report-flow.md`](report-flow.md), BR-M06→M14.
 - **BR-A10**: Mọi thao tác quản trị quan trọng ghi Audit Log.
 
 ---
@@ -276,6 +277,17 @@ stateDiagram-v2
 - **BR-M03**: Moderation action (Keep/Hide/Remove/Warn/Ban) phải có lý do.
 - **BR-M04**: Mọi moderation action ghi Audit Log.
 - **BR-M05** *(mới)*: User bị Warn nhiều lần cộng dồn (`warningCount` trên `users`) — MVP chưa tự động ban theo ngưỡng, Admin tự quyết định dựa trên số cảnh cáo.
+- **BR-M06** *(mới 2026-09)*: Phải đăng nhập mới gửi được báo cáo (Guest bấm báo cáo → lời mời đăng nhập nhẹ, không redirect). Không được báo cáo nội dung của chính mình (đánh giá mình viết, món/quán mình đóng góp); UI không hiện mục "Báo cáo đánh giá" trên đánh giá của chính mình.
+- **BR-M07** *(mới)*: Mỗi User chỉ báo cáo **1 lần** cho mỗi đối tượng (unique index `reporterId + targetType + targetId`). Đã báo cáo thì UI hiện "Bạn đã báo cáo" thay vì mở lại form.
+- **BR-M08** *(mới)*: Tối đa **20 báo cáo / User / ngày** (ngày theo giờ Việt Nam). Hoàn tác không trả lại lượt.
+- **BR-M09** *(mới)*: Đánh giá bị **3 User khác nhau** báo cáo → tự ẩn tạm (`hidden_pending_review`), không tính vào `avgRating`/`ratingCount` cho tới khi Admin xử lý. Hoàn tác làm số báo cáo tụt dưới 3 → hiện lại. **Món/quán không tự ẩn.**
+- **BR-M10** *(mới)*: Báo cáo được gom thành **case** theo đối tượng (mỗi đối tượng tối đa 1 case `pending`); case đã đóng mà có báo cáo mới thì mở case mới. User hoàn tác báo cáo của mình **chỉ khi case còn `pending`**.
+- **BR-M11** *(mới)*: Lý do chọn 1: đánh giá — Spam/quảng cáo · Ngôn từ xúc phạm · Không liên quan tới món · Sai sự thật · Lộ thông tin cá nhân · Khác; món/quán — Quán đã đóng cửa · Sai địa chỉ/vị trí · Trùng với quán khác (báo cáo **quán**) · Sai giá · Ảnh không đúng · Khác (báo cáo **món**). "Khác" bắt buộc ghi chú (≤ 300 ký tự); "Trùng với quán khác" bắt buộc chọn quán gốc.
+- **BR-M12** *(mới)*: Quán **đã đóng cửa** (`businessStatus = closed`) không xuất hiện trong random, danh sách `/mon-an`, tìm kiếm, chọn quán và gợi ý quán gần; trang chi tiết món vẫn truy cập được, kèm badge "Quán đã đóng cửa". Không xoá dữ liệu; Admin "Mở lại quán" được (AuditLog `restaurant_reopen`).
+- **BR-M13** *(mới)*: Hành động xử lý case (mọi hành động bắt buộc lý do — chọn nhanh hoặc tự gõ):
+  - Đánh giá: Bỏ qua (hiện lại nếu đang ẩn tạm) · Gỡ đánh giá · Gỡ + cảnh cáo tác giả (`warningCount + 1`). Khoá tài khoản tác giả chỉ Admin (xác nhận 2 bước), Admin thấy số lần tác giả đã bị cảnh cáo.
+  - Món/quán: Bỏ qua · Sửa thông tin tại chỗ (Admin toàn quyền, kể cả gỡ ảnh sai — hết ảnh thì fallback ảnh mặc định) · Đánh dấu quán đã đóng cửa · Gộp quán trùng (chuyển toàn bộ món, lịch sử check-in, đánh giá sang quán gốc; quán trùng → `visibility = deleted` + `mergedIntoRestaurantId`; xác nhận 2 bước vì không hoàn tác được; tham chiếu tới quán trùng tự trỏ sang quán gốc).
+- **BR-M14** *(mới)*: Thông báo sau xử lý — người báo cáo nhận kết quả (gỡ / cập nhật / bỏ qua với giọng nhẹ nhàng, loại `report_handled`); tác giả đánh giá bị gỡ nhận thông báo kèm lý do, giọng lịch sự (loại `review_removed`). **Không bao giờ tiết lộ ai đã báo cáo.**
 
 | ID | Use Case |
 |---|---|
@@ -283,7 +295,9 @@ stateDiagram-v2
 | UC-M02 | User report Review |
 | UC-M03 | Admin xem Report queue |
 | UC-M04 | Admin xem chi tiết Report |
-| UC-M05 | Admin xử lý Report (Keep/Hide/Remove/Warn/Ban) |
+| UC-M05 | Admin xử lý Report theo case (Bỏ qua / Gỡ / Gỡ + cảnh cáo / Sửa thông tin / Đánh dấu đóng cửa / Gộp quán trùng / Khoá tài khoản — BR-M13) |
+| UC-M06 | User hoàn tác báo cáo của mình khi case còn chờ (BR-M10) |
+| UC-M07 | Admin mở lại quán đã đánh dấu đóng cửa (BR-M12) |
 
 ```mermaid
 flowchart LR

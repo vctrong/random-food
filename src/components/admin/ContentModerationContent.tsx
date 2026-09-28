@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useToast } from "@/components/ui/ToastProvider";
+import { RemovalReasonModal } from "@/components/admin/RemovalReasonModal";
 import { MODERATION_STATUS_LABELS } from "@/constants/admin";
 import { cn, formatPriceRange, isAllowedImageHost } from "@/lib/utils";
 import type { AdminContentRow, ModerationStatus } from "@/types/admin";
@@ -35,6 +36,8 @@ export function ContentModerationContent({ initialRows }: ContentModerationConte
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState<string | null>(null);
+  const [removingRow, setRemovingRow] = useState<AdminContentRow | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -80,20 +83,31 @@ export function ContentModerationContent({ initialRows }: ContentModerationConte
     }
   }
 
-  async function handleVisibility(row: AdminContentRow, visibility: "visible" | "hidden") {
+  async function handleVisibility(row: AdminContentRow, visibility: "visible" | "hidden", reason?: string): Promise<boolean> {
     const res = await fetch("/api/admin/content", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ targetType: row.targetType, targetId: row.id, visibility }),
+      body: JSON.stringify({ targetType: row.targetType, targetId: row.id, visibility, reason }),
     });
     const data = await res.json();
     if (!res.ok) {
       showToast(data.error ?? "Có lỗi xảy ra.", "error");
-      return;
+      return false;
     }
     setRows((prev) => prev.map((r) => (key(r) === key(row) ? { ...r, visibility } : r)));
-    showToast(visibility === "hidden" ? "Đã ẩn nội dung." : "Đã hiện lại nội dung.", "success");
+    showToast(visibility === "hidden" ? "Đã gỡ nội dung và báo cho người đóng góp." : "Đã hiện lại nội dung.", "success");
     router.refresh();
+    return true;
+  }
+
+  async function handleConfirmRemoval(reason: string) {
+    if (!removingRow) return;
+    setIsRemoving(true);
+    try {
+      if (await handleVisibility(removingRow, "hidden", reason)) setRemovingRow(null);
+    } finally {
+      setIsRemoving(false);
+    }
   }
 
   return (
@@ -214,8 +228,8 @@ export function ContentModerationContent({ initialRows }: ContentModerationConte
                   </Button>
                   {selected.moderationStatus === "approved" && (
                     selected.visibility === "visible" ? (
-                      <Button size="sm" variant="outline" leftIcon={<EyeOff className="size-4" />} onClick={() => handleVisibility(selected, "hidden")}>
-                        Ẩn khỏi trang chủ
+                      <Button size="sm" variant="outline" leftIcon={<EyeOff className="size-4" />} onClick={() => setRemovingRow(selected)}>
+                        Gỡ nội dung
                       </Button>
                     ) : (
                       <Button size="sm" variant="outline" leftIcon={<Eye className="size-4" />} onClick={() => handleVisibility(selected, "visible")}>
@@ -231,6 +245,16 @@ export function ContentModerationContent({ initialRows }: ContentModerationConte
           )}
         </div>
       )}
+
+      <RemovalReasonModal
+        isOpen={removingRow !== null}
+        onClose={() => setRemovingRow(null)}
+        onConfirm={handleConfirmRemoval}
+        kind={removingRow?.targetType ?? "food"}
+        subjectName={removingRow?.name ?? ""}
+        recipientName={removingRow?.submitter.name ?? "người đóng góp"}
+        isLoading={isRemoving}
+      />
     </div>
   );
 }

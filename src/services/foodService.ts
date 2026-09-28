@@ -18,17 +18,29 @@ export async function getAllFoods(): Promise<Food[]> {
   }
 }
 
+/**
+ * Món còn "đi ăn được": bỏ món của quán đã đóng cửa (BR-M12) — dùng cho random,
+ * danh sách /mon-an và tìm kiếm. Trang chi tiết / Đã lưu / Lịch sử vẫn dùng getAllFoods.
+ */
+export function excludeClosedRestaurants(foods: Food[]): Food[] {
+  return foods.filter((food) => !food.restaurant?.isClosed);
+}
+
+export async function getOpenFoods(): Promise<Food[]> {
+  return excludeClosedRestaurants(await getAllFoods());
+}
+
 export async function getFoodById(id: string): Promise<Food | undefined> {
   const foods = await getAllFoods();
   return foods.find((food) => food.id === id);
 }
 
-/** Bản gọi từ trình duyệt (URL tương đối) — vd mini random ở footer. */
+/** Bản gọi từ trình duyệt (URL tương đối) — vd mini random ở footer. Đã bỏ món của quán đóng cửa. */
 export async function getAllFoodsFromClient(): Promise<Food[]> {
   try {
     const response = await fetch("/api/foods");
     if (!response.ok) return [];
-    return (await response.json()) as Food[];
+    return excludeClosedRestaurants((await response.json()) as Food[]);
   } catch {
     return [];
   }

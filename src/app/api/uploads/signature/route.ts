@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/requireAuth";
+import { requireAdminSession } from "@/lib/admin/session";
 import { hitRateLimit } from "@/lib/rateLimit";
 import { createUploadSignature, UPLOAD_FOLDERS, type UploadKind } from "@/lib/cloudinary";
 
 const SIGNATURES_PER_WINDOW = 40;
 const WINDOW_MS = 10 * 60 * 1000;
 
-/** Cấp chữ ký upload thẳng lên Cloudinary — chỉ user đã đăng nhập, chỉ 2 thư mục cố định. */
+/** Cấp chữ ký upload thẳng lên Cloudinary — chỉ user đã đăng nhập, chỉ các thư mục cố định (announcement: chỉ Admin). */
 export async function POST(request: Request) {
   const auth = await requireAuth();
   if (!auth.ok) return NextResponse.json({ error: "Vui lòng đăng nhập để tải ảnh lên." }, { status: 401 });
@@ -15,6 +16,10 @@ export async function POST(request: Request) {
   const kind = body?.kind;
   if (typeof kind !== "string" || !(kind in UPLOAD_FOLDERS)) {
     return NextResponse.json({ error: "Loại ảnh không hợp lệ." }, { status: 400 });
+  }
+
+  if (kind === "announcement" && !(await requireAdminSession())) {
+    return NextResponse.json({ error: "Bạn không có quyền tải ảnh cho thông báo." }, { status: 403 });
   }
 
   const limit = await hitRateLimit(`upload:signature:user:${auth.id}`, SIGNATURES_PER_WINDOW, WINDOW_MS);

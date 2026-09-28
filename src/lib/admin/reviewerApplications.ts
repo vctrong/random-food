@@ -2,7 +2,7 @@ import { connectDB } from "@/lib/mongodb";
 import { FoodReviewerApplication } from "@/lib/models/FoodReviewerApplication";
 import { User } from "@/lib/models/User";
 import { AuditLog } from "@/lib/models/AuditLog";
-import { createNotification } from "@/lib/notify";
+import { notify } from "@/lib/notifications/notify";
 import type { AdminReviewerApplicationRow } from "@/types/admin";
 
 interface LeanUserRef {
@@ -104,13 +104,10 @@ export async function decideReviewerApplication({
     reason: reason.trim() || undefined,
   });
 
-  await createNotification({
-    userId: String(application.userId),
+  await notify(String(application.userId), {
     type: "reviewer_application_result",
-    message:
-      decision === "approved"
-        ? "Chúc mừng! Đơn ứng tuyển FoodReviewer của bạn đã được duyệt."
-        : `Đơn ứng tuyển FoodReviewer của bạn đã bị từ chối.${reason.trim() ? ` Lý do: ${reason.trim()}` : ""}`,
+    payload: { decision, ...(reason.trim() && { reason: reason.trim() }) },
+    actorId: adminId,
   });
 
   return { error: null };

@@ -30,6 +30,9 @@ function getTransporter(): Transporter | null {
 }
 
 /**
+ * Điểm gửi email DUY NHẤT của app (quên mật khẩu, xác thực email, thông báo —
+ * docs/notifications.md mục 5). Đổi nhà cung cấp (vd Resend) chỉ sửa file này.
+ *
  * Gửi email qua SMTP (biến môi trường SMTP_* — xem .env.example). Chưa cấu hình
  * SMTP: ở dev in email ra console server để test luồng không cần mail thật; ở
  * production thì ném lỗi (không âm thầm "gửi thành công" khi thực ra không gửi).

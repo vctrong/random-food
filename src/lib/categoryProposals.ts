@@ -5,6 +5,7 @@ import { CategoryProposal } from "@/lib/models/CategoryProposal";
 import { Food } from "@/lib/models/Food";
 import { AuditLog } from "@/lib/models/AuditLog";
 import { recountCategoryFoods } from "@/lib/categoryCounts";
+import { notifyMany } from "@/lib/notifications/notify";
 import { normalizeVietnamese, slugifyVietnamese } from "@/lib/vietnameseText";
 import { FALLBACK_CATEGORY_SLUG, type CategoryGroup } from "@/constants/categoryGroups";
 
@@ -164,6 +165,12 @@ async function loadPendingProposal(proposalId: string) {
   return { ok: true as const, proposal };
 }
 
+/** Mọi người đã đề xuất tên này (đề xuất cũ chỉ có proposedBy). */
+function proposerIdsOf(proposal: { proposedBy?: unknown; proposerIds?: unknown[] }): string[] {
+  const ids = proposal.proposerIds?.length ? proposal.proposerIds : [proposal.proposedBy];
+  return ids.filter(Boolean).map(String);
+}
+
 function markReviewed(proposal: { reviewedBy?: unknown; reviewedAt?: Date | null }, actorId: string) {
   proposal.reviewedBy = actorId;
   proposal.reviewedAt = new Date();
@@ -207,6 +214,11 @@ export async function mergeProposal({
     metadata: { proposalName: proposal.name, categoryId, categoryName: category.name, affectedFoods: foods.length },
   });
   await recountCategoryFoods(touched);
+  await notifyMany(proposerIdsOf(proposal), {
+    type: "category_proposal_merged",
+    payload: { proposalName: proposal.name, categoryId, categoryName: category.name },
+    actorId,
+  });
   return { error: null, affectedFoods: foods.length };
 }
 
@@ -241,6 +253,11 @@ export async function rejectProposal({
     metadata: { proposalName: proposal.name, affectedFoods: foods.length },
   });
   await recountCategoryFoods(touched);
+  await notifyMany(proposerIdsOf(proposal), {
+    type: "category_proposal_rejected",
+    payload: { proposalName: proposal.name, ...(note?.trim() && { reason: note.trim() }) },
+    actorId,
+  });
   return { error: null, affectedFoods: foods.length };
 }
 
@@ -289,5 +306,10 @@ export async function approveProposalAsCategory({
     metadata: { proposalId: String(proposal._id), proposalName: proposal.name, group, affectedFoods: foods.length },
   });
   await recountCategoryFoods(touched);
+  await notifyMany(proposerIdsOf(proposal), {
+    type: "category_proposal_approved",
+    payload: { proposalName: proposal.name, categoryId, categoryName: finalName },
+    actorId: adminId,
+  });
   return { error: null, categoryId, affectedFoods: foods.length };
 }

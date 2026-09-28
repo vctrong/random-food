@@ -9,7 +9,7 @@ import { User } from "@/lib/models/User";
 // model đã register trước, dù không dùng trực tiếp import này).
 import "@/lib/models/Category";
 import { CategoryProposal } from "@/lib/models/CategoryProposal";
-import { createNotification } from "@/lib/notify";
+import { notify } from "@/lib/notifications/notify";
 import { ensureFallbackCategory } from "@/lib/categoryProposals";
 import { recountCategoriesOfFood } from "@/lib/categoryCounts";
 import { getContributionOverview } from "@/lib/achievements";
@@ -281,21 +281,22 @@ export async function applyModerationDecision({
     metadata: { name: item.name },
   });
 
-  const label = targetType === "food" ? "Món ăn" : "Quán ăn";
-  const decisionMessage =
-    decision === "approved"
-      ? "đã được duyệt và hiển thị công khai."
-      : decision === "rejected"
-        ? `đã bị từ chối. Lý do: ${note.trim()}`
-        : `cần bạn chỉnh sửa thêm. Ghi chú: ${note.trim()}`;
-  const notificationType = decision === "approved" ? "food_approved" : decision === "rejected" ? "food_rejected" : "food_needs_revision";
-
-  await createNotification({
-    userId: String(item.createdBy),
-    type: notificationType,
-    message: `${label} "${item.name}" ${decisionMessage}`,
-    relatedId: targetId,
-  });
+  const recipientId = String(item.createdBy);
+  let foodId: string | undefined;
+  if (targetType === "restaurant") {
+    const ownFood = (await Food.findOne({ restaurantId: targetId, createdBy: item.createdBy }).select("_id").lean()) as {
+      _id: unknown;
+    } | null;
+    foodId = ownFood ? String(ownFood._id) : undefined;
+  }
+  const target = { targetType, targetId, name: item.name as string, ...(foodId && { foodId }) };
+  if (decision === "approved") {
+    await notify(recipientId, { type: "food_approved", payload: target, actorId: reviewerId });
+  } else if (decision === "rejected") {
+    await notify(recipientId, { type: "food_rejected", payload: { ...target, reason: note.trim() }, actorId: reviewerId });
+  } else {
+    await notify(recipientId, { type: "food_needs_revision", payload: { ...target, feedback: note.trim() }, actorId: reviewerId });
+  }
 
   if (decision === "approved") {
     // Trao thành tựu ngay khi duyệt; lỗi ở bước phụ này không được làm hỏng quyết định đã ghi.

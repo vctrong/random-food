@@ -113,7 +113,12 @@ export async function submitFood(
   let restaurantImageIds: string[] = [];
   if (input.restaurant.mode === "existing") {
     if (!isValidObjectId(input.restaurant.id)) return { error: "INVALID_RESTAURANT" };
-    const exists = await Restaurant.exists({ _id: input.restaurant.id, moderationStatus: "approved", visibility: "visible" });
+    const exists = await Restaurant.exists({
+      _id: input.restaurant.id,
+      moderationStatus: "approved",
+      visibility: "visible",
+      businessStatus: { $ne: "closed" },
+    });
     if (!exists) return { error: "INVALID_RESTAURANT" };
   } else {
     const { location, locationSource } = input.restaurant;

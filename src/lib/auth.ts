@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import { Types } from "mongoose";
 import clientPromise, { connectDB } from "@/lib/mongodb";
 import { User } from "@/lib/models/User";
-import { createNotification } from "@/lib/notify";
+import { notify } from "@/lib/notifications/notify";
 
 /** Phiên "không ghi nhớ đăng nhập" tự hết hạn sau 30 phút không hoạt động
  * (kiểm tra thật trong callbacks.session() — chạy lại mỗi request, không phải
@@ -43,11 +43,7 @@ export const authOptions: NextAuthOptions = {
         if (!user || !user.passwordHash) return null;
 
         if (user.accountStatus === "banned") {
-          await createNotification({
-            userId: user._id.toString(),
-            type: "login_failed",
-            message: "Có một lần đăng nhập thất bại: tài khoản của bạn đang bị khóa.",
-          });
+          await notify(user._id.toString(), { type: "login_failed", payload: { reason: "banned" } });
           throw new Error("Tài khoản của bạn đã bị khóa.");
         }
 
@@ -58,22 +54,13 @@ export const authOptions: NextAuthOptions = {
 
         const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!isValid) {
-          await createNotification({
-            userId: user._id.toString(),
-            type: "login_failed",
-            message: "Có một lần đăng nhập thất bại vào tài khoản của bạn (sai mật khẩu).",
-          });
+          await notify(user._id.toString(), { type: "login_failed", payload: { reason: "wrong_password" } });
           throw new Error("Email hoặc mật khẩu không đúng.");
         }
 
         user.lastLoginAt = new Date();
         user.lastActiveAt = new Date();
         await user.save();
-        await createNotification({
-          userId: user._id.toString(),
-          type: "login_success",
-          message: "Bạn vừa đăng nhập thành công.",
-        });
 
         return {
           id: user._id.toString(),
@@ -190,11 +177,6 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider !== "google") return;
       await connectDB();
       await User.updateOne({ _id: user.id }, { $set: { lastLoginAt: new Date(), lastActiveAt: new Date() } });
-      await createNotification({
-        userId: user.id,
-        type: "login_success",
-        message: "Bạn vừa đăng nhập thành công bằng Google.",
-      });
     },
   },
 };

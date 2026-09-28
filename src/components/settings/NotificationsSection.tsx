@@ -1,226 +1,240 @@
 "use client";
 
-import { useState } from "react";
-import { Bell, ChefHat, ChevronDown, Info, ShieldCheck } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Bell, ChefHat, Flag, Lock, MailWarning, ShieldCheck, ShieldHalf, UserCog, type LucideIcon } from "lucide-react";
 import { Toggle } from "@/components/ui/Toggle";
 import { cn } from "@/lib/utils";
 
-interface NotificationItem {
-  type: string;
+/**
+ * Bảng loại thông báo × kênh (docs/notifications.md mục 8). Thông báo trong app
+ * luôn bật nên không có cột riêng; Push chưa ra mắt → cột disabled.
+ */
+
+type EmailRule =
+  | { kind: "optional"; type: string }
+  | { kind: "mandatory"; why: string }
+  | { kind: "none"; why?: string };
+
+interface SettingRow {
   label: string;
   description: string;
-  /** true = bắt buộc, không cho tắt (thông báo bảo mật quan trọng). */
-  locked?: boolean;
+  email: EmailRule;
 }
 
-interface NotificationGroup {
+interface SettingGroup {
   id: string;
   title: string;
-  description: string;
   icon: LucideIcon;
-  items: NotificationItem[];
+  rows: SettingRow[];
+  roles?: ("foodreviewer" | "admin")[];
 }
 
+const GROUPS: SettingGroup[] = [
+  {
+    id: "contributions",
+    title: "Đóng góp của bạn",
+    icon: ChefHat,
+    rows: [
+      { label: "Món/quán được duyệt", description: "Đóng góp của bạn đã được công khai.", email: { kind: "optional", type: "food_approved" } },
+      { label: "Món/quán bị từ chối", description: "Kèm lý do từ đội kiểm duyệt.", email: { kind: "optional", type: "food_rejected" } },
+      { label: "Cần bạn chỉnh sửa", description: "Kèm góp ý, có nút mở thẳng form sửa.", email: { kind: "optional", type: "food_needs_revision" } },
+      { label: "Thông tin được chỉnh giúp", description: "Đội kiểm duyệt sửa giá, địa chỉ, vị trí hoặc giờ mở cửa.", email: { kind: "none" } },
+      { label: "Kết quả đề xuất danh mục", description: "Đề xuất được duyệt, gộp hoặc từ chối.", email: { kind: "none" } },
+    ],
+  },
+  {
+    id: "reports",
+    title: "Báo cáo & nội dung",
+    icon: Flag,
+    rows: [
+      { label: "Báo cáo của bạn đã được xử lý", description: "Kết quả sau khi Admin xem xét báo cáo bạn gửi.", email: { kind: "none" } },
+      { label: "Nội dung của bạn bị gỡ", description: "Đánh giá, món hoặc quán bị gỡ do vi phạm, kèm lý do.", email: { kind: "optional", type: "content_removed" } },
+    ],
+  },
+  {
+    id: "account",
+    title: "Tài khoản & bảo mật",
+    icon: ShieldCheck,
+    rows: [
+      {
+        label: "Tài khoản bị khoá / mở khoá",
+        description: "Trạng thái truy cập tài khoản của bạn.",
+        email: { kind: "mandatory", why: "Bạn cần biết ngay khi quyền truy cập tài khoản thay đổi, kể cả lúc không mở app." },
+      },
+      {
+        label: "Thay đổi vai trò",
+        description: "Admin đổi vai trò tài khoản của bạn.",
+        email: { kind: "mandatory", why: "Vai trò quyết định bạn làm được gì trong app nên luôn được báo qua email." },
+      },
+      {
+        label: "Kết quả ứng tuyển FoodReviewer",
+        description: "Email chỉ gửi khi đơn được duyệt (vai trò thay đổi).",
+        email: { kind: "mandatory", why: "Được duyệt nghĩa là vai trò của bạn thay đổi — luôn báo qua email." },
+      },
+      {
+        label: "Đổi / tạo mật khẩu",
+        description: "Mật khẩu tài khoản vừa được thay đổi.",
+        email: { kind: "mandatory", why: "Giúp bạn phát hiện kịp nếu có người khác đổi mật khẩu của bạn." },
+      },
+      {
+        label: "Đăng nhập không thành công",
+        description: "Có người đăng nhập sai mật khẩu vào tài khoản của bạn.",
+        email: { kind: "none", why: "Không gửi email để kẻ xấu không lợi dụng dội thư vào hộp thư của bạn." },
+      },
+    ],
+  },
+  {
+    id: "reviewer",
+    title: "Kiểm duyệt",
+    icon: ShieldHalf,
+    roles: ["foodreviewer", "admin"],
+    rows: [
+      { label: "Người dùng đã sửa theo góp ý", description: "Đóng góp bạn yêu cầu sửa đã được gửi lại.", email: { kind: "none" } },
+    ],
+  },
+  {
+    id: "admin",
+    title: "Quản trị",
+    icon: UserCog,
+    roles: ["admin"],
+    rows: [{ label: "Có báo cáo mới", description: "Mỗi case báo cáo mới mở gửi 1 thông báo.", email: { kind: "none" } }],
+  },
+];
+
 interface NotificationsSectionProps {
-  initialPrefs: Record<string, boolean>;
-  hasAppliedReviewer: boolean;
+  initialEmailPrefs: Record<string, boolean>;
+  role: string;
   onChange: (prefs: Record<string, boolean>) => void;
 }
 
-function buildGroups(hasAppliedReviewer: boolean): NotificationGroup[] {
-  const groups: NotificationGroup[] = [
-    {
-      id: "contributions",
-      title: "Đóng góp của bạn",
-      description: "Cập nhật khi món/quán bạn đóng góp được xử lý.",
-      icon: ChefHat,
-      items: [
-        { type: "food_approved", label: "Nội dung được duyệt", description: "Món/quán bạn gửi đã được công khai." },
-        { type: "food_rejected", label: "Nội dung bị từ chối", description: "Món/quán bạn gửi không được duyệt." },
-        { type: "food_needs_revision", label: "Cần chỉnh sửa", description: "Nội dung cần bổ sung trước khi duyệt lại." },
-        { type: "report_handled", label: "Report của bạn đã xử lý", description: "Report bạn gửi lên đã có kết quả." },
-      ],
-    },
-    {
-      id: "security",
-      title: "Bảo mật tài khoản",
-      description: "Các thông báo quan trọng về bảo mật — phần lớn bắt buộc bật để bạn kịp phát hiện bất thường.",
-      icon: ShieldCheck,
-      items: [
-        {
-          type: "account_banned",
-          label: "Tài khoản bị khoá",
-          description: "Bắt buộc — để bạn biết ngay khi tài khoản bị hạn chế.",
-          locked: true,
-        },
-        {
-          type: "account_unbanned",
-          label: "Tài khoản được mở khoá",
-          description: "Bắt buộc — xác nhận tài khoản đã hoạt động lại.",
-          locked: true,
-        },
-        {
-          type: "login_failed",
-          label: "Đăng nhập thất bại",
-          description: "Bắt buộc — cảnh báo sớm nếu có người cố đăng nhập trái phép.",
-          locked: true,
-        },
-        {
-          type: "password_changed",
-          label: "Đổi mật khẩu",
-          description: "Bắt buộc — xác nhận mật khẩu vừa được thay đổi.",
-          locked: true,
-        },
-        { type: "login_success", label: "Đăng nhập thành công", description: "Tuỳ chọn — báo mỗi lần đăng nhập, có thể tắt để đỡ spam." },
-      ],
-    },
-    {
-      id: "system",
-      title: "Hệ thống",
-      description: "Thông báo chung từ NayAnGi (bảo trì, thay đổi lớn...).",
-      icon: Info,
-      items: [
-        {
-          type: "system",
-          label: "Thông báo hệ thống",
-          description: "Hiện chưa có sự kiện nào trong hệ thống gửi loại thông báo này — để sẵn cho các cập nhật sau này.",
-        },
-      ],
-    },
-  ];
+export function NotificationsSection({ initialEmailPrefs, role, onChange }: NotificationsSectionProps) {
+  const [prefs, setPrefs] = useState(initialEmailPrefs);
+  const groups = GROUPS.filter((group) => !group.roles || group.roles.includes(role as "foodreviewer" | "admin"));
+  const anyEmailOn = Object.values(prefs).some(Boolean);
 
-  if (hasAppliedReviewer) {
-    groups.splice(1, 0, {
-      id: "reviewer",
-      title: "Ứng tuyển FoodReviewer",
-      description: "Cập nhật kết quả đơn ứng tuyển bạn đã nộp.",
-      icon: Bell,
-      items: [
-        {
-          type: "reviewer_application_result",
-          label: "Kết quả ứng tuyển FoodReviewer",
-          description: "Admin đã duyệt hoặc từ chối đơn ứng tuyển của bạn.",
-        },
-      ],
-    });
-  }
-
-  return groups;
-}
-
-export function NotificationsSection({ initialPrefs, hasAppliedReviewer, onChange }: NotificationsSectionProps) {
-  const [prefs, setPrefs] = useState(initialPrefs);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const groups = buildGroups(hasAppliedReviewer);
-
-  function updatePrefs(next: Record<string, boolean>) {
+  function toggle(type: string) {
+    const next = { ...prefs, [type]: !prefs[type] };
     setPrefs(next);
     onChange(next);
   }
 
-  function toggleItem(type: string) {
-    updatePrefs({ ...prefs, [type]: !prefs[type] });
-  }
-
-  function toggleGroup(group: NotificationGroup) {
-    const optionalItems = group.items.filter((item) => !item.locked);
-    if (optionalItems.length === 0) return;
-    const allOn = optionalItems.every((item) => prefs[item.type] ?? false);
-    const next = { ...prefs };
-    for (const item of optionalItems) next[item.type] = !allOn;
-    updatePrefs(next);
-  }
-
-  function toggleExpanded(id: string) {
-    setExpandedGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
   return (
-    <section id="thong-bao" className="bg-surface rounded-2xl p-6 shadow-sm space-y-4 scroll-mt-24">
-      <div className="flex items-center gap-3 pb-3 border-b border-border">
-        <span className="inline-flex p-2 rounded-xl bg-accent-soft text-accent-ink">
+    <section id="thong-bao" className="scroll-mt-24 space-y-5 rounded-2xl bg-surface p-6 shadow-sm">
+      <div className="flex items-center gap-3 border-b border-border pb-3">
+        <span className="inline-flex rounded-xl bg-accent-soft p-2 text-accent-ink">
           <Bell className="size-5" aria-hidden />
         </span>
         <div>
           <h2 className="text-lg font-semibold text-text-primary">Thông báo</h2>
-          <p className="text-sm text-text-secondary">Chọn loại thông báo bạn muốn nhận, theo từng nhóm.</p>
+          <p className="text-sm text-text-secondary">
+            Mọi thông báo luôn có trong app (biểu tượng chuông). Chọn thêm loại nào muốn nhận qua email.
+          </p>
         </div>
       </div>
 
-      <div className="space-y-3">
-        {groups.map((group) => {
-          const optionalItems = group.items.filter((item) => !item.locked);
-          const isExpanded = expandedGroups.has(group.id);
-          const allOptionalOn = optionalItems.length > 0 && optionalItems.every((item) => prefs[item.type] ?? false);
+      {anyEmailOn && (
+        <p className="flex items-start gap-2 rounded-xl bg-primary-soft/60 px-3.5 py-2.5 text-sm text-text-primary">
+          <MailWarning className="mt-0.5 size-4 shrink-0 text-primary-strong dark:text-primary" aria-hidden />
+          <span>Không thấy email? Nhớ kiểm tra thư mục Spam/Quảng cáo và đánh dấu “Không phải spam” để lần sau vào hộp thư chính nha.</span>
+        </p>
+      )}
 
-          return (
-            <div key={group.id} className="rounded-xl border border-border overflow-hidden">
-              {/* 2 button riêng biệt (không lồng nhau — <button> không được chứa <button> theo spec HTML):
-                  vùng label mở rộng/thu gọn, Toggle + nút mũi tên nằm ngoài. */}
-              <div className="w-full flex items-center justify-between gap-3 p-4 hover:bg-primary-soft/20 transition-colors">
-                <button
-                  type="button"
-                  onClick={() => toggleExpanded(group.id)}
-                  aria-expanded={isExpanded}
-                  className="flex items-center gap-3 min-w-0 flex-1 text-left"
-                >
-                  <group.icon className="size-4.5 text-primary shrink-0" aria-hidden />
-                  <div className="min-w-0">
-                    <p className="font-semibold text-text-primary">{group.title}</p>
-                    <p className="text-xs text-text-secondary truncate">{group.description}</p>
+      <div className="overflow-hidden rounded-xl border border-border">
+        {/* Hàng tiêu đề cột — ẩn trên mobile (mỗi dòng tự ghi nhãn kênh). */}
+        <div className="hidden grid-cols-[1fr_7rem_7rem] items-center gap-3 border-b border-border bg-background px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-text-secondary sm:grid">
+          <span>Loại thông báo</span>
+          <span className="text-center">Email</span>
+          <span className="text-center">
+            Push
+            <span className="ml-1 rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] normal-case tracking-normal text-accent-ink">
+              Sắp ra mắt
+            </span>
+          </span>
+        </div>
+
+        {groups.map((group) => (
+          <div key={group.id} role="group" aria-labelledby={`notif-group-${group.id}`}>
+            <p
+              id={`notif-group-${group.id}`}
+              className="flex items-center gap-2 border-b border-border bg-primary-soft/25 px-4 py-2 text-sm font-semibold text-text-primary"
+            >
+              <group.icon className="size-4 text-primary" aria-hidden />
+              {group.title}
+            </p>
+            <ul className="divide-y divide-border border-b border-border last:border-b-0">
+              {group.rows.map((row) => (
+                <li key={row.label} className="grid gap-3 px-4 py-3 sm:grid-cols-[1fr_7rem_7rem] sm:items-center">
+                  <div>
+                    <p className="text-sm text-text-primary">{row.label}</p>
+                    <p className="text-xs text-text-secondary">{row.description}</p>
                   </div>
-                </button>
-                <div className="flex items-center gap-3 shrink-0">
-                  {optionalItems.length > 0 && (
-                    <Toggle checked={allOptionalOn} onChange={() => toggleGroup(group)} label={`Bật/tắt cả nhóm ${group.title}`} />
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => toggleExpanded(group.id)}
-                    aria-label={isExpanded ? `Thu gọn nhóm ${group.title}` : `Mở rộng nhóm ${group.title}`}
-                    aria-expanded={isExpanded}
-                    className="text-text-secondary hover:text-text-primary transition-colors"
-                  >
-                    <ChevronDown className={cn("size-4 transition-transform", isExpanded && "rotate-180")} aria-hidden />
-                  </button>
-                </div>
-              </div>
-
-              {isExpanded && (
-                <div className="divide-y divide-border border-t border-border">
-                  {group.items.map((item) =>
-                    item.locked ? (
-                      <div key={item.type} className="flex items-center justify-between gap-3 py-3 px-4 bg-primary-soft/10">
-                        <div>
-                          <p className="text-sm text-text-primary">{item.label}</p>
-                          <p className="text-xs text-text-secondary">{item.description}</p>
-                        </div>
-                        <span className="shrink-0 text-[11px] font-semibold px-2 py-1 rounded-full bg-primary-soft text-primary">
-                          Bắt buộc
-                        </span>
-                      </div>
-                    ) : (
-                      <div key={item.type} className="flex items-center justify-between gap-3 py-3 px-4">
-                        <div>
-                          <p className="text-sm text-text-primary">{item.label}</p>
-                          <p className="text-xs text-text-secondary">{item.description}</p>
-                        </div>
-                        <Toggle checked={prefs[item.type] ?? false} onChange={() => toggleItem(item.type)} label={item.label} />
-                      </div>
-                    ),
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+                  <ChannelCell label="Email">
+                    <EmailCell rule={row.email} label={row.label} prefs={prefs} onToggle={toggle} />
+                  </ChannelCell>
+                  <ChannelCell label="Push">
+                    <span title="Sắp ra mắt">
+                      <Toggle checked={false} onChange={() => undefined} disabled label={`Push: ${row.label} (sắp ra mắt)`} />
+                    </span>
+                  </ChannelCell>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
     </section>
+  );
+}
+
+/** Mobile: "Email ....... [toggle]" theo hàng; từ sm là 1 ô căn giữa trong lưới cột. */
+function ChannelCell({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 sm:justify-center">
+      <span className="text-xs font-semibold text-text-secondary sm:hidden">
+        {label}
+        {label === "Push" && <span className="ml-1 font-normal">(sắp ra mắt)</span>}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+function EmailCell({
+  rule,
+  label,
+  prefs,
+  onToggle,
+}: {
+  rule: EmailRule;
+  label: string;
+  prefs: Record<string, boolean>;
+  onToggle: (type: string) => void;
+}) {
+  if (rule.kind === "optional") {
+    return <Toggle checked={prefs[rule.type] ?? false} onChange={() => onToggle(rule.type)} label={`Email: ${label}`} />;
+  }
+  if (rule.kind === "mandatory") {
+    return (
+      <span
+        title={rule.why}
+        className="group/lock relative inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-1 text-[11px] font-semibold text-primary-strong dark:text-primary"
+        tabIndex={0}
+        aria-label={`Email bắt buộc: ${rule.why}`}
+      >
+        <Lock className="size-3" aria-hidden />
+        Bắt buộc
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute bottom-full right-0 z-20 mb-2 hidden w-60 rounded-xl border border-border bg-surface p-2.5 text-left text-xs font-normal text-text-primary shadow-lg group-hover/lock:block group-focus/lock:block sm:left-1/2 sm:right-auto sm:-translate-x-1/2"
+        >
+          {rule.why}
+        </span>
+      </span>
+    );
+  }
+  return (
+    <span title={rule.why} className={cn("text-xs text-text-secondary", rule.why && "cursor-help underline decoration-dotted")}>
+      Chỉ trong app
+    </span>
   );
 }

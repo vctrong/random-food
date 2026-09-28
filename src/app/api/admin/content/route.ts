@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { REMOVAL_REASON_MAX_LENGTH } from "@/constants/admin";
 import { apiNotFound } from "@/lib/http404";
 import { requireAdminSession } from "@/lib/admin/session";
 import { getContentRows, setContentVisibility } from "@/lib/admin/content";
@@ -67,6 +68,7 @@ export async function PATCH(request: Request) {
   const targetType = body?.targetType;
   const targetId = body?.targetId;
   const visibility = body?.visibility;
+  const reason = typeof body?.reason === "string" ? body.reason.trim() : "";
 
   if (typeof targetType !== "string" || !TARGET_TYPES.has(targetType)) {
     return NextResponse.json({ error: "Thiếu hoặc sai targetType." }, { status: 400 });
@@ -78,11 +80,19 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Thiếu hoặc sai visibility." }, { status: 400 });
   }
 
+  if (visibility === "hidden" && !reason) {
+    return NextResponse.json({ error: "Cần nhập lý do khi gỡ nội dung." }, { status: 400 });
+  }
+  if (reason.length > REMOVAL_REASON_MAX_LENGTH) {
+    return NextResponse.json({ error: "Lý do quá dài." }, { status: 400 });
+  }
+
   const result = await setContentVisibility({
     adminId: admin.id,
     targetType: targetType as "food" | "restaurant",
     targetId,
     visibility: visibility as "visible" | "hidden",
+    reason,
   });
 
   if (result.error) return NextResponse.json({ error: "Không tìm thấy nội dung." }, { status: 400 });

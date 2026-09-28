@@ -8,6 +8,7 @@ import {
   FileClock,
   Flag,
   LayoutGrid,
+  Megaphone,
   Star,
   Tags,
   UtensilsCrossed,
@@ -48,6 +49,7 @@ export function AdminSidebar({
     },
     { href: "/admin/danh-gia", label: "Kiểm duyệt đánh giá", icon: Star, exact: false, badge: 0 },
     { href: "/admin/bao-cao", label: "Xử lý báo cáo", icon: Flag, exact: false, badge: pendingReports },
+    { href: "/admin/thong-bao", label: "Thông báo chính thức", icon: Megaphone, exact: false, badge: 0 },
     { href: "/admin/nhat-ky", label: "Nhật ký hệ thống", icon: FileClock, exact: false, badge: 0 },
   ] as const;
 

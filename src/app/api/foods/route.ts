@@ -13,7 +13,7 @@ export async function GET() {
   const foods = await Food.find({ moderationStatus: "approved", visibility: "visible" })
     .sort({ createdAt: -1 })
     .populate("categoryIds", "name slug icon")
-    .populate("restaurantId", "name address location openingHours images")
+    .populate("restaurantId", "name address location openingHours images businessStatus")
     .lean();
 
   return NextResponse.json(
@@ -25,6 +25,7 @@ export async function GET() {
         location?: { coordinates?: [number, number] };
         openingHours?: string;
         images?: string[];
+        businessStatus?: string;
       } | null;
       const categories = (food.categoryIds ?? []) as unknown as {
         _id: string;
@@ -62,6 +63,7 @@ export async function GET() {
               location: coordinates ? { lat: coordinates[1], lng: coordinates[0] } : null,
               openingHours: restaurant.openingHours?.trim() || null,
               images: restaurant.images ?? [],
+              isClosed: restaurant.businessStatus === "closed",
             }
           : null,
       };

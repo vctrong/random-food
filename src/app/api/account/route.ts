@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
 import { User } from "@/lib/models/User";
-import { createNotification } from "@/lib/notify";
+import { notify } from "@/lib/notifications/notify";
 import { isPasswordValid, PASSWORD_POLICY_MESSAGE } from "@/lib/password";
 
 export async function PATCH(request: Request) {
@@ -49,11 +49,7 @@ export async function PATCH(request: Request) {
   user.sessionVersion = (user.sessionVersion ?? 0) + 1;
   await user.save();
 
-  await createNotification({
-    userId,
-    type: "password_changed",
-    message: "Mật khẩu tài khoản của bạn vừa được thay đổi.",
-  });
+  await notify(userId, { type: "password_changed", payload: { method: "change" } });
 
   return NextResponse.json({ success: true });
 }

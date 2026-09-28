@@ -28,6 +28,8 @@ export async function uploadImageFile(file: File, folder: string): Promise<strin
 export const UPLOAD_FOLDERS = {
   food: "nayangi/foods",
   restaurant: "nayangi/restaurants",
+  // Ảnh trong thông báo chính thức — chỉ Admin xin được chữ ký (api/uploads/signature).
+  announcement: "nayangi/announcements",
 } as const;
 
 export type UploadKind = keyof typeof UPLOAD_FOLDERS;

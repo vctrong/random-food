@@ -3,6 +3,7 @@ import { recountCategoriesOfFood } from "@/lib/categoryCounts";
 import { Food } from "@/lib/models/Food";
 import { Restaurant } from "@/lib/models/Restaurant";
 import { AuditLog } from "@/lib/models/AuditLog";
+import { notify } from "@/lib/notifications/notify";
 import "@/lib/models/Category";
 import type { AdminContentRow, ContentTargetType, ModerationStatus } from "@/types/admin";
 
@@ -78,11 +79,14 @@ export async function setContentVisibility({
   targetType,
   targetId,
   visibility,
+  reason,
 }: {
   adminId: string;
   targetType: ContentTargetType;
   targetId: string;
   visibility: "visible" | "hidden";
+  /** Bắt buộc khi ẩn (route kiểm) — ghi AuditLog + gửi kèm thông báo. */
+  reason?: string;
 }): Promise<{ error: VisibilityError | null }> {
   await connectDB();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Food/Restaurant có field visibility giống nhau nhưng khác model TS.
@@ -90,6 +94,7 @@ export async function setContentVisibility({
   const item = await Model.findById(targetId);
   if (!item) return { error: "NOT_FOUND" };
 
+  const wasVisible = item.visibility === "visible";
   item.visibility = visibility;
   item.updatedAt = new Date();
   await item.save();
@@ -100,9 +105,18 @@ export async function setContentVisibility({
     action: "set_visibility",
     targetType,
     targetId,
-    reason: `Đổi visibility sang "${visibility}"`,
+    reason: reason?.trim() || `Đổi visibility sang "${visibility}"`,
     metadata: { name: item.name },
   });
+
+  // Chỉ báo khi nội dung đang công khai bị gỡ — hiện lại hoặc ẩn lần nữa không gửi.
+  if (wasVisible && visibility === "hidden" && item.createdBy) {
+    await notify(String(item.createdBy), {
+      type: "content_removed",
+      payload: { targetType, targetId, name: item.name, ...(reason?.trim() && { reason: reason.trim() }) },
+      actorId: adminId,
+    });
+  }
 
   return { error: null };
 }

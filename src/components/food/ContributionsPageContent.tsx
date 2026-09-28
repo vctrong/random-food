@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Camera,
   CheckCircle2,
@@ -26,6 +27,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ContributionCard } from "@/components/food/ContributionCard";
 import { ContributionDetailModal } from "@/components/food/ContributionDetailModal";
 import { ContributionEditModal } from "@/components/food/ContributionEditModal";
+import { useToast } from "@/components/ui/ToastProvider";
 import { ContributorLevelCard } from "@/components/food/ContributorLevelCard";
 import type {
   AchievementStatus,
@@ -82,8 +84,34 @@ export function ContributionsPageContent({ initialContributions, initialAchievem
     refresh,
   } = useContributions(initialContributions, initialAchievements);
 
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { showToast } = useToast();
+  // ?edit=<foodId> — nút "Sửa ngay" trong thông báo yêu cầu sửa mở thẳng form (kèm góp ý của Reviewer).
+  const editParam = searchParams.get("edit");
   const [detailTarget, setDetailTarget] = useState<Contribution | null>(null);
   const [editTarget, setEditTarget] = useState<Contribution | null>(null);
+  const [handledEditParam, setHandledEditParam] = useState<string | null>(null);
+  const requestedEdit = editParam ? contributions.find((item) => item.id === editParam) : undefined;
+  const canOpenRequestedEdit = Boolean(requestedEdit && (requestedEdit.editable.food || requestedEdit.editable.restaurant));
+
+  // Cập nhật state ngay trong render khi query đổi (mẫu React khuyến nghị thay cho effect) —
+  // chạy cả khi đang ở sẵn /dong-gop rồi bấm "Sửa ngay" (component không mount lại).
+  if (editParam !== handledEditParam) {
+    setHandledEditParam(editParam);
+    if (requestedEdit && canOpenRequestedEdit) {
+      setDetailTarget(null);
+      setEditTarget(requestedEdit);
+    }
+  }
+
+  useEffect(() => {
+    if (!editParam) return;
+    if (!canOpenRequestedEdit) showToast("Đóng góp này hiện không cần sửa nữa rồi nha", "info");
+    // Bỏ ?edit khỏi URL để tải lại trang không mở lại form.
+    router.replace(pathname, { scroll: false });
+  }, [editParam, canOpenRequestedEdit, pathname, router, showToast]);
 
   const approvalRate = summary.total > 0 ? Math.round((summary.approved / summary.total) * 100) : 0;
   const firstContributedAt = contributions.reduce<string | null>(

@@ -1,53 +1,52 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { isValidObjectId } from "mongoose";
-import { authOptions } from "@/lib/auth";
-import { connectDB } from "@/lib/mongodb";
-import { Notification } from "@/lib/models/Notification";
+import { z } from "zod";
+import { requireAuth } from "@/lib/requireAuth";
+import { deleteNotifications, listNotifications, markNotificationsRead } from "@/lib/notifications/inbox";
+import { NOTIFICATION_PAGE_SIZE, NOTIFICATION_PAGE_SIZE_MAX } from "@/constants/notifications";
 
-export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401 });
-  }
+const idsSchema = z.array(z.string().refine((value) => isValidObjectId(value))).min(1).max(100);
+const patchSchema = z.union([z.object({ ids: idsSchema }).strict(), z.object({ all: z.literal(true) }).strict()]);
+const deleteSchema = z.object({ ids: idsSchema }).strict();
 
-  await connectDB();
-  const userId = (session.user as { id: string }).id;
-  const notifications = await Notification.find({ userId }).sort({ createdAt: -1 }).lean();
+function unauthorized() {
+  return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401 });
+}
 
-  return NextResponse.json(
-    notifications.map((notification) => ({
-      id: String(notification._id),
-      type: notification.type,
-      message: notification.message,
-      relatedId: notification.relatedId ? String(notification.relatedId) : null,
-      isRead: notification.isRead,
-      createdAt: notification.createdAt.toISOString(),
-    })),
-  );
+export async function GET(request: Request) {
+  const auth = await requireAuth();
+  if (!auth.ok) return unauthorized();
+
+  const params = new URL(request.url).searchParams;
+  const limitParam = Number(params.get("limit"));
+  const limit = Number.isInteger(limitParam) && limitParam > 0 ? Math.min(limitParam, NOTIFICATION_PAGE_SIZE_MAX) : NOTIFICATION_PAGE_SIZE;
+
+  const result = await listNotifications(auth.id, {
+    cursor: params.get("cursor") ?? undefined,
+    limit,
+    unreadOnly: params.get("unread") === "1",
+  });
+  return NextResponse.json(result);
 }
 
 export async function PATCH(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (!auth.ok) return unauthorized();
 
-  const body = await request.json();
-  const { id, markAllRead } = body as { id?: string; markAllRead?: boolean };
-  const userId = (session.user as { id: string }).id;
+  const parsed = patchSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "Dữ liệu không hợp lệ." }, { status: 400 });
 
-  await connectDB();
+  await markNotificationsRead(auth.id, parsed.data);
+  return NextResponse.json({ ok: true });
+}
 
-  if (markAllRead) {
-    await Notification.updateMany({ userId, isRead: false }, { $set: { isRead: true } });
-    return NextResponse.json({ success: true });
-  }
+export async function DELETE(request: Request) {
+  const auth = await requireAuth();
+  if (!auth.ok) return unauthorized();
 
-  if (!id || !isValidObjectId(id)) {
-    return NextResponse.json({ error: "Thiếu hoặc sai id thông báo." }, { status: 400 });
-  }
+  const parsed = deleteSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "Dữ liệu không hợp lệ." }, { status: 400 });
 
-  await Notification.updateOne({ _id: id, userId }, { $set: { isRead: true } });
-  return NextResponse.json({ success: true });
+  const deleted = await deleteNotifications(auth.id, parsed.data.ids);
+  return NextResponse.json({ ok: true, deleted });
 }
