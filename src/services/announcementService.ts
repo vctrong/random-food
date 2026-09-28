@@ -55,3 +55,11 @@ export function updateAnnouncement(id: string, input: AnnouncementInput): Promis
 export function deleteAnnouncement(id: string): Promise<ApiResult<{ ok: true }>> {
   return callJson<{ ok: true }>(`/api/admin/announcements/${id}`, { method: "DELETE" });
 }
+
+/** Xoá ảnh vừa upload nhưng bỏ đi khi soạn — server chỉ xoá ảnh chưa từng nằm trong bản đã lưu. */
+export function discardAnnouncementImage(url: string): Promise<ApiResult<{ ok: true; deleted: boolean }>> {
+  return callJson<{ ok: true; deleted: boolean }>("/api/admin/announcements/images/discard", {
+    method: "POST",
+    body: JSON.stringify({ url }),
+  });
+}

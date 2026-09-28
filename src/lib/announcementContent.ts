@@ -99,6 +99,12 @@ export function collectImageSources(node: TipTapNode): string[] {
   return [...own, ...(node.content ?? []).flatMap(collectImageSources)];
 }
 
+/** Ảnh cũ không còn trong bản mới (cần gắn lại tag `unattached`) — so theo public_id, bỏ trùng. */
+export function diffRemovedImages(previous: string[], next: string[]): string[] {
+  const kept = new Set(next);
+  return [...new Set(previous)].filter((id) => !kept.has(id));
+}
+
 /** ~200 từ/phút, tối thiểu 1 phút. */
 export function estimateReadingMinutes(text: string): number {
   const words = text.trim().split(/\s+/).filter(Boolean).length;

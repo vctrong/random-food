@@ -9,13 +9,15 @@ import { getAnnouncementDisplayStatus, liveAnnouncementFilter } from "@/lib/anno
 import {
   buildAnnouncementCode,
   collectImageSources,
+  diffRemovedImages,
   estimateReadingMinutes,
   extractPlainText,
   sanitizeAnnouncementContent,
   type TipTapNode,
 } from "@/lib/announcementContent";
 import { renderAnnouncementHtml } from "@/lib/announcementRender";
-import { markImagesAttached, parseOwnUploadUrl } from "@/lib/cloudinary";
+import { deleteImageIfUnattached, markImagesAttached, markImagesUnattached, parseOwnUploadUrl } from "@/lib/cloudinary";
+import { findUsedPublicIds } from "@/lib/media/imageUsage";
 import { slugifyVietnamese } from "@/lib/vietnameseText";
 import {
   ANNOUNCEMENT_LIMITS,
@@ -257,6 +259,7 @@ export type AnnouncementError =
   | "INVALID_SLUG"
   | "SLUG_TAKEN"
   | "INVALID_SCHEDULE"
+  | "TOO_MANY_IMAGES"
   | "NOT_FOUND";
 
 interface NormalizedInput {
@@ -276,6 +279,29 @@ interface NormalizedInput {
 
 function isOwnAnnouncementImage(src: string): boolean {
   return parseOwnUploadUrl(src, "announcement") !== null;
+}
+
+/** public_id (bỏ trùng) của mọi ảnh app trong nội dung. */
+function contentImageIds(content: TipTapNode | null | undefined): string[] {
+  if (!content) return [];
+  const ids = collectImageSources(content)
+    .map((src) => parseOwnUploadUrl(src, "announcement"))
+    .filter((id): id is string => id !== null);
+  return [...new Set(ids)];
+}
+
+/**
+ * Ảnh không còn trong bài → gắn lại tag `unattached` để cron dọn sau. Bỏ qua ảnh
+ * bài KHÁC (hoặc nơi khác trong DB) vẫn đang dùng. Lỗi không làm hỏng việc lưu bài.
+ */
+async function releaseImages(publicIds: string[], announcementId: string) {
+  if (publicIds.length === 0) return;
+  try {
+    const used = await findUsedPublicIds(publicIds, { excludeAnnouncementId: announcementId });
+    await markImagesUnattached(publicIds.filter((id) => !used.has(id)));
+  } catch (error) {
+    console.error("[announcement] release images failed", error);
+  }
 }
 
 /** "Tất cả" đã gồm mọi role — lưu gọn thành ["all"]. */
@@ -305,6 +331,8 @@ async function normalizeInput(
 
   const content = sanitizeAnnouncementContent(input.content, isOwnAnnouncementImage);
   if (!content) return { ok: false, error: "INVALID_CONTENT" };
+  const imageIds = contentImageIds(content);
+  if (imageIds.length > ANNOUNCEMENT_LIMITS.imagesMax) return { ok: false, error: "TOO_MANY_IMAGES" };
 
   // Slug tự gõ phải khớp định dạng; để trống thì sinh từ tiêu đề (giữ slug cũ khi sửa).
   const wantedSlug = input.slug?.trim() || existing?.slug || input.title;
@@ -341,9 +369,7 @@ async function normalizeInput(
       status: input.status,
       publishAt,
       expireAt: input.expireAt,
-      imageIds: collectImageSources(content)
-        .map((src) => parseOwnUploadUrl(src, "announcement"))
-        .filter((id): id is string => id !== null),
+      imageIds,
     },
   };
 }
@@ -420,14 +446,33 @@ export async function updateAnnouncement(
     await audit(adminId, "announcement_publish", id, data.title, { publishAt: data.publishAt?.toISOString() ?? null });
   }
   await markImagesAttached(imageIds);
+  await releaseImages(diffRemovedImages(contentImageIds(existing.content), imageIds), id);
   return { error: null, slug: data.slug };
 }
 
 export async function deleteAnnouncement(adminId: string, id: string): Promise<{ error: "NOT_FOUND" | null }> {
   if (!isValidObjectId(id)) return { error: "NOT_FOUND" };
   await connectDB();
-  const doc = (await Announcement.findByIdAndDelete(id).select("title").lean()) as { title?: string } | null;
+  const doc = (await Announcement.findByIdAndDelete(id).select("title content").lean()) as {
+    title?: string;
+    content?: TipTapNode;
+  } | null;
   if (!doc) return { error: "NOT_FOUND" };
   await audit(adminId, "announcement_delete", id, doc.title ?? "");
+  await releaseImages(contentImageIds(doc.content), id);
   return { error: null };
+}
+
+/**
+ * Xoá ngay ảnh Admin vừa upload rồi bỏ khi đang soạn — chỉ ảnh thư mục thông báo,
+ * còn tag `unattached` (chưa từng lưu) và không nằm trong bài nào đã lưu.
+ */
+export async function discardAnnouncementImage(url: unknown): Promise<"deleted" | "in_use" | "invalid" | "not_found"> {
+  if (typeof url !== "string") return "invalid";
+  const publicId = parseOwnUploadUrl(url, "announcement");
+  if (!publicId) return "invalid";
+  const used = await findUsedPublicIds([publicId]);
+  if (used.has(publicId)) return "in_use";
+  const result = await deleteImageIfUnattached(publicId);
+  return result === "attached" ? "in_use" : result;
 }

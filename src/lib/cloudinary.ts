@@ -71,6 +71,12 @@ export function parseOwnUploadUrl(url: string, kind: UploadKind): string | null 
   return /^[\w\-/]+$/.test(publicId) ? publicId : null;
 }
 
+/**
+ * Context ghi thời điểm ảnh bị gỡ khỏi nội dung — Cloudinary không lưu lúc gắn tag,
+ * nên dọn ảnh tính tuổi theo mốc này (không có thì theo ngày upload). Xem lib/media/cleanupService.ts.
+ */
+export const UNATTACHED_AT_CONTEXT = "unattached_at";
+
 /** Gỡ tag `unattached` sau khi ảnh đã được lưu vào DB — lỗi ở đây không làm hỏng luồng chính. */
 export async function markImagesAttached(publicIds: string[]): Promise<void> {
   if (publicIds.length === 0) return;
@@ -79,6 +85,35 @@ export async function markImagesAttached(publicIds: string[]): Promise<void> {
   } catch (error) {
     console.error("[cloudinary] remove_tag failed", error);
   }
+}
+
+/**
+ * Gắn lại tag `unattached` + mốc `unattached_at` cho ảnh không còn nằm trong nội dung nào
+ * — cron dọn ảnh sẽ xoá sau N ngày. Luồng nào bỏ ảnh cũ (sửa/xoá bài, thay ảnh...) chỉ cần
+ * gọi hàm này. Lỗi ở đây không làm hỏng luồng chính (ảnh chỉ nằm lại trên Cloudinary).
+ */
+export async function markImagesUnattached(publicIds: string[]): Promise<void> {
+  if (publicIds.length === 0) return;
+  try {
+    await cloudinary.uploader.add_tag(UNATTACHED_TAG, publicIds);
+    await cloudinary.uploader.add_context(`${UNATTACHED_AT_CONTEXT}=${new Date().toISOString()}`, publicIds);
+  } catch (error) {
+    console.error("[cloudinary] add_tag failed", error);
+  }
+}
+
+/** Xoá ngay 1 ảnh CHỈ KHI ảnh còn tag `unattached` (chưa từng được lưu vào nội dung). */
+export async function deleteImageIfUnattached(publicId: string): Promise<"deleted" | "attached" | "not_found"> {
+  let resource: { tags?: string[] };
+  try {
+    resource = (await cloudinary.api.resource(publicId, { tags: true })) as { tags?: string[] };
+  } catch (error) {
+    if ((error as { error?: { http_code?: number } })?.error?.http_code === 404) return "not_found";
+    throw error;
+  }
+  if (!resource.tags?.includes(UNATTACHED_TAG)) return "attached";
+  const result = (await cloudinary.uploader.destroy(publicId, { invalidate: true })) as { result?: string };
+  return result.result === "ok" ? "deleted" : "not_found";
 }
 
 export { cloudinary };

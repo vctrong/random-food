@@ -67,12 +67,28 @@ async function getSignature(kind: UploadKind): Promise<UploadSignature> {
   return data;
 }
 
+export interface UploadedImage {
+  url: string;
+  width: number | null;
+  height: number | null;
+}
+
+interface UploadOptions {
+  onProgress?: (percent: number) => void;
+  signal?: AbortSignal;
+}
+
 /** Nén + upload 1 ảnh, trả secure_url. `onProgress` nhận 0–100. Huỷ được bằng `signal`. */
-export async function uploadImage(
+export async function uploadImage(file: File, kind: UploadKind, options: UploadOptions = {}): Promise<string> {
+  return (await uploadImageAsset(file, kind, options)).url;
+}
+
+/** Như uploadImage nhưng trả thêm kích thước thật của ảnh (để giữ chỗ đúng tỉ lệ khi hiển thị). */
+export async function uploadImageAsset(
   file: File,
   kind: UploadKind,
-  { onProgress, signal }: { onProgress?: (percent: number) => void; signal?: AbortSignal } = {},
-): Promise<string> {
+  { onProgress, signal }: UploadOptions = {},
+): Promise<UploadedImage> {
   if (!file.type.startsWith("image/")) throw new UploadError("Chỉ nhận tệp hình ảnh.");
   const compressed = await compressImage(file);
   if (compressed.size > MAX_FOOD_IMAGE_BYTES) throw new UploadError("Ảnh quá lớn (tối đa 5MB sau khi nén).");
@@ -86,7 +102,7 @@ export async function uploadImage(
   form.append("folder", signature.folder);
   form.append("tags", signature.tags);
 
-  return new Promise<string>((resolve, reject) => {
+  return new Promise<UploadedImage>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `https://api.cloudinary.com/v1_1/${signature.cloudName}/image/upload`);
     xhr.upload.onprogress = (event) => {
@@ -94,9 +110,12 @@ export async function uploadImage(
     };
     xhr.onload = () => {
       try {
-        const body = JSON.parse(xhr.responseText) as { secure_url?: string; error?: { message?: string } };
-        if (xhr.status >= 200 && xhr.status < 300 && body.secure_url) resolve(body.secure_url);
-        else reject(new UploadError("Tải ảnh lên thất bại, thử lại nha."));
+        const body = JSON.parse(xhr.responseText) as { secure_url?: string; width?: number; height?: number };
+        if (xhr.status >= 200 && xhr.status < 300 && body.secure_url) {
+          resolve({ url: body.secure_url, width: body.width ?? null, height: body.height ?? null });
+        } else {
+          reject(new UploadError("Tải ảnh lên thất bại, thử lại nha."));
+        }
       } catch {
         reject(new UploadError("Tải ảnh lên thất bại, thử lại nha."));
       }

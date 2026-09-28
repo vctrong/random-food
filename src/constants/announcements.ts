@@ -47,6 +47,9 @@ export const ANNOUNCEMENT_LIMITS = {
   highlightLabelMax: 40,
   highlightValueMax: 60,
   highlightNoteMax: 120,
+  /** Tổng số ảnh khác nhau trong 1 bài (mọi bộ ảnh + ảnh lẻ cũ cộng lại). */
+  imagesMax: 20,
+  imageAltMax: 200,
   /** Giới hạn kích thước JSON nội dung (ký tự) — chặn payload bất thường. */
   contentMaxChars: 200_000,
 } as const;

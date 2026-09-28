@@ -1,4 +1,5 @@
 import type { AnnouncementError } from "@/lib/announcements";
+import { ANNOUNCEMENT_LIMITS } from "@/constants/announcements";
 
 export const ANNOUNCEMENT_ERROR_MESSAGES: Record<AnnouncementError, string> = {
   INVALID_INPUT: "Thông tin chưa hợp lệ — kiểm tra tiêu đề, mô tả ngắn, loại và đối tượng.",
@@ -6,5 +7,6 @@ export const ANNOUNCEMENT_ERROR_MESSAGES: Record<AnnouncementError, string> = {
   INVALID_SLUG: "Đường dẫn (slug) chỉ gồm chữ thường không dấu, số và dấu gạch ngang.",
   SLUG_TAKEN: "Đường dẫn này đã có thông báo khác dùng rồi.",
   INVALID_SCHEDULE: "Ngày hết hạn phải sau thời điểm đăng.",
+  TOO_MANY_IMAGES: `Mỗi bài tối đa ${ANNOUNCEMENT_LIMITS.imagesMax} ảnh — bớt ảnh rồi lưu lại nha.`,
   NOT_FOUND: "Không tìm thấy thông báo.",
 };

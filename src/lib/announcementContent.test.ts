@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildAnnouncementCode,
   collectImageSources,
+  diffRemovedImages,
   estimateReadingMinutes,
   isSafeLinkHref,
   sanitizeAnnouncementContent,
@@ -72,6 +73,11 @@ describe("helpers", () => {
   it("mã bài theo tháng giờ VN", () => {
     // 30/09 18:00 UTC = 01:00 ngày 01/10 giờ VN.
     expect(buildAnnouncementCode("maintenance", new Date("2026-09-30T18:00:00Z"))).toBe("TB-2026/10-SYS");
+  });
+
+  it("diffRemovedImages: chỉ ảnh cũ không còn trong bản mới, bỏ trùng", () => {
+    expect(diffRemovedImages(["a", "b", "b", "c"], ["c", "d"])).toEqual(["a", "b"]);
+    expect(diffRemovedImages([], ["a"])).toEqual([]);
   });
 
   it("thời gian đọc tối thiểu 1 phút", () => {
