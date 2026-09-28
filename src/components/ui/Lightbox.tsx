@@ -158,7 +158,9 @@ export function Lightbox({ items, startIndex, onClose }: LightboxProps) {
           draggable={false}
           onLoad={() => setLoadedSrc(src)}
           className={cn(
-            "max-h-full max-w-full rounded-lg object-contain transition-opacity duration-200",
+            // Nền sáng ngay sau ảnh: ảnh trong suốt vẫn rõ trên nền tối của lightbox; ảnh
+            // thường phủ kín khung nên không thấy nền này.
+            "max-h-full max-w-full rounded-lg bg-surface object-contain transition-opacity duration-200 dark:bg-text-primary",
             isLoaded ? "opacity-100" : "opacity-0",
           )}
         />

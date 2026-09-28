@@ -21,7 +21,7 @@ import { GalleryPreview } from "@/components/admin/GalleryPreview";
 import { GalleryCropPanel } from "@/components/admin/GalleryCropPanel";
 import { toGalleryImages, useGalleryDraft, type GalleryDraftItem } from "@/features/announcement-gallery/useGalleryDraft";
 import { cloudinaryWidth } from "@/lib/media/cloudinaryUrl";
-import type { GalleryImage } from "@/lib/media/galleryLayout";
+import { GALLERY_CLASSES, type GalleryImage } from "@/lib/media/galleryLayout";
 import {
   ANNOUNCEMENT_IMAGE_SOURCE_MAX_BYTES,
   ANNOUNCEMENT_IMAGE_TYPE_LABEL,
@@ -381,7 +381,7 @@ export function GalleryManagerModal({ mode, initialImages, otherImageSrcs, onApp
                               : "border-border",
                           )}
                         >
-                          <div className="relative aspect-[4/3] bg-background">
+                          <div className={cn("relative aspect-[4/3]", item.transparent ? GALLERY_CLASSES.transparentBackdrop : "bg-background")}>
                             {src && <img src={src} alt="" className="size-full object-cover" draggable={false} />}
                             <span className="absolute left-2 top-2 rounded-full bg-surface/90 px-2 py-0.5 text-xs font-semibold text-text-primary shadow-sm tabular-nums">
                               {index + 1}

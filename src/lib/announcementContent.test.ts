@@ -110,6 +110,23 @@ describe("gallery", () => {
     expect(JSON.parse(json ?? "[]")).toHaveLength(7);
   });
 
+  it("ảnh trong suốt: chỉ giữ cờ transparent khi đúng true; ảnh đơn nền sáng, không có lớp ảnh mờ", () => {
+    const cleaned = sanitizeAnnouncementContent(
+      doc({ type: "gallery", attrs: { images: [img({ transparent: true }), img({ transparent: "yes" })] } }),
+      isOwn,
+    );
+    const images = (cleaned?.content?.[0].attrs as { images: Record<string, unknown>[] }).images;
+    expect(images[0].transparent).toBe(true);
+    expect(images[1]).not.toHaveProperty("transparent");
+
+    const single = renderAnnouncementHtml(doc({ type: "gallery", attrs: { images: [img({ transparent: true })] } }) as never);
+    expect(single).not.toContain("blur-2xl");
+    expect(single).toContain("dark:bg-text-primary");
+    const opaque = renderAnnouncementHtml(doc({ type: "gallery", attrs: { images: [img()] } }) as never);
+    expect(opaque).toContain("blur-2xl");
+    expect(opaque).not.toContain("dark:bg-text-primary");
+  });
+
   it("alt độc không thoát được khỏi attribute (dấu \" bị escape)", () => {
     const html = renderAnnouncementHtml(doc({ type: "gallery", attrs: { images: [img({ alt: '"><script>alert(1)</script>' })] } }) as never);
     expect(html).not.toMatch(/"><script/);

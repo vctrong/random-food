@@ -1,4 +1,12 @@
 import { UPLOAD_MAX_DIMENSION, UPLOAD_QUALITY, MAX_FOOD_IMAGE_BYTES } from "@/constants/limits";
+import {
+  ALPHA_CAPABLE_TYPES,
+  chooseOutputType,
+  extensionFor,
+  fallbackOutputType,
+  hasTransparentPixels,
+  type CanvasOutputType,
+} from "@/lib/media/imageFormat";
 
 /**
  * Upload ảnh thẳng từ trình duyệt lên Cloudinary: xin chữ ký ở
@@ -37,23 +45,76 @@ function loadImage(file: File): Promise<HTMLImageElement> {
   });
 }
 
-/** Thu nhỏ cạnh dài về ≤ 1600px và nén JPEG. Ảnh GIF/ảnh đã nhỏ giữ nguyên. */
-export async function compressImage(file: File): Promise<File> {
-  if (!COMPRESSIBLE_TYPES.has(file.type)) return file;
+/** Kết quả chuẩn bị ảnh: file để upload + ảnh có vùng trong suốt không (để hiển thị nền sáng). */
+export interface PreparedImage {
+  file: File;
+  transparent: boolean;
+}
+
+/** Ảnh nhỏ hơn mức này và không cần thu nhỏ thì giữ nguyên file gốc (không mã hoá lại). */
+const SKIP_REENCODE_BYTES = 600 * 1024;
+
+/** Vẽ ảnh lên canvas; `crop` tính bằng pixel ảnh gốc. */
+function drawToCanvas(image: HTMLImageElement, target: { width: number; height: number }, crop?: CropRect) {
+  const canvas = document.createElement("canvas");
+  canvas.width = target.width;
+  canvas.height = target.height;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return null;
+  if (crop) context.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, target.width, target.height);
+  else context.drawImage(image, 0, 0, target.width, target.height);
+  return { canvas, context };
+}
+
+function detectTransparency(sourceType: string, context: CanvasRenderingContext2D, width: number, height: number): boolean {
+  if (!ALPHA_CAPABLE_TYPES.has(sourceType)) return false;
+  return hasTransparentPixels(context.getImageData(0, 0, width, height).data);
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, type: CanvasOutputType, quality: number): Promise<Blob | null> {
+  return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+}
+
+/**
+ * Xuất canvas: có trong suốt → WebP (giữ alpha), trình duyệt không xuất được WebP → PNG;
+ * không trong suốt → JPEG. JPEG không có alpha nên vùng trong suốt sẽ thành đen — đó
+ * là lỗi cũ khi mọi ảnh đều bị xuất JPEG.
+ */
+async function exportCanvas(canvas: HTMLCanvasElement, sourceType: string, transparent: boolean, quality: number) {
+  let type = chooseOutputType({ sourceType, hasTransparency: transparent });
+  let blob = await canvasToBlob(canvas, type, quality);
+  const fallback = fallbackOutputType(type, blob?.type);
+  if (fallback) {
+    type = fallback;
+    blob = await canvasToBlob(canvas, type, quality);
+  }
+  return blob ? { blob, type } : null;
+}
+
+function renamed(name: string, type: CanvasOutputType): string {
+  return name.replace(/\.\w+$/, "") + extensionFor(type);
+}
+
+/**
+ * Thu nhỏ cạnh dài về ≤ 1600px và nén (JPEG, hoặc WebP nếu ảnh có trong suốt).
+ * GIF giữ nguyên (canvas làm mất chuyển động); ảnh đã nhỏ giữ nguyên file gốc.
+ */
+export async function compressImage(file: File): Promise<PreparedImage> {
+  if (!COMPRESSIBLE_TYPES.has(file.type) && file.type !== "image/gif") return { file, transparent: false };
   const image = await loadImage(file);
   const scale = Math.min(1, UPLOAD_MAX_DIMENSION / Math.max(image.naturalWidth, image.naturalHeight));
-  if (scale === 1 && file.size < 600 * 1024) return file;
+  const width = Math.max(1, Math.round(image.naturalWidth * scale));
+  const height = Math.max(1, Math.round(image.naturalHeight * scale));
+  const drawn = drawToCanvas(image, { width, height });
+  if (!drawn) return { file, transparent: false };
+  const transparent = detectTransparency(file.type, drawn.context, width, height);
 
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(image.naturalWidth * scale);
-  canvas.height = Math.round(image.naturalHeight * scale);
-  const context = canvas.getContext("2d");
-  if (!context) return file;
-  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  if (file.type === "image/gif" || (scale === 1 && file.size < SKIP_REENCODE_BYTES)) return { file, transparent };
 
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", UPLOAD_QUALITY));
-  if (!blob || blob.size >= file.size) return file;
-  return new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" });
+  const exported = await exportCanvas(drawn.canvas, file.type, transparent, UPLOAD_QUALITY);
+  // Nén không nhỏ hơn (hiếm) → giữ file gốc; file gốc PNG/WebP vẫn còn alpha.
+  if (!exported || exported.blob.size >= file.size) return { file, transparent };
+  return { file: new File([exported.blob], renamed(file.name, exported.type), { type: exported.type }), transparent };
 }
 
 export interface CropRect {
@@ -64,8 +125,8 @@ export interface CropRect {
 }
 
 /**
- * Cắt ảnh theo vùng tính bằng pixel ảnh gốc (canvas, không cần thư viện). PNG giữ
- * PNG (nền trong suốt), còn lại JPEG chất lượng cao — compressImage nén tiếp lúc upload.
+ * Cắt ảnh theo vùng tính bằng pixel ảnh gốc (canvas, không cần thư viện). Vùng cắt có
+ * trong suốt → WebP/PNG giữ alpha, không thì JPEG chất lượng cao — compressImage nén tiếp lúc upload.
  */
 export async function cropImageFile(file: File, rect: CropRect): Promise<File> {
   const image = await loadImage(file);
@@ -75,18 +136,12 @@ export async function cropImageFile(file: File, rect: CropRect): Promise<File> {
   const height = Math.min(image.naturalHeight - y, Math.round(rect.height));
   if (width < 1 || height < 1) throw new UploadError("Vùng cắt không hợp lệ, chọn lại nha.");
 
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const context = canvas.getContext("2d");
-  if (!context) throw new UploadError("Trình duyệt không cắt được ảnh này.");
-  context.drawImage(image, x, y, width, height, 0, 0, width, height);
-
-  const type = file.type === "image/png" ? "image/png" : "image/jpeg";
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, 0.92));
-  if (!blob) throw new UploadError("Trình duyệt không cắt được ảnh này.");
-  const extension = type === "image/png" ? ".png" : ".jpg";
-  return new File([blob], file.name.replace(/\.\w+$/, "") + extension, { type });
+  const drawn = drawToCanvas(image, { width, height }, { x, y, width, height });
+  if (!drawn) throw new UploadError("Trình duyệt không cắt được ảnh này.");
+  const transparent = detectTransparency(file.type, drawn.context, width, height);
+  const exported = await exportCanvas(drawn.canvas, file.type, transparent, 0.92);
+  if (!exported) throw new UploadError("Trình duyệt không cắt được ảnh này.");
+  return new File([exported.blob], renamed(file.name, exported.type), { type: exported.type });
 }
 
 async function getSignature(kind: UploadKind): Promise<UploadSignature> {
@@ -104,6 +159,8 @@ export interface UploadedImage {
   url: string;
   width: number | null;
   height: number | null;
+  /** Ảnh có vùng trong suốt — hiển thị trên nền sáng, không làm mờ nền phía sau. */
+  transparent: boolean;
 }
 
 interface UploadOptions {
@@ -123,7 +180,7 @@ export async function uploadImageAsset(
   { onProgress, signal }: UploadOptions = {},
 ): Promise<UploadedImage> {
   if (!file.type.startsWith("image/")) throw new UploadError("Chỉ nhận tệp hình ảnh.");
-  const compressed = await compressImage(file);
+  const { file: compressed, transparent } = await compressImage(file);
   if (compressed.size > MAX_FOOD_IMAGE_BYTES) throw new UploadError("Ảnh quá lớn (tối đa 5MB sau khi nén).");
 
   const signature = await getSignature(kind);
@@ -145,7 +202,7 @@ export async function uploadImageAsset(
       try {
         const body = JSON.parse(xhr.responseText) as { secure_url?: string; width?: number; height?: number };
         if (xhr.status >= 200 && xhr.status < 300 && body.secure_url) {
-          resolve({ url: body.secure_url, width: body.width ?? null, height: body.height ?? null });
+          resolve({ url: body.secure_url, width: body.width ?? null, height: body.height ?? null, transparent });
         } else {
           reject(new UploadError("Tải ảnh lên thất bại, thử lại nha."));
         }

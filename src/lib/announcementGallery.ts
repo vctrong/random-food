@@ -31,15 +31,19 @@ function sizeAttrs(image: GalleryImage) {
 }
 
 function renderSingle(image: GalleryImage): DOMOutputSpec {
+  // Ảnh trong suốt: nền sáng, KHÔNG có lớp ảnh mờ phía sau (sẽ lộ qua vùng trong suốt).
+  const backdrop: DOMOutputSpec[] = image.transparent
+    ? []
+    : [["img", { src: cloudinaryTiny(image.src), alt: "", "aria-hidden": "true", loading: "lazy", decoding: "async", class: GALLERY_CLASSES.singleBackdrop }]];
   return [
     "a",
     {
       href: cloudinaryWidth(image.src, GALLERY_FULL_WIDTH),
       "data-gallery-item": "0",
       "aria-label": image.alt ? `Xem ảnh lớn: ${image.alt}` : "Xem ảnh lớn",
-      class: GALLERY_CLASSES.singleFrame,
+      class: image.transparent ? `${GALLERY_CLASSES.singleFrame} ${GALLERY_CLASSES.transparentBackdrop}` : GALLERY_CLASSES.singleFrame,
     },
-    ["img", { src: cloudinaryTiny(image.src), alt: "", "aria-hidden": "true", loading: "lazy", decoding: "async", class: GALLERY_CLASSES.singleBackdrop }],
+    ...backdrop,
     [
       "img",
       {
@@ -67,7 +71,7 @@ function renderGrid(images: GalleryImage[]): DOMOutputSpec {
         href: cloudinaryWidth(image.src, GALLERY_FULL_WIDTH),
         "data-gallery-item": String(index),
         "aria-label": label,
-        class: `${GALLERY_CLASSES.cell} ${layout.cellClasses[index]}`.trim(),
+        class: [GALLERY_CLASSES.cell, layout.cellClasses[index], image.transparent && GALLERY_CLASSES.transparentBackdrop].filter(Boolean).join(" "),
       },
       [
         "img",

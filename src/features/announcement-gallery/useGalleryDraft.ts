@@ -11,6 +11,7 @@ export interface GalleryDraftItem {
   alt: string;
   width: number | null;
   height: number | null;
+  transparent: boolean;
   /** Ảnh cục bộ (object URL) để xem trước trong lúc upload. */
   localUrl: string | null;
   status: "ready" | "uploading" | "error";
@@ -31,6 +32,7 @@ function fromImage(image: GalleryImage): GalleryDraftItem {
     alt: image.alt ?? "",
     width: image.width,
     height: image.height,
+    transparent: image.transparent === true,
     localUrl: null,
     status: "ready",
     progress: 100,
@@ -72,7 +74,15 @@ export function useGalleryDraft(initialImages: GalleryImage[]) {
       uploadImageAsset(file, "announcement", { signal: controller.signal, onProgress: (progress) => patch(key, { progress }) })
         .then((uploaded) => {
           setUploadedInSession((prev) => [...prev, uploaded.url]);
-          patch(key, { status: "ready", progress: 100, src: uploaded.url, width: uploaded.width, height: uploaded.height, file: null });
+          patch(key, {
+            status: "ready",
+            progress: 100,
+            src: uploaded.url,
+            width: uploaded.width,
+            height: uploaded.height,
+            transparent: uploaded.transparent,
+            file: null,
+          });
         })
         .catch((error: unknown) => {
           if (error instanceof DOMException && error.name === "AbortError") return;
@@ -104,6 +114,7 @@ export function useGalleryDraft(initialImages: GalleryImage[]) {
         alt: "",
         width: null,
         height: null,
+        transparent: false,
         localUrl: makeLocalUrl(file),
         status: "uploading",
         progress: 0,
@@ -119,7 +130,7 @@ export function useGalleryDraft(initialImages: GalleryImage[]) {
   /** Thay ảnh tại chỗ (giữ vị trí + alt); ảnh cũ do modal quyết định xoá hay giữ. */
   const replace = useCallback(
     (key: string, file: File) => {
-      patch(key, { src: null, width: null, height: null, localUrl: makeLocalUrl(file), file });
+      patch(key, { src: null, width: null, height: null, transparent: false, localUrl: makeLocalUrl(file), file });
       startUpload(key, file);
     },
     [patch, startUpload],
@@ -169,5 +180,11 @@ export function useGalleryDraft(initialImages: GalleryImage[]) {
 export function toGalleryImages(items: GalleryDraftItem[]): GalleryImage[] {
   return items
     .filter((item): item is GalleryDraftItem & { src: string } => item.status === "ready" && item.src !== null)
-    .map((item) => ({ src: item.src, alt: item.alt.trim() || null, width: item.width, height: item.height }));
+    .map((item) => ({
+      src: item.src,
+      alt: item.alt.trim() || null,
+      width: item.width,
+      height: item.height,
+      ...(item.transparent && { transparent: true }),
+    }));
 }

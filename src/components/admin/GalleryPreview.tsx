@@ -38,8 +38,8 @@ export function GalleryPreview({ items }: { items: GalleryDraftItem[] }) {
     const src = displaySrc(item, 1200);
     return (
       <figure className="my-0">
-        <div className={GALLERY_CLASSES.singleFrame}>
-          {src && (
+        <div className={cn(GALLERY_CLASSES.singleFrame, item.transparent && GALLERY_CLASSES.transparentBackdrop)}>
+          {src && !item.transparent && (
             <img
               src={item.src && item.status === "ready" ? cloudinaryTiny(item.src) : src}
               alt=""
@@ -72,7 +72,7 @@ export function GalleryPreview({ items }: { items: GalleryDraftItem[] }) {
           const src = displaySrc(item, 800);
           const isMoreCell = layout.hiddenCount > 0 && index === GALLERY_VISIBLE_MAX - 1;
           return (
-            <div key={item.key} className={cn(GALLERY_CLASSES.cell, layout.cellClasses[index])}>
+            <div key={item.key} className={cn(GALLERY_CLASSES.cell, layout.cellClasses[index], item.transparent && GALLERY_CLASSES.transparentBackdrop)}>
               {src && <img src={src} alt={item.alt} className={GALLERY_CLASSES.cellImage} />}
               {isMoreCell ? <span className={GALLERY_CLASSES.more}>+{layout.hiddenCount}</span> : <UploadOverlay item={item} />}
             </div>

@@ -64,9 +64,15 @@ function cleanGalleryImages(raw: unknown, isImageAllowed: (src: string) => boole
   const images: GalleryImage[] = [];
   for (const item of raw) {
     if (!item || typeof item !== "object") continue;
-    const { src, alt, width, height } = item as Record<string, unknown>;
+    const { src, alt, width, height, transparent } = item as Record<string, unknown>;
     if (typeof src !== "string" || !isImageAllowed(src)) continue;
-    images.push({ src, alt: cleanAlt(alt), width: cleanDimension(width), height: cleanDimension(height) });
+    images.push({
+      src,
+      alt: cleanAlt(alt),
+      width: cleanDimension(width),
+      height: cleanDimension(height),
+      ...(transparent === true && { transparent: true }),
+    });
     // Giới hạn tổng số ảnh của bài kiểm ở lib/announcements.ts; đây chỉ chặn mảng bất thường.
     if (images.length >= ANNOUNCEMENT_LIMITS.imagesMax * 2) break;
   }

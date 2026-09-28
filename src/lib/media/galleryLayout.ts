@@ -9,6 +9,8 @@ export interface GalleryImage {
   alt: string | null;
   width: number | null;
   height: number | null;
+  /** Ảnh có vùng trong suốt (dò lúc upload) — chỉ lưu khi true. */
+  transparent?: boolean;
 }
 
 /** Số ô hiện trên lưới; ảnh thứ 6 trở đi gộp vào ô cuối "+N" (vẫn xem được trong lightbox). */
@@ -31,6 +33,11 @@ export const GALLERY_CLASSES = {
   grid: "grid gap-1 overflow-hidden rounded-2xl border border-border bg-surface",
   cell: "group relative block min-h-0 overflow-hidden bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary",
   cellImage: "size-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]",
+  /**
+   * Nền sau ảnh trong suốt: luôn SÁNG ở cả light/dark (dark dùng token text-primary
+   * #F1F5F9 làm nền) để logo/nét tối không chìm vào nền tối — không dùng nền đen.
+   */
+  transparentBackdrop: "bg-surface dark:bg-text-primary",
   more: "absolute inset-0 grid place-items-center bg-text-primary/55 font-heading text-2xl text-white dark:bg-background/70 dark:text-text-primary",
 } as const;
 
@@ -88,6 +95,7 @@ export function parseGalleryImagesAttr(value: string | null): GalleryImage[] {
         alt: typeof item.alt === "string" ? item.alt : null,
         width: typeof item.width === "number" ? item.width : null,
         height: typeof item.height === "number" ? item.height : null,
+        ...(item.transparent === true && { transparent: true }),
       }));
   } catch {
     return [];
