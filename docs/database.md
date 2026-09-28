@@ -97,19 +97,12 @@ erDiagram
     favoriteCategoryIds: [ObjectId],  // ref categories
     priceRange: { min: 15000, max: 100000 }
   },
-  notificationPrefs: {              // bật/tắt từng loại notification, mặc định phần lớn = true
-    food_approved: true,
-    food_rejected: true,
-    food_needs_revision: true,
-    report_handled: true,
-    reviewer_application_result: true,
-    system: true,
-    login_success: false,           // mặc định TẮT — tránh spam mỗi lần đăng nhập
-    login_failed: true,
-    account_banned: true,
-    account_unbanned: true,
-    password_changed: true
-  },
+  notificationPreferences: {        // chỉ kênh EMAIL của các loại email tuỳ chọn (docs/notifications.md mục 2.4)
+    email: { food_approved: true, food_rejected: true, food_needs_revision: true, content_removed: false }
+  },                                // thông báo trong app luôn bật; email bắt buộc do server quyết định
+  lastAnnouncementSeenAt: ISODate,  // mốc "Đánh dấu đã đọc hết" thông báo chính thức
+  readAnnouncementIds: [ObjectId],  // ref announcements — bài đọc lẻ sau mốc trên; chưa đọc = publishAt > mốc
+                                     // VÀ _id không nằm ở đây. "Đọc hết" → dọn sạch mảng (docs/notifications.md mục 6)
   createdAt: ISODate,
   updatedAt: ISODate
 }
@@ -136,6 +129,11 @@ erDiagram
   nameNormalized: "quan bun bo co ba",          // không dấu, lowercase — tự cập nhật khi save (pre validate)
   addressNormalized: "123 nguyen van cu ninh kieu can tho",
   openingHours: "06:00 - 21:00",
+  businessStatus: "open",          // "open" | "closed" — quán đóng cửa ẩn khỏi random, /mon-an, tìm kiếm,
+                                     // chọn quán, quán gần; không xoá dữ liệu (BR-M12)
+  closedAt: ISODate,                // khi businessStatus = "closed"
+  mergedIntoRestaurantId: ObjectId, // quán trùng đã gộp vào quán gốc (visibility = "deleted") — mọi tham chiếu cũ
+                                     // tự trỏ sang quán gốc (lib/restaurants.ts::resolveMergedRestaurantId)
   moderationStatus: "pending",      // "pending" | "approved" | "rejected" | "needs_revision"
   visibility: "visible",            // "visible" | "hidden" | "deleted"
   moderationNote: null,
@@ -295,7 +293,9 @@ erDiagram
   experienceId: ObjectId,           // ref experiences, required (BR-RV03)
   rating: 4.5,                      // Number, min 1, max 5
   comment: "Ngon, giá hợp lý",
-  status: "visible",                // "visible" | "hidden" (Admin moderation)
+  status: "visible",                // "visible" | "hidden" (Admin gỡ/ẩn) | "hidden_pending_review"
+                                     // (tự ẩn tạm khi ≥ 3 user báo cáo — BR-M09). Chỉ "visible" hiện công khai
+                                     // và được tính vào avgRating/ratingCount.
   createdAt: ISODate,               // mốc tính hạn sửa 24h (BR-RV09)
   updatedAt: ISODate,
   deletedAt: ISODate                // optional — xóa mềm khi User tự xóa review đã quá 24h (BR-RV11)
@@ -349,46 +349,82 @@ erDiagram
 
 ---
 
-## 10. `reports` (`src/lib/models/Report.ts`)
+## 10. `reports` (`src/lib/models/Report.ts`) — cấu trúc mới 2026-09
+
+1 lượt báo cáo của 1 user cho 1 đối tượng. **Trạng thái xử lý nằm ở `reportCases`** (đã bỏ `status`/`action`/`handledBy`/`handledAt` cũ — collection rỗng lúc đổi nên không cần chuyển dữ liệu).
 
 ```js
 {
   _id: ObjectId,
   reporterId: ObjectId,             // ref users, required
-  targetType: "food",               // "food" | "review" | "restaurant"
+  targetType: "review",             // "review" | "food" | "restaurant"
   targetId: ObjectId,               // required
-  reason: "Thông tin sai sự thật",  // required
-  status: "pending",                // "pending" | "reviewed"
-  action: null,                     // "keep" | "hide" | "remove" | "warn_user" | "ban_user"
-  handledBy: ObjectId,
-  handledAt: ISODate,
+  reason: "spam",                   // enum — src/constants/reports.ts:
+                                     // đánh giá: spam | offensive | off_topic | false_info | personal_info | other
+                                     // món/quán: closed | wrong_address | duplicate (→ quán) · wrong_price | wrong_image | other (→ món)
+  note: "Quảng cáo shop khác",      // optional, ≤ 300 ký tự — BẮT BUỘC khi reason = "other"
+  duplicateOfRestaurantId: ObjectId,// chỉ khi reason = "duplicate" — quán gốc bị trùng (bắt buộc)
+  caseId: ObjectId,                 // ref reportCases, required
   createdAt: ISODate
 }
 ```
 
-**Index:** `{ status: 1, createdAt: -1 }` · `{ targetType: 1, targetId: 1 }`
+**Index:** `{ reporterId: 1, targetType: 1, targetId: 1 }` **unique** (`reporter_target_unique` — BR-M07) · `{ caseId: 1, createdAt: -1 }`
 
----
+Hoàn tác = xoá bản ghi (chỉ khi case còn `pending`), nên user báo cáo lại được. Hạn mức 20 báo cáo/ngày đếm ở `rateLimits` (key `report:day:<yyyy-mm-dd giờ VN>:user:<id>`), hoàn tác không trả lượt.
 
-## 11. `notifications` (`src/lib/models/Notification.ts`)
+## 10b. `reportCases` (`src/lib/models/ReportCase.ts`) — mới 2026-09
 
 ```js
 {
   _id: ObjectId,
-  userId: ObjectId,                 // ref users, required
-  type: "food_approved",            // required — xem danh sách đầy đủ bên dưới
-  message: "Món 'Bún bò Cô Ba' của bạn đã được duyệt!",
-  relatedId: ObjectId,
+  targetType: "review",             // "review" | "food" | "restaurant"
+  targetId: ObjectId,
+  reportCount: 3,                   // số báo cáo đang gắn case (= số user khác nhau, nhờ unique index của reports)
+  reasonCounts: { spam: 2, other: 1 },  // Map<reason, số lượt>
+  status: "pending",                // "pending" | "resolved" | "dismissed"
+  action: "remove_review",          // dismiss | remove_review | remove_review_warn | edit_info | mark_closed | merge_restaurant
+  resolvedBy: ObjectId,             // ref users — CHỈ Admin (BR-A09)
+  resolvedAt: ISODate,
+  resolutionNote: "Spam / quảng cáo",   // lý do xử lý — bắt buộc, gửi kèm thông báo
+  createdAt: ISODate,
+  updatedAt: ISODate
+}
+```
+
+**Index:** `{ targetType: 1, targetId: 1 }` **unique một phần** (`status: "pending"`, tên `target_pending_unique` — mỗi đối tượng 1 case đang chờ) · `{ status: 1, reportCount: -1, updatedAt: -1 }` (danh sách Admin). Case đã đóng mà có báo cáo mới → case mới.
+
+> Tạo index + gán `businessStatus` cho quán cũ: `npm run migrate:report-flow` (dry-run) / `-- --apply`. Luồng chi tiết: [`report-flow.md`](report-flow.md).
+
+---
+
+## 11. `notifications` (`src/lib/models/Notification.ts`) — đổi cấu trúc 2026-09
+
+```js
+{
+  _id: ObjectId,
+  recipientId: ObjectId,           // ref users, required
+  type: "food_approved",           // enum — src/constants/notifications.ts (NOTIFICATION_TYPES)
+  actorId: ObjectId,               // optional, Reviewer/Admin gây ra sự kiện — không trả ra client
+  payload: {},                     // Mixed — chỉ dữ liệu; câu chữ do frontend dựng từ type + payload
+  link: "/mon-an/<id>",            // optional
   isRead: false,
+  readAt: ISODate,                 // optional
   createdAt: ISODate
 }
 ```
 
-**`type` enum đầy đủ (mở rộng so với bản thiết kế nghiệp vụ ban đầu):**
-- Nhóm nghiệp vụ gốc: `food_approved` · `food_rejected` · `food_needs_revision` · `report_handled` · `reviewer_application_result` · `system`
-- Nhóm auth/tài khoản (thêm khi làm đăng nhập, xem `src/lib/notify.ts` + `src/lib/auth.ts`): `login_success` · `login_failed` · `account_banned` · `account_unbanned` · `password_changed`
+**Index:** `{ recipientId: 1, isRead: 1, createdAt: -1 }` · `{ recipientId: 1, _id: -1 }` · TTL `{ createdAt: 1 }` 90 ngày.
 
-**Index:** `{ userId: 1, isRead: 1, createdAt: -1 }`
+Dữ liệu dạng cũ (`userId` + `message`) đã chốt **xoá, không migrate** (`npm run reset:notifications`). Chỉ ghi qua `lib/notifications/notify.ts`. Chi tiết loại, người nhận, kênh: [`notifications.md`](notifications.md).
+
+## 11b. `announcements` (`src/lib/models/Announcement.ts`) — mới 2026-09
+
+Thông báo chính thức (Tin tức). `status` chỉ `draft` | `published`; "đã lên lịch / đang hiển thị / hết hạn" tính từ `publishAt` + `expireAt` lúc truy vấn. `content` là TipTap JSON đã sanitize; `highlights` tối đa 3 ô `{ label, value, note? }`; `targetRoles` `["all"]` hoặc tập con `user|foodreviewer|admin`. Schema đầy đủ: [`notifications.md`](notifications.md) mục 2.2. Thao tác Admin ghi `auditLogs` (`announcement_create|update|publish|delete`, `targetType: "announcement"`).
+
+## 11c. `deviceTokens` (`src/lib/models/DeviceToken.ts`) — mới 2026-09, chưa dùng
+
+`{ userId, token (unique), platform: "web"|"android"|"ios", createdAt, lastUsedAt }` — chuẩn bị cho push.
 
 ---
 
@@ -403,7 +439,9 @@ erDiagram
                                      // hide_review | delete_food | assign_reviewer | remove_reviewer |
                                      // approve_reviewer_application | reject_reviewer_application |
                                      // category_create | category_update | category_delete | handle_report |
-                                     // category_proposal_merge | category_proposal_reject | category_proposal_approve
+                                     // category_proposal_merge | category_proposal_reject | category_proposal_approve |
+                                     // report_case_resolve | report_case_dismiss | restaurant_close | restaurant_reopen |
+                                     // restaurant_merge | content_edit (metadata.changes = [{ field, before, after }])
   targetType: "food",               // "food" | "restaurant" | "review" | "user" | "category" | "report", required
   targetId: ObjectId,               // required
   reason: "Đã kiểm tra tại chỗ, thông tin đúng",
@@ -565,7 +603,7 @@ Adapter tạo document `users` cho tài khoản Google bằng field riêng (`nam
 5. **`categoryIds` là mảng** — 1 món có thể thuộc nhiều category.
 6. **`users` không có field `updatedAt`** — chỉ có `createdAt` + các mốc thời gian riêng (`lastLoginAt`, `lastActiveAt`). Đừng giả định `updatedAt` tồn tại khi viết code liên quan tới `User`.
 7. **`sessionVersion` / `lastActiveAt` (users)** là cơ chế thu hồi phiên đăng nhập + idle-timeout, phát sinh khi làm tính năng đăng nhập — không có trong thiết kế nghiệp vụ gốc nhưng đã là một phần chính thức của schema hiện tại.
-8. **`notificationPrefs` (userProfiles)** cho phép user bật/tắt từng loại notification — phát sinh cùng lúc với hệ thống notification.
+8. **`notificationPreferences` (userProfiles)** chỉ chứa lựa chọn email cho các loại email tuỳ chọn — thông báo trong app luôn bật (docs/notifications.md).
 9. **`articles` là collection độc lập, mới, chưa nằm trong bản thiết kế nghiệp vụ gốc** — phục vụ mục Tin tức, hiện không có moderation/owner.
 10. **Restaurant tạo kèm Food mới** (BR-C07): khi submit Food tại quán chưa có trong hệ thống, tạo đồng thời `restaurants` (status `pending`) — FoodReviewer duyệt cả hai cùng lúc. Đã có code: `POST /api/foods` (`lib/foodSubmission.ts`), chi tiết ở [`contribute-food.md`](contribute-food.md).
 11. **Ảnh (Cloudinary) upload thẳng từ trình duyệt** qua chữ ký `/api/uploads/signature`; ảnh mới gắn tag `unattached`, gỡ tag khi form gửi thành công. **Việc cần làm sau:** script dọn ảnh còn tag `unattached` quá N ngày (user bỏ ngang form).

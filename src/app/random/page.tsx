@@ -1,4 +1,4 @@
-import { getAllFoods } from "@/services/foodService";
+import { getOpenFoods } from "@/services/foodService";
 import { RandomFoodResult } from "@/components/food/RandomFoodResult";
 import { filterFoods, pickRandomFood } from "@/features/random-food/randomLogic";
 import { isEatingLevel } from "@/constants/categories";
@@ -12,7 +12,7 @@ export default async function RandomPage(props: PageProps<"/random">) {
   const categoryParam = searchParams["category"];
   const categoryId = Array.isArray(categoryParam) ? categoryParam[0] : (categoryParam ?? null);
 
-  const allFoods = await getAllFoods();
+  const allFoods = await getOpenFoods();
 
   // Tính sẵn kết quả random ĐẦU TIÊN trên server và truyền xuống làm prop —
   // tránh gọi Math.random() lại trong lúc client hydrate (gây hydration mismatch

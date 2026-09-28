@@ -11,7 +11,7 @@ export default async function FoodDetailPage({ params }: { params: Promise<{ id:
   if (!food) notFound();
 
   const similarFoods = allFoods
-    .filter((item) => item.id !== food.id && item.categories.some((c) => food.categories.some((fc) => fc.id === c.id)))
+    .filter((item) => item.id !== food.id && !item.restaurant?.isClosed && item.categories.some((c) => food.categories.some((fc) => fc.id === c.id)))
     .slice(0, 3);
 
   return <FoodDetailPageContent food={food} similarFoods={similarFoods} />;

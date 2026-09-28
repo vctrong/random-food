@@ -3,8 +3,8 @@ import { connectDB } from "@/lib/mongodb";
 import { User } from "@/lib/models/User";
 import { PasswordReset } from "@/lib/models/PasswordReset";
 import { Log } from "@/lib/models/Log";
-import { createNotification } from "@/lib/notify";
-import { sendEmail } from "@/lib/email/mailer";
+import { notify } from "@/lib/notifications/notify";
+import { sendEmail } from "@/lib/email/emailService";
 import {
   createPasswordResetService,
   type PasswordResetRepository,
@@ -236,11 +236,7 @@ export function getPasswordResetService(): PasswordResetService {
         }
       },
       async onPasswordChanged(userId) {
-        await createNotification({
-          userId,
-          type: "password_changed",
-          message: "Mật khẩu của bạn vừa được đặt lại qua “Quên mật khẩu”. Các thiết bị khác đã bị đăng xuất.",
-        });
+        await notify(userId, { type: "password_changed", payload: { method: "reset" } });
       },
     });
   }

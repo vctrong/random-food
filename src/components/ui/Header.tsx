@@ -12,6 +12,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { BrandMark } from "@/components/ui/BrandMark";
 import { NavMegaMenu } from "@/components/ui/NavMegaMenu";
 import { MobileMenuSheet } from "@/components/ui/MobileMenuSheet";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 /** Trễ khi rời chuột khỏi "Món ăn" — đủ để di chuột xuống mega menu mà không bị đóng. */
 const MEGA_CLOSE_DELAY_MS = 160;
@@ -171,6 +172,7 @@ export function Header() {
             {/* Nhóm phải (desktop) */}
             <div className="relative hidden shrink-0 items-center gap-2 lg:flex">
               <ThemeToggle />
+              <NotificationBell />
               <UserMenu />
               <Link
                 href="/random"
@@ -184,6 +186,7 @@ export function Header() {
 
             {/* Nhóm phải (mobile/tablet) */}
             <div className="relative flex shrink-0 items-center gap-2 lg:hidden">
+              <NotificationBell />
               <Link
                 href="/random"
                 aria-label="Random món ăn"

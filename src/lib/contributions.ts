@@ -8,7 +8,8 @@ import { AuditLog } from "@/lib/models/AuditLog";
 import { getFallbackCategoryId } from "@/lib/categoryProposals";
 import { validateFoodCategories } from "@/lib/foodSubmission";
 // Đăng ký model User để .populate("verification.verifiedBy") hoạt động.
-import "@/lib/models/User";
+import { User } from "@/lib/models/User";
+import { notify } from "@/lib/notifications/notify";
 import { isEatingLevel } from "@/constants/categories";
 import { MAX_FOOD_IMAGES, MAX_FOOD_IMAGE_BYTES } from "@/constants/limits";
 import { deriveContributionStatus } from "@/features/contributions/contributionLogic";
@@ -194,6 +195,31 @@ export type UpdateContributionError =
   | "INVALID_RESTAURANT";
 
 /**
+ * Báo cho Reviewer đã yêu cầu sửa (actor của AuditLog needs_revision gần nhất).
+ * Không tìm được hoặc người đó không còn quyền kiểm duyệt → bỏ qua; mục vẫn có badge hàng chờ.
+ */
+async function notifyRevisionRequester(targetType: "food" | "restaurant", targetId: string, name: string, contributorId: string) {
+  const log = (await AuditLog.findOne({ action: "needs_revision", targetType, targetId })
+    .sort({ createdAt: -1 })
+    .select("actorId")
+    .lean()) as { actorId?: unknown } | null;
+  if (!log?.actorId) return;
+  const reviewer = (await User.findOne({
+    _id: log.actorId,
+    role: { $in: ["foodreviewer", "admin"] },
+    accountStatus: { $ne: "banned" },
+  })
+    .select("_id")
+    .lean()) as { _id: unknown } | null;
+  if (!reviewer) return;
+  await notify(String(reviewer._id), {
+    type: "contribution_resubmitted",
+    payload: { targetType, targetId, name },
+    actorId: contributorId,
+  });
+}
+
+/**
  * UC-U12 / BR-U10: user sửa đóng góp của CHÍNH MÌNH khi đang `needs_revision`,
  * rồi gửi lại → `pending` để FoodReviewer duyệt lại (BR_UC mục 4). Mỗi phần
  * (món / quán kèm theo) chỉ sửa được khi phần đó đang `needs_revision`; user
@@ -279,6 +305,9 @@ export async function updateContribution(
 
   if (input.food) await food.save();
   if (input.restaurant && restaurant) await restaurant.save();
+
+  if (input.food) await notifyRevisionRequester("food", String(food._id), food.name, userId);
+  if (input.restaurant && restaurant) await notifyRevisionRequester("restaurant", String(restaurant._id), restaurant.name, userId);
 
   return { error: null };
 }

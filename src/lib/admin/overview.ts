@@ -2,7 +2,7 @@ import { connectDB } from "@/lib/mongodb";
 import { User } from "@/lib/models/User";
 import { Food } from "@/lib/models/Food";
 import { Restaurant } from "@/lib/models/Restaurant";
-import { Report } from "@/lib/models/Report";
+import { ReportCase } from "@/lib/models/ReportCase";
 import { FoodReviewerApplication } from "@/lib/models/FoodReviewerApplication";
 import { CategoryProposal } from "@/lib/models/CategoryProposal";
 import { AuditLog } from "@/lib/models/AuditLog";
@@ -27,7 +27,8 @@ export async function getOverviewStats(): Promise<AdminOverviewStats> {
     User.countDocuments({ accountStatus: "banned" }),
     Food.countDocuments({ moderationStatus: "pending" }),
     Restaurant.countDocuments({ moderationStatus: "pending" }),
-    Report.countDocuments({ status: "pending" }),
+    // Số CASE đang chờ (mỗi case gom mọi báo cáo của 1 đối tượng).
+    ReportCase.countDocuments({ status: "pending" }),
     FoodReviewerApplication.countDocuments({ status: "pending" }),
     CategoryProposal.countDocuments({ status: "pending" }),
     AuditLog.countDocuments({ createdAt: { $gte: new Date(Date.now() - SEVEN_DAYS_MS) } }),

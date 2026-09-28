@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { beforeEach, describe, expect, it } from "vitest";
 import { EMAIL_VERIFICATION_CONFIG } from "@/constants/emailVerification";
-import type { EmailMessage } from "@/lib/email/mailer";
+import type { EmailMessage } from "@/lib/email/emailService";
 import {
   createEmailVerificationService,
   type EmailVerificationRepository,

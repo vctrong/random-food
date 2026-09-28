@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useToast } from "@/components/ui/ToastProvider";
+import { RemovalReasonModal } from "@/components/admin/RemovalReasonModal";
 import { formatDateTime } from "@/lib/utils";
 import type { AdminReviewRow } from "@/types/admin";
 
@@ -23,6 +24,8 @@ export function ReviewsModerationContent({ initialReviews }: ReviewsModerationCo
   const [reviews, setReviews] = useState(initialReviews);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
+  const [removingReview, setRemovingReview] = useState<AdminReviewRow | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -37,21 +40,31 @@ export function ReviewsModerationContent({ initialReviews }: ReviewsModerationCo
     });
   }, [reviews, statusFilter, search]);
 
-  async function handleToggle(review: AdminReviewRow) {
-    const status = review.status === "visible" ? "hidden" : "visible";
+  async function updateStatus(review: AdminReviewRow, status: "visible" | "hidden", reason?: string): Promise<boolean> {
     const res = await fetch("/api/admin/reviews", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reviewId: review.id, status }),
+      body: JSON.stringify({ reviewId: review.id, status, reason }),
     });
     const data = await res.json();
     if (!res.ok) {
       showToast(data.error ?? "Có lỗi xảy ra.", "error");
-      return;
+      return false;
     }
     setReviews((prev) => prev.map((r) => (r.id === review.id ? { ...r, status } : r)));
-    showToast(status === "hidden" ? "Đã ẩn đánh giá." : "Đã hiện lại đánh giá.", "success");
+    showToast(status === "hidden" ? "Đã gỡ đánh giá và báo cho tác giả." : "Đã hiện lại đánh giá.", "success");
     router.refresh();
+    return true;
+  }
+
+  async function handleConfirmRemoval(reason: string) {
+    if (!removingReview) return;
+    setIsRemoving(true);
+    try {
+      if (await updateStatus(removingReview, "hidden", reason)) setRemovingReview(null);
+    } finally {
+      setIsRemoving(false);
+    }
   }
 
   return (
@@ -131,11 +144,11 @@ export function ReviewsModerationContent({ initialReviews }: ReviewsModerationCo
                     </td>
                     <td className="px-4 py-3 text-right">
                       {review.status === "visible" ? (
-                        <Button size="sm" variant="outline" leftIcon={<EyeOff className="size-3.5" />} onClick={() => handleToggle(review)}>
-                          Ẩn
+                        <Button size="sm" variant="outline" leftIcon={<EyeOff className="size-3.5" />} onClick={() => setRemovingReview(review)}>
+                          Gỡ
                         </Button>
                       ) : (
-                        <Button size="sm" variant="outline" leftIcon={<Eye className="size-3.5" />} onClick={() => handleToggle(review)}>
+                        <Button size="sm" variant="outline" leftIcon={<Eye className="size-3.5" />} onClick={() => updateStatus(review, "visible")}>
                           Hiện lại
                         </Button>
                       )}
@@ -147,6 +160,16 @@ export function ReviewsModerationContent({ initialReviews }: ReviewsModerationCo
           </div>
         </Card>
       )}
+
+      <RemovalReasonModal
+        isOpen={removingReview !== null}
+        onClose={() => setRemovingReview(null)}
+        onConfirm={handleConfirmRemoval}
+        kind="review"
+        subjectName={removingReview?.foodName ?? ""}
+        recipientName={removingReview?.user.name ?? "tác giả"}
+        isLoading={isRemoving}
+      />
     </div>
   );
 }

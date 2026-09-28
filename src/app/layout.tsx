@@ -10,6 +10,7 @@ import { Footer } from "@/components/ui/Footer";
 import { SessionProvider } from "@/components/auth/SessionProvider";
 import { SessionErrorGuard } from "@/components/auth/SessionErrorGuard";
 import { ToastProvider } from "@/components/ui/ToastProvider";
+import { NotificationCenterProvider } from "@/components/notifications/NotificationCenterProvider";
 import { FoodQuickActionsBubble } from "@/components/food/FoodQuickActionsBubble";
 import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { BRAND } from "@/constants/brand";
@@ -71,14 +72,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <MotionConfig reducedMotion="user">
             <SessionProvider>
               <ToastProvider>
-                <SessionErrorGuard />
-                <ThemeDbSync />
-                <Header />
-                <main className="flex-1 pt-(--header-h)">{children}</main>
-                <Footer />
-                <MobileNav />
-                <FoodQuickActionsBubble />
-                <OnboardingModal />
+                <NotificationCenterProvider>
+                  <SessionErrorGuard />
+                  <ThemeDbSync />
+                  <Header />
+                  <main className="flex-1 pt-(--header-h)">{children}</main>
+                  <Footer />
+                  <MobileNav />
+                  <FoodQuickActionsBubble />
+                  <OnboardingModal />
+                </NotificationCenterProvider>
               </ToastProvider>
             </SessionProvider>
           </MotionConfig>

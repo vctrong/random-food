@@ -7,6 +7,7 @@ import { joinHistoryWithFood } from "@/features/history-log/historyLogic";
 import { joinSavedWithFood } from "@/features/saved-foods/savedFoodsLogic";
 import { getAllHistory } from "@/services/historyService";
 import { getSavedFoodRecords } from "@/services/savedFoodService";
+import { updateEmailPreferences } from "@/services/notificationService";
 import { useSettings } from "@/features/settings/useSettings";
 import {
   buildHistoryExportCsv,
@@ -29,8 +30,8 @@ interface SettingsPageContentProps {
   totalFoodsCount: number;
   appVersion: string;
   isAuthenticated: boolean;
-  notificationPrefs: Record<string, boolean> | null;
-  hasAppliedReviewer: boolean;
+  emailPrefs: Record<string, boolean> | null;
+  role: string;
 }
 
 const NAV_ITEMS: SectionNavItem[] = [
@@ -46,27 +47,18 @@ export function SettingsPageContent({
   totalFoodsCount,
   appVersion,
   isAuthenticated,
-  notificationPrefs,
-  hasAppliedReviewer,
+  emailPrefs,
+  role,
 }: SettingsPageContentProps) {
   const { settings, toggleSound, toggleReducedMotion, resetAll, notify } = useSettings();
   const { showToast } = useToast();
   const [isSavingNotifications, setIsSavingNotifications] = useState(false);
 
-  async function handleNotificationPrefsChange(next: Record<string, boolean>) {
+  async function handleEmailPrefsChange(next: Record<string, boolean>) {
     setIsSavingNotifications(true);
-    try {
-      const response = await fetch("/api/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notificationPrefs: next }),
-      });
-      if (!response.ok) showToast("Không thể lưu tuỳ chọn thông báo, vui lòng thử lại.", "error");
-    } catch {
-      showToast("Không thể kết nối tới máy chủ.", "error");
-    } finally {
-      setIsSavingNotifications(false);
-    }
+    const result = await updateEmailPreferences(next);
+    if (!result.ok) showToast(result.message, "error");
+    setIsSavingNotifications(false);
   }
 
   return (
@@ -93,23 +85,19 @@ export function SettingsPageContent({
             onToggleReducedMotion={toggleReducedMotion}
           />
 
-          {isAuthenticated && notificationPrefs ? (
+          {isAuthenticated && emailPrefs ? (
             <div className="relative">
               {isSavingNotifications && (
                 <span className="absolute top-4 right-4 text-xs text-text-secondary">Đang lưu…</span>
               )}
-              <NotificationsSection
-                initialPrefs={notificationPrefs}
-                hasAppliedReviewer={hasAppliedReviewer}
-                onChange={handleNotificationPrefsChange}
-              />
+              <NotificationsSection initialEmailPrefs={emailPrefs} role={role} onChange={handleEmailPrefsChange} />
             </div>
           ) : (
             <div id="thong-bao">
               <LoginPromptInline
                 icon={Bell}
                 title="Đăng nhập để quản lý thông báo"
-                description="Chọn loại thông báo bạn muốn nhận về đóng góp, ứng tuyển FoodReviewer và bảo mật tài khoản."
+                description="Chọn loại thông báo bạn muốn nhận thêm qua email."
               />
             </div>
           )}

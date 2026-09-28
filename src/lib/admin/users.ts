@@ -1,7 +1,7 @@
 import { connectDB } from "@/lib/mongodb";
 import { User } from "@/lib/models/User";
 import { AuditLog } from "@/lib/models/AuditLog";
-import { createNotification } from "@/lib/notify";
+import { notify } from "@/lib/notifications/notify";
 import type { AccountStatus, AdminUserRow, UserRole } from "@/types/admin";
 
 export async function getUsers(): Promise<AdminUserRow[]> {
@@ -57,6 +57,14 @@ export async function changeUserRole({
     metadata: { name: user.name },
   });
 
+  if (previousRole !== role) {
+    await notify(targetUserId, {
+      type: "role_changed",
+      payload: { previousRole: (previousRole ?? "user") as UserRole, newRole: role },
+      actorId: adminId,
+    });
+  }
+
   return { error: null };
 }
 
@@ -95,14 +103,15 @@ export async function setAccountStatus({
     metadata: { name: user.name },
   });
 
-  await createNotification({
-    userId: targetUserId,
-    type: status === "banned" ? "account_banned" : "account_unbanned",
-    message:
-      status === "banned"
-        ? `Tài khoản của bạn đã bị khoá.${reason.trim() ? ` Lý do: ${reason.trim()}` : ""}`
-        : "Tài khoản của bạn đã được mở khoá.",
-  });
+  if (status === "banned") {
+    await notify(targetUserId, {
+      type: "account_banned",
+      payload: reason.trim() ? { reason: reason.trim() } : {},
+      actorId: adminId,
+    });
+  } else {
+    await notify(targetUserId, { type: "account_unbanned", payload: {}, actorId: adminId });
+  }
 
   return { error: null };
 }

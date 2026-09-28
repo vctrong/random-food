@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { getEmailVerificationService } from "@/lib/emailVerificationStore";
 import { authorizeVerificationRequest, setInitialPasswordResponse } from "@/lib/emailVerificationHttp";
-import { createNotification } from "@/lib/notify";
+import { notify } from "@/lib/notifications/notify";
 import { getRequestContext, readJsonBody, serverErrorResponse, stringField } from "@/lib/passwordResetHttp";
 
 /** Hồ sơ: tạo mật khẩu đầu tiên — chỉ khi email đã xác thực và tài khoản chưa có mật khẩu (tài khoản Google). */
@@ -17,11 +17,7 @@ export async function POST(request: NextRequest) {
       getRequestContext(request),
     );
     if (result.kind === "created") {
-      await createNotification({
-        userId: authorized.userId,
-        type: "password_changed",
-        message: "Bạn vừa tạo mật khẩu — từ giờ có thể đăng nhập bằng email và mật khẩu.",
-      });
+      await notify(authorized.userId, { type: "password_changed", payload: { method: "set" } });
     }
     return setInitialPasswordResponse(result);
   } catch {

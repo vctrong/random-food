@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/mongodb";
 import { User } from "@/lib/models/User";
 import { EmailVerification } from "@/lib/models/EmailVerification";
 import { Log } from "@/lib/models/Log";
-import { sendEmail } from "@/lib/email/mailer";
+import { sendEmail } from "@/lib/email/emailService";
 import {
   createEmailVerificationService,
   type AccountLookup,

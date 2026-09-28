@@ -34,9 +34,11 @@ export async function GET(request: Request) {
   const page = Number(searchParams.get("page") ?? "1");
   const limit = Number(searchParams.get("limit") ?? String(MAX_PAGE_SIZE));
 
+  const auth = await requireAuth();
   const result = await listReviewsForFood(foodId, {
     page: Number.isFinite(page) ? page : 1,
     limit: Number.isFinite(limit) ? limit : MAX_PAGE_SIZE,
+    viewerId: auth.ok ? auth.id : null,
   });
 
   return NextResponse.json(result);
@@ -52,7 +54,7 @@ const postSchema = z
 
 /**
  * Tạo review mới — bắt buộc gắn với 1 Experience của chính user (schema đã ép),
- * hiển thị công khai ngay (không cần duyệt trước), xử lý vi phạm qua /api/reports.
+ * hiển thị công khai ngay (không cần duyệt trước), xử lý vi phạm qua báo cáo (/api/reports).
  */
 export async function POST(request: Request) {
   const auth = await requireAuth();

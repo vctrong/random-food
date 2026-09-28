@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,8 @@ export interface ToastOptions {
   description?: string;
   /** Ghi đè thời gian hiển thị (ms). Mặc định theo loại — xem TOAST_DURATION_MS. */
   duration?: number;
+  /** Link hành động dưới nội dung (vd toast thông báo realtime → mở thông báo). */
+  action?: { label: string; href: string };
 }
 
 interface ToastItem {
@@ -21,6 +24,7 @@ interface ToastItem {
   type: ToastType;
   description?: string;
   duration: number;
+  action?: { label: string; href: string };
 }
 
 interface ToastContextValue {
@@ -102,6 +106,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       type,
       description: options?.description,
       duration: options?.duration ?? TOAST_DURATION_MS[type],
+      action: options?.action,
     };
     setToasts((prev) => [item, ...prev].slice(0, MAX_VISIBLE_TOASTS));
     const spoken = [TOAST_STYLES[type].label, message, options?.description].filter(Boolean).join(". ");
@@ -175,6 +180,15 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: num
           <p className="text-sm font-semibold leading-snug text-text-primary break-words">{toast.message}</p>
           {toast.description && (
             <p className="mt-0.5 text-sm leading-snug text-text-secondary break-words">{toast.description}</p>
+          )}
+          {toast.action && (
+            <Link
+              href={toast.action.href}
+              onClick={() => onDismiss(toast.id)}
+              className="mt-1.5 inline-flex text-sm font-semibold text-primary-strong underline-offset-2 hover:underline dark:text-primary"
+            >
+              {toast.action.label}
+            </Link>
           )}
         </div>
         <button

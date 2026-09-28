@@ -2,6 +2,7 @@ import { isValidObjectId } from "mongoose";
 import { connectDB } from "@/lib/mongodb";
 import { Experience } from "@/lib/models/Experience";
 import { Food } from "@/lib/models/Food";
+import { resolveMergedRestaurantId } from "@/lib/restaurants";
 import { Restaurant } from "@/lib/models/Restaurant";
 
 export interface ExperienceRecord {
@@ -33,13 +34,14 @@ export async function addExperience(
   userId: string,
   input: { restaurantId: string; foodId?: string | null },
 ): Promise<{ error?: AddExperienceError; id?: string }> {
-  const restaurantId = input.restaurantId;
   const foodId = input.foodId ?? null;
 
-  if (!isValidObjectId(restaurantId)) return { error: "INVALID_RESTAURANT" };
+  if (!isValidObjectId(input.restaurantId)) return { error: "INVALID_RESTAURANT" };
   if (foodId && !isValidObjectId(foodId)) return { error: "INVALID_FOOD" };
 
   await connectDB();
+  // Quán đã bị gộp vào quán khác → ghi nhận vào quán gốc (client có thể còn giữ id cũ).
+  const restaurantId = await resolveMergedRestaurantId(input.restaurantId);
 
   const restaurant = (await Restaurant.findOne({
     _id: restaurantId,

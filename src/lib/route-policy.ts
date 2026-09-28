@@ -94,6 +94,22 @@ function isFoodDetailPage(pathname: string): boolean {
   return segment.length > 0 && !MON_AN_STATIC_SUBPATHS.has(segment);
 }
 
+/** Trang chi tiết tin tức / thông báo chính thức /tin-tuc/[slug] — công khai; lọc theo đối tượng ở tầng dữ liệu (404 nếu không được xem). */
+function isNewsDetailPage(pathname: string): boolean {
+  if (!pathname.startsWith("/tin-tuc/")) return false;
+  const segments = pathname.slice("/tin-tuc/".length).split("/").filter(Boolean);
+  return segments.length === 1;
+}
+
+/**
+ * API đọc thông báo chính thức — công khai (Guest xem bài nhắm "Tất cả"), trừ
+ * /api/announcements/seen (ghi mốc đã xem của user → cần đăng nhập).
+ */
+function isPublicAnnouncementApi(pathname: string): boolean {
+  if (pathname !== "/api/announcements" && !pathname.startsWith("/api/announcements/")) return false;
+  return pathname !== "/api/announcements/seen";
+}
+
 function isAdminPath(pathname: string): boolean {
   return pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/api/admin" || pathname.startsWith("/api/admin/");
 }
@@ -177,7 +193,14 @@ export function evaluateRoute({ pathname, method, token, origin, host }: RoutePo
   }
 
   // 6. Public (API auth tự viết đã qua CSRF ở bước 3).
-  if (PUBLIC_PAGES.has(pathname) || PUBLIC_APIS.has(pathname) || isCustomAuthApi(pathname) || isFoodDetailPage(pathname)) {
+  if (
+    PUBLIC_PAGES.has(pathname) ||
+    PUBLIC_APIS.has(pathname) ||
+    isCustomAuthApi(pathname) ||
+    isFoodDetailPage(pathname) ||
+    isNewsDetailPage(pathname) ||
+    isPublicAnnouncementApi(pathname)
+  ) {
     return { kind: "allow" };
   }
 

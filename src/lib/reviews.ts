@@ -3,6 +3,8 @@ import { connectDB } from "@/lib/mongodb";
 import { Review } from "@/lib/models/Review";
 import { Experience } from "@/lib/models/Experience";
 import { Food } from "@/lib/models/Food";
+import { Report } from "@/lib/models/Report";
+import "@/lib/models/ReportCase";
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "@/constants/limits";
 import { getCreateReviewRemainingMs, getEditReviewRemainingMs } from "@/lib/reviewWindow";
 
@@ -12,17 +14,27 @@ export interface ReviewRecord {
   comment: string | null;
   createdAt: string;
   user: { name: string; avatarUrl: string | null };
+  /** Đánh giá của chính người đang xem — không hiện "Báo cáo đánh giá". */
+  isMine: boolean;
+  /** Người đang xem đã báo cáo đánh giá này (UI thu gọn thành "Bạn đã báo cáo · Hoàn tác"). */
+  reportedByMe: boolean;
+  canUndoReport: boolean;
 }
 
 interface PopulatedReviewUser {
+  _id?: unknown;
   name?: string;
   avatarUrl?: string;
 }
 
-/** Danh sách review công khai của 1 món — chỉ status "visible" và chưa bị xoá mềm, không lộ email/id nội bộ tác giả. */
+/**
+ * Danh sách review công khai của 1 món — chỉ status "visible" và chưa bị xoá mềm,
+ * không lộ email/id nội bộ tác giả. Có `viewerId`: thêm cờ của-mình/đã-báo-cáo, và
+ * vẫn trả đánh giá đang ẩn tạm mà CHÍNH người xem đã báo cáo (để còn nút Hoàn tác).
+ */
 export async function listReviewsForFood(
   foodId: string,
-  { page = 1, limit = DEFAULT_PAGE_SIZE }: { page?: number; limit?: number } = {},
+  { page = 1, limit = DEFAULT_PAGE_SIZE, viewerId = null }: { page?: number; limit?: number; viewerId?: string | null } = {},
 ): Promise<{ items: ReviewRecord[]; total: number }> {
   if (!isValidObjectId(foodId)) return { items: [], total: 0 };
 
@@ -30,7 +42,23 @@ export async function listReviewsForFood(
   const safePage = Math.max(Math.trunc(page), 1);
 
   await connectDB();
-  const filter = { foodId, status: "visible", deletedAt: null };
+
+  const myReports = viewerId
+    ? ((await Report.find({ reporterId: viewerId, targetType: "review" })
+        .select("targetId caseId")
+        .populate("caseId", "status")
+        .lean()) as unknown as { targetId: unknown; caseId?: { status?: string } | null }[])
+    : [];
+  const reportState = new Map(myReports.map((report) => [String(report.targetId), report.caseId?.status === "pending"]));
+
+  const filter = {
+    foodId,
+    deletedAt: null,
+    $or: [
+      { status: "visible" },
+      { status: "hidden_pending_review", _id: { $in: myReports.map((report) => report.targetId) } },
+    ],
+  };
   const [reviews, total] = await Promise.all([
     Review.find(filter)
       .sort({ createdAt: -1 })
@@ -48,16 +76,22 @@ export async function listReviewsForFood(
       comment?: string;
       createdAt: Date;
       userId: PopulatedReviewUser | null;
-    }[]).map((review) => ({
-      id: String(review._id),
-      rating: review.rating,
-      comment: review.comment ?? null,
-      createdAt: review.createdAt.toISOString(),
-      user: {
-        name: review.userId?.name ?? "Người dùng đã xoá",
-        avatarUrl: review.userId?.avatarUrl ?? null,
-      },
-    })),
+    }[]).map((review) => {
+      const id = String(review._id);
+      return {
+        id,
+        rating: review.rating,
+        comment: review.comment ?? null,
+        createdAt: review.createdAt.toISOString(),
+        user: {
+          name: review.userId?.name ?? "Người dùng đã xoá",
+          avatarUrl: review.userId?.avatarUrl ?? null,
+        },
+        isMine: Boolean(viewerId && review.userId?._id && String(review.userId._id) === viewerId),
+        reportedByMe: reportState.has(id),
+        canUndoReport: reportState.get(id) ?? false,
+      };
+    }),
     total,
   };
 }

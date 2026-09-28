@@ -2,9 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { MessageSquareText, Star } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { EyeOff, MessageSquareText, Star } from "lucide-react";
 import { formatRelativeTime, isAllowedImageHost } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useToast } from "@/components/ui/ToastProvider";
+import { ReviewActionsMenu } from "@/components/food/ReviewActionsMenu";
+import { cancelReport } from "@/services/reportService";
+import { REPORT_THANK_YOU_TOAST } from "@/constants/reports";
 
 interface ReviewApiRecord {
   id: string;
@@ -12,6 +17,9 @@ interface ReviewApiRecord {
   comment: string | null;
   createdAt: string;
   user: { name: string; avatarUrl: string | null };
+  isMine: boolean;
+  reportedByMe: boolean;
+  canUndoReport: boolean;
 }
 
 interface FoodReviewsSectionProps {
@@ -30,6 +38,29 @@ export function FoodReviewsSection({ foodId, avgRating, ratingCount }: FoodRevie
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const { status } = useSession();
+  const { showToast } = useToast();
+
+  function patchReview(id: string, changes: Partial<ReviewApiRecord>) {
+    setReviews((prev) => prev?.map((review) => (review.id === id ? { ...review, ...changes } : review)) ?? prev);
+  }
+
+  function handleReported(id: string) {
+    // Ẩn ngay với chính người báo cáo, thay bằng dòng "Bạn đã báo cáo · Hoàn tác".
+    patchReview(id, { reportedByMe: true, canUndoReport: true });
+    showToast(REPORT_THANK_YOU_TOAST, "success");
+  }
+
+  async function handleUndo(id: string) {
+    const result = await cancelReport("review", id);
+    if (!result.ok) {
+      showToast(result.error, "error");
+      if (result.error.includes("đã được xử lý")) patchReview(id, { canUndoReport: false });
+      return;
+    }
+    patchReview(id, { reportedByMe: false, canUndoReport: false });
+    showToast("Đã hoàn tác báo cáo.", "info");
+  }
 
   useEffect(() => {
     // key={foodId} ở nơi gọi (RandomFoodResult) đảm bảo component remount mỗi
@@ -110,9 +141,18 @@ export function FoodReviewsSection({ foodId, avgRating, ratingCount }: FoodRevie
       ) : (
         <>
           <div className="flex flex-col divide-y divide-border">
-            {reviews.map((review) => (
-              <ReviewItem key={review.id} review={review} />
-            ))}
+            {reviews.map((review) =>
+              review.reportedByMe ? (
+                <ReportedReviewRow key={review.id} canUndo={review.canUndoReport} onUndo={() => void handleUndo(review.id)} />
+              ) : (
+                <ReviewItem
+                  key={review.id}
+                  review={review}
+                  isAuthenticated={status === "authenticated"}
+                  onReported={() => handleReported(review.id)}
+                />
+              ),
+            )}
           </div>
           {reviews.length < total && (
             <div className="pt-4 flex justify-center">
@@ -132,11 +172,40 @@ export function FoodReviewsSection({ foodId, avgRating, ratingCount }: FoodRevie
   );
 }
 
-function ReviewItem({ review }: { review: ReviewApiRecord }) {
+function ReportedReviewRow({ canUndo, onUndo }: { canUndo: boolean; onUndo: () => void }) {
+  return (
+    <div className="py-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-secondary">
+      <EyeOff className="size-4 shrink-0" aria-hidden />
+      <span>Bạn đã báo cáo đánh giá này</span>
+      {canUndo && (
+        <>
+          <span aria-hidden>·</span>
+          <button
+            type="button"
+            onClick={onUndo}
+            className="min-h-9 rounded-lg px-1.5 font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            Hoàn tác
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ReviewItem({
+  review,
+  isAuthenticated,
+  onReported,
+}: {
+  review: ReviewApiRecord;
+  isAuthenticated: boolean;
+  onReported: () => void;
+}) {
   const initials = review.user.name.slice(0, 2).toUpperCase();
 
   return (
-    <div className="py-4 flex flex-col gap-2">
+    <div className="group py-4 flex flex-col gap-2">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           {isAllowedImageHost(review.user.avatarUrl) ? (
@@ -157,16 +226,26 @@ function ReviewItem({ review }: { review: ReviewApiRecord }) {
             <p className="text-xs text-text-secondary">{formatRelativeTime(review.createdAt)}</p>
           </div>
         </div>
-        <div className="flex items-center gap-0.5 shrink-0">
-          {[1, 2, 3, 4, 5].map((value) => (
-            <Star
-              key={value}
-              className="size-3.5"
-              fill={value <= review.rating ? "#F4C95D" : "none"}
-              stroke={value <= review.rating ? "#F4C95D" : "currentColor"}
-              aria-hidden
+        <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-0.5" role="img" aria-label={`${review.rating} trên 5 sao`}>
+            {[1, 2, 3, 4, 5].map((value) => (
+              <Star
+                key={value}
+                className="size-3.5"
+                fill={value <= review.rating ? "#F4C95D" : "none"}
+                stroke={value <= review.rating ? "#F4C95D" : "currentColor"}
+                aria-hidden
+              />
+            ))}
+          </div>
+          {!review.isMine && (
+            <ReviewActionsMenu
+              reviewId={review.id}
+              authorName={review.user.name}
+              isAuthenticated={isAuthenticated}
+              onReported={onReported}
             />
-          ))}
+          )}
         </div>
       </div>
       {review.comment && <p className="text-sm text-text-secondary leading-relaxed">{review.comment}</p>}
