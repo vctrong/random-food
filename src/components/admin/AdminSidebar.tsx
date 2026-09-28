@@ -7,6 +7,7 @@ import {
   Badge as BadgeIcon,
   FileClock,
   Flag,
+  ImageOff,
   LayoutGrid,
   Megaphone,
   Star,
@@ -50,6 +51,7 @@ export function AdminSidebar({
     { href: "/admin/danh-gia", label: "Kiểm duyệt đánh giá", icon: Star, exact: false, badge: 0 },
     { href: "/admin/bao-cao", label: "Xử lý báo cáo", icon: Flag, exact: false, badge: pendingReports },
     { href: "/admin/thong-bao", label: "Thông báo chính thức", icon: Megaphone, exact: false, badge: 0 },
+    { href: "/admin/don-anh", label: "Dọn ảnh rác", icon: ImageOff, exact: false, badge: 0 },
     { href: "/admin/nhat-ky", label: "Nhật ký hệ thống", icon: FileClock, exact: false, badge: 0 },
   ] as const;
 

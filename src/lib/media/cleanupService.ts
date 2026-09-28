@@ -14,6 +14,7 @@ import {
   isOldEnough,
   orphanReferenceDate,
 } from "@/lib/media/cleanupRules";
+import type { CleanupOutcome, CleanupRunRow, CleanupTrigger, OrphanImage } from "@/types/media";
 
 /**
  * Dọn ảnh rác trên Cloudinary — DÙNG CHUNG cho script (`npm run cleanup:images`),
@@ -24,19 +25,6 @@ import {
  * (lib/media/imageUsage.ts): còn dùng thì chỉ gỡ tag. Idempotent — chạy lại / chạy
  * trùng chỉ gặp ảnh đã xoá (Cloudinary trả `not_found`, bỏ qua).
  */
-
-export interface OrphanImage {
-  publicId: string;
-  url: string;
-  folder: string;
-  bytes: number;
-  format: string;
-  width: number | null;
-  height: number | null;
-  uploadedAt: string;
-  /** Mốc tính tuổi (bị gỡ khỏi nội dung, hoặc ngày upload). */
-  referenceAt: string;
-}
 
 interface SearchResource {
   public_id: string;
@@ -96,20 +84,6 @@ export async function listOrphanImages({
   } while (cursor);
 
   return { images, truncated };
-}
-
-export interface CleanupOutcome {
-  /** Số ảnh rác nằm trong phạm vi lần chạy (sau khi lọc theo lựa chọn). */
-  candidates: number;
-  deleted: number;
-  retagged: number;
-  failed: number;
-  bytesFreed: number;
-  /** Ảnh rác chưa xử lý vì hết thời gian — lần sau làm tiếp. */
-  remaining: number;
-  /** Còn ảnh chưa quét tới (vượt MAX_SCANNED). */
-  truncated: boolean;
-  errorSamples: string[];
 }
 
 async function processBatch(images: OrphanImage[], outcome: CleanupOutcome) {
@@ -187,8 +161,6 @@ export async function cleanupOrphanImages({
 
 /* ------------------------------ Lịch sử + AuditLog ------------------------------ */
 
-export type CleanupTrigger = "manual" | "cron" | "script";
-
 export async function startCleanupRun({
   trigger,
   actorId = null,
@@ -241,21 +213,31 @@ export async function recordCleanupOutcome(
 
   if (outcome.deleted + outcome.retagged + outcome.failed === 0) return;
   const freedMb = (outcome.bytesFreed / 1024 / 1024).toFixed(2);
-  await AuditLog.create({
-    ...(actorId && { actorId }),
-    action: "media_cleanup",
-    targetType: "media",
-    targetId: new Types.ObjectId(runId),
-    reason: `Xoá ${outcome.deleted} ảnh (${freedMb} MB), gỡ tag ${outcome.retagged}, lỗi ${outcome.failed}`,
-    metadata: {
-      trigger,
-      deleted: outcome.deleted,
-      retagged: outcome.retagged,
-      failed: outcome.failed,
-      bytesFreed: outcome.bytesFreed,
-      remaining: outcome.remaining,
-    },
-  });
+  // Ảnh đã xoá xong (không hoàn tác được) — lỗi ghi nhật ký không được che mất kết quả đó:
+  // ghi lỗi vào lịch sử lần dọn để Admin thấy, thay vì báo cả lần dọn thất bại.
+  try {
+    await AuditLog.create({
+      ...(actorId && { actorId }),
+      action: "media_cleanup",
+      targetType: "media",
+      targetId: new Types.ObjectId(runId),
+      reason: `Xoá ${outcome.deleted} ảnh (${freedMb} MB), gỡ tag ${outcome.retagged}, lỗi ${outcome.failed}`,
+      metadata: {
+        trigger,
+        deleted: outcome.deleted,
+        retagged: outcome.retagged,
+        failed: outcome.failed,
+        bytesFreed: outcome.bytesFreed,
+        remaining: outcome.remaining,
+      },
+    });
+  } catch (error) {
+    console.error("[media] audit log failed", error);
+    await MediaCleanupRun.updateOne(
+      { _id: runId },
+      { $push: { errorSamples: { $each: [`Không ghi được AuditLog: ${(error as Error)?.message ?? error}`], $slice: MAX_ERROR_SAMPLES } } },
+    );
+  }
 }
 
 /** Một lần dọn trọn gói cho cron / script: tạo lịch sử → dọn tới hạn chót → ghi kết quả. */
@@ -282,23 +264,6 @@ export async function runCleanupJob({
     );
     throw error;
   }
-}
-
-export interface CleanupRunRow {
-  id: string;
-  trigger: CleanupTrigger;
-  actorName: string | null;
-  mode: "selected" | "all";
-  days: number;
-  folder: string | null;
-  status: "running" | "completed" | "partial";
-  deletedCount: number;
-  retaggedCount: number;
-  failedCount: number;
-  bytesFreed: number;
-  errorSamples: string[];
-  startedAt: string;
-  finishedAt: string | null;
 }
 
 export async function listCleanupRuns(limit = 30): Promise<CleanupRunRow[]> {
@@ -335,4 +300,40 @@ export async function listCleanupRuns(limit = 30): Promise<CleanupRunRow[]> {
     startedAt: run.startedAt.toISOString(),
     finishedAt: run.finishedAt ? run.finishedAt.toISOString() : null,
   }));
+}
+
+/** Hạn chót mỗi request từ trang Admin — client (callJson) tự huỷ sau 20 giây. */
+const MANUAL_REQUEST_BUDGET_MS = 15_000;
+
+/**
+ * 1 lượt dọn từ trang Admin: lượt đầu (không có runId) tạo bản ghi lịch sử, các lượt sau
+ * cộng dồn vào đó. `publicIds` (≤ 100) = dọn ảnh đã chọn; `all` = mọi ảnh rác, client
+ * gọi lặp tới khi `remaining` = 0.
+ */
+export async function runManualCleanupBatch({
+  adminId,
+  runId,
+  publicIds,
+  all,
+}: {
+  adminId: string;
+  runId: string | null;
+  publicIds: string[] | null;
+  all: boolean;
+}): Promise<{ error: "RUN_NOT_FOUND" | null; runId?: string; outcome?: CleanupOutcome }> {
+  await connectDB();
+  let id = runId;
+  if (id) {
+    const exists = await MediaCleanupRun.exists({ _id: id, trigger: "manual" });
+    if (!exists) return { error: "RUN_NOT_FOUND" };
+  } else {
+    id = await startCleanupRun({ trigger: "manual", actorId: adminId, mode: all ? "all" : "selected", days: DEFAULT_ORPHAN_DAYS });
+  }
+  const outcome = await cleanupOrphanImages({
+    days: DEFAULT_ORPHAN_DAYS,
+    publicIds: all ? null : publicIds,
+    deadlineAt: Date.now() + MANUAL_REQUEST_BUDGET_MS,
+  });
+  await recordCleanupOutcome(id, outcome, { trigger: "manual", actorId: adminId });
+  return { error: null, runId: id, outcome };
 }
