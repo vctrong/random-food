@@ -8,9 +8,12 @@ import { AnnouncementCard } from "./AnnouncementCard";
 import { AnnouncementTypeBadge, OfficialBadge, PinnedBadge } from "./AnnouncementBadges";
 import { AnnouncementShareActions } from "./AnnouncementShareActions";
 import { AnnouncementReadMarker } from "./AnnouncementReadMarker";
+import { AnnouncementLightbox } from "./AnnouncementLightbox";
 import { ANNOUNCEMENT_PROSE_CLASS } from "./announcementProse";
 
 /** "Cần Thơ, ngày 28 tháng 09 năm 2026" theo giờ Việt Nam. */
+const CONTENT_ID = "announcement-content";
+
 function formatSignatureDate(iso: string): string {
   const parts = new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Asia/Ho_Chi_Minh" })
     .formatToParts(new Date(iso))
@@ -106,7 +109,8 @@ export function AnnouncementDetailView({ announcement, others, isPreview }: Anno
       )}
 
       {/* HTML đã sanitize + render ở server (docs/notifications.md mục 6). */}
-      <div className={`mt-8 ${ANNOUNCEMENT_PROSE_CLASS}`} dangerouslySetInnerHTML={{ __html: announcement.html }} />
+      <div id={CONTENT_ID} className={`mt-8 ${ANNOUNCEMENT_PROSE_CLASS}`} dangerouslySetInnerHTML={{ __html: announcement.html }} />
+      <AnnouncementLightbox containerId={CONTENT_ID} />
 
       <div className="mt-10 rounded-2xl border border-primary-line bg-primary-soft/40 px-5 py-5">
         <p className="text-sm italic text-text-secondary">{formatSignatureDate(announcement.publishAt)}</p>

@@ -1,4 +1,5 @@
 import { ANNOUNCEMENT_CODE_SUFFIX, ANNOUNCEMENT_LIMITS, type AnnouncementType } from "@/constants/announcements";
+import type { GalleryImage } from "@/lib/media/galleryLayout";
 
 /**
  * Hàm thuần xử lý nội dung TipTap JSON của Announcement: làm sạch (whitelist
@@ -14,10 +15,11 @@ export interface TipTapNode {
   text?: string;
 }
 
-const BLOCK_NODES = new Set(["paragraph", "heading", "bulletList", "orderedList", "listItem", "blockquote", "horizontalRule", "image"]);
+const BLOCK_NODES = new Set(["paragraph", "heading", "bulletList", "orderedList", "listItem", "blockquote", "horizontalRule", "image", "gallery"]);
 const INLINE_NODES = new Set(["text", "hardBreak"]);
 const SIMPLE_MARKS = new Set(["bold", "italic", "underline", "strike"]);
 const MAX_DEPTH = 12;
+const MAX_IMAGE_DIMENSION = 20_000;
 
 export function isSafeLinkHref(href: unknown): href is string {
   if (typeof href !== "string" || href.length > 2048) return false;
@@ -46,6 +48,31 @@ function cleanMarks(marks: unknown): TipTapNode["marks"] {
   return cleaned.length > 0 ? cleaned : undefined;
 }
 
+function cleanDimension(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value > 0 && value <= MAX_IMAGE_DIMENSION ? value : null;
+}
+
+function cleanAlt(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const alt = value.trim().slice(0, ANNOUNCEMENT_LIMITS.imageAltMax);
+  return alt || null;
+}
+
+/** Ảnh trong bộ ảnh: chỉ src hợp lệ + alt + kích thước; attr khác bị bỏ. */
+function cleanGalleryImages(raw: unknown, isImageAllowed: (src: string) => boolean): GalleryImage[] {
+  if (!Array.isArray(raw)) return [];
+  const images: GalleryImage[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const { src, alt, width, height } = item as Record<string, unknown>;
+    if (typeof src !== "string" || !isImageAllowed(src)) continue;
+    images.push({ src, alt: cleanAlt(alt), width: cleanDimension(width), height: cleanDimension(height) });
+    // Giới hạn tổng số ảnh của bài kiểm ở lib/announcements.ts; đây chỉ chặn mảng bất thường.
+    if (images.length >= ANNOUNCEMENT_LIMITS.imagesMax * 2) break;
+  }
+  return images;
+}
+
 function cleanNode(raw: unknown, isImageAllowed: (src: string) => boolean, depth: number): TipTapNode | null {
   if (!raw || typeof raw !== "object" || depth > MAX_DEPTH) return null;
   const node = raw as Partial<TipTapNode> & { attrs?: Record<string, unknown> };
@@ -63,6 +90,10 @@ function cleanNode(raw: unknown, isImageAllowed: (src: string) => boolean, depth
     if (typeof src !== "string" || !isImageAllowed(src)) return null;
     const alt = typeof node.attrs?.alt === "string" ? node.attrs.alt.slice(0, 200) : null;
     return { type, attrs: { src, alt } };
+  }
+  if (type === "gallery") {
+    const images = cleanGalleryImages(node.attrs?.images, isImageAllowed);
+    return images.length > 0 ? { type, attrs: { images } } : null;
   }
 
   const children = Array.isArray(node.content)
@@ -84,7 +115,8 @@ export function sanitizeAnnouncementContent(raw: unknown, isImageAllowed: (src: 
   const blocks = Array.isArray((raw as TipTapNode).content) ? (raw as TipTapNode).content! : [];
   const content = blocks.map((block) => cleanNode(block, isImageAllowed, 1)).filter((block): block is TipTapNode => block !== null);
   const doc: TipTapNode = { type: "doc", content };
-  return extractPlainText(doc).trim().length > 0 || content.some((block) => block.type === "image") ? doc : null;
+  const hasImage = content.some((block) => block.type === "image" || block.type === "gallery");
+  return extractPlainText(doc).trim().length > 0 || hasImage ? doc : null;
 }
 
 export function extractPlainText(node: TipTapNode): string {
@@ -95,7 +127,12 @@ export function extractPlainText(node: TipTapNode): string {
 
 /** Mọi URL ảnh trong nội dung — để gỡ tag `unattached` trên Cloudinary sau khi lưu. */
 export function collectImageSources(node: TipTapNode): string[] {
-  const own = node.type === "image" && typeof node.attrs?.src === "string" ? [node.attrs.src] : [];
+  const own =
+    node.type === "image" && typeof node.attrs?.src === "string"
+      ? [node.attrs.src]
+      : node.type === "gallery" && Array.isArray(node.attrs?.images)
+        ? (node.attrs.images as { src?: unknown }[]).map((image) => image?.src).filter((src): src is string => typeof src === "string")
+        : [];
   return [...own, ...(node.content ?? []).flatMap(collectImageSources)];
 }
 

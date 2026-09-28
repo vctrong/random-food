@@ -12,4 +12,6 @@ export const ANNOUNCEMENT_PROSE_CLASS =
   "[&_a]:font-semibold [&_a]:text-primary-strong [&_a]:underline [&_a]:underline-offset-2 dark:[&_a]:text-primary " +
   "[&_strong]:font-bold [&_blockquote]:my-5 [&_blockquote]:rounded-r-xl [&_blockquote]:border-l-4 [&_blockquote]:border-primary " +
   "[&_blockquote]:bg-primary-soft/50 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:text-text-primary " +
-  "[&_hr]:my-8 [&_hr]:border-border [&_img]:my-5 [&_img]:h-auto [&_img]:w-full [&_img]:rounded-2xl [&_img]:border [&_img]:border-border";
+  "[&_hr]:my-8 [&_hr]:border-border " +
+  // Ảnh lẻ kiểu cũ (node image) — ảnh trong bộ ảnh (figure[data-gallery]) có style riêng ở lib/media/galleryLayout.ts.
+  "[&>img]:my-5 [&>img]:h-auto [&>img]:w-full [&>img]:cursor-zoom-in [&>img]:rounded-2xl [&>img]:border [&>img]:border-border";

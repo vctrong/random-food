@@ -1,5 +1,6 @@
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
+import { Gallery } from "@/lib/announcementGallery";
 
 /**
  * Bộ extension TipTap DÙNG CHUNG cho trình soạn thảo (client) và render HTML
@@ -19,5 +20,7 @@ export const announcementExtensions = [
       HTMLAttributes: { rel: "noopener noreferrer nofollow", target: "_blank" },
     },
   }),
+  // Ảnh lẻ kiểu cũ — chỉ còn để hiển thị/sửa bài cũ; ảnh mới luôn chèn qua bộ ảnh (Gallery).
   Image.configure({ HTMLAttributes: { loading: "lazy" } }),
+  Gallery,
 ];

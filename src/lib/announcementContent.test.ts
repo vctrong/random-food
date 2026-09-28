@@ -61,6 +61,62 @@ describe("sanitizeAnnouncementContent", () => {
   });
 });
 
+describe("gallery", () => {
+  const img = (extra: Record<string, unknown> = {}) => ({ src: OWN_IMAGE, alt: "Món ngon", width: 1200, height: 800, ...extra });
+
+  it("sanitize: chỉ giữ ảnh của app + alt/kích thước hợp lệ, bộ rỗng bị bỏ", () => {
+    const cleaned = sanitizeAnnouncementContent(
+      doc(
+        { type: "paragraph", content: [{ type: "text", text: "Ảnh" }] },
+        {
+          type: "gallery",
+          attrs: {
+            onclick: "x",
+            images: [img({ onerror: "x", width: -5, height: "800" }), { src: "https://evil.example/x.png" }, "rác"],
+          },
+        },
+        { type: "gallery", attrs: { images: [{ src: "https://evil.example/x.png" }] } },
+      ),
+      isOwn,
+    );
+    expect(cleaned?.content?.[1]).toEqual({
+      type: "gallery",
+      attrs: { images: [{ src: OWN_IMAGE, alt: "Món ngon", width: null, height: null }] },
+    });
+    expect(cleaned?.content).toHaveLength(2);
+    expect(cleaned && collectImageSources(cleaned)).toEqual([OWN_IMAGE]);
+  });
+
+  it("bài chỉ có bộ ảnh vẫn hợp lệ", () => {
+    expect(sanitizeAnnouncementContent(doc({ type: "gallery", attrs: { images: [img()] } }), isOwn)).not.toBeNull();
+  });
+
+  it("render ảnh đơn: giữ tỉ lệ, có nền mờ, ảnh qua transform Cloudinary", () => {
+    const html = renderAnnouncementHtml(doc({ type: "gallery", attrs: { images: [img()] } }) as never);
+    expect(html).toContain('data-count="1"');
+    expect(html).toContain("/image/upload/c_limit,w_1200,f_auto,q_auto/v1/nayangi/announcements/a.jpg");
+    expect(html).toContain('width="1200"');
+    expect(html).toContain("object-contain");
+    expect(html).toContain("blur-2xl");
+  });
+
+  it("render 7 ảnh: 5 ô, ô cuối +2, data-images đủ 7 ảnh", () => {
+    const images = Array.from({ length: 7 }, (_, index) => img({ alt: `Ảnh ${index + 1}` }));
+    const html = renderAnnouncementHtml(doc({ type: "gallery", attrs: { images } }) as never);
+    expect(html.match(/data-gallery-item=/g)).toHaveLength(5);
+    expect(html).toContain("+2");
+    expect(html).toContain("grid-cols-6");
+    const json = /data-images="([^"]*)"/.exec(html)?.[1].replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+    expect(JSON.parse(json ?? "[]")).toHaveLength(7);
+  });
+
+  it("alt độc không thoát được khỏi attribute (dấu \" bị escape)", () => {
+    const html = renderAnnouncementHtml(doc({ type: "gallery", attrs: { images: [img({ alt: '"><script>alert(1)</script>' })] } }) as never);
+    expect(html).not.toMatch(/"><script/);
+    expect(html).toContain('alt="&quot;><script>');
+  });
+});
+
 describe("helpers", () => {
   it("isSafeLinkHref", () => {
     expect(isSafeLinkHref("https://nayangi.io.vn")).toBe(true);
