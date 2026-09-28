@@ -1,3 +1,5 @@
+import { isGuestOnlyPage } from "@/lib/route-policy";
+
 /**
  * Chống open-redirect: chỉ chấp nhận `callbackUrl` là đường dẫn NỘI BỘ tuyệt đối
  * (bắt đầu bằng "/", không phải "//" hay "/\" — cả hai đều được trình duyệt hiểu
@@ -22,4 +24,15 @@ export function sanitizeCallbackUrl(raw: string | null | undefined): string {
   if (/[\x00-\x1f]/.test(decoded)) return "/"; // chặn ký tự điều khiển (tab/newline) mà trình duyệt bỏ qua khi phân giải scheme
 
   return decoded;
+}
+
+/**
+ * Đích chuyển tới sau khi đăng nhập/đăng ký (BR-S09): callbackUrl đã qua
+ * sanitizeCallbackUrl; nếu nó lại trỏ về trang chỉ-dành-cho-khách (vd
+ * callbackUrl=/dang-nhap) thì về "/" để không đá qua đá lại giữa các trang auth.
+ */
+export function resolvePostLoginRedirect(raw: string | null | undefined): string {
+  const safe = sanitizeCallbackUrl(raw);
+  const pathname = safe.split(/[?#]/)[0];
+  return isGuestOnlyPage(pathname) ? "/" : safe;
 }

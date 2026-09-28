@@ -4,6 +4,10 @@ export interface HistoryReviewSummary {
   id: string;
   rating: number;
   comment: string | null;
+  /** ISO datetime lúc tạo review — mốc tính hạn sửa 24h. */
+  createdAt: string;
+  /** Đã bị xoá sau 24h (xoá mềm) — không thể đánh giá lại món này. */
+  isDeleted: boolean;
 }
 
 export interface HistoryEntry {

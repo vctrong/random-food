@@ -45,7 +45,7 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
     try {
       const response = await fetch(`/api/geocode?q=${encodeURIComponent(searchQuery)}`);
       const data = await response.json();
-      const found: GeocodeResult[] = Array.isArray(data) ? data : [];
+      const found: GeocodeResult[] = Array.isArray(data?.results) ? data.results : [];
       if (requestId === requestIdRef.current) {
         setResults(found);
         setNotFound(found.length === 0);

@@ -2,6 +2,9 @@ import { connectDB } from "@/lib/mongodb";
 import { Category } from "@/lib/models/Category";
 import { CategoryProposal } from "@/lib/models/CategoryProposal";
 import { AuditLog } from "@/lib/models/AuditLog";
+import { Food } from "@/lib/models/Food";
+import { slugifyVietnamese } from "@/lib/vietnameseText";
+import { FALLBACK_CATEGORY_SLUG, isCategoryGroup, type CategoryGroup } from "@/constants/categoryGroups";
 import type { AdminCategoryProposalRow, AdminCategoryRow } from "@/types/admin";
 
 export async function getCategories(): Promise<AdminCategoryRow[]> {
@@ -14,27 +17,21 @@ export async function getCategories(): Promise<AdminCategoryRow[]> {
     icon: category.icon ?? null,
     description: category.description ?? null,
     isActive: category.isActive ?? true,
+    group: (category.group && isCategoryGroup(category.group) ? category.group : "khac") as CategoryGroup,
+    foodCount: category.foodCount ?? 0,
+    isSystem: category.slug === FALLBACK_CATEGORY_SLUG,
     createdAt: (category.createdAt ?? new Date()).toISOString(),
   }));
 }
 
 type CategoryError = "SLUG_TAKEN" | "NOT_FOUND";
 
-export function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
 interface CreateCategoryInput {
   adminId: string;
   name: string;
   icon?: string;
   description?: string;
+  group?: CategoryGroup;
 }
 
 export async function createCategory({
@@ -42,13 +39,14 @@ export async function createCategory({
   name,
   icon,
   description,
+  group,
 }: CreateCategoryInput): Promise<{ error: CategoryError | null; id?: string }> {
   await connectDB();
-  const slug = slugify(name);
+  const slug = slugifyVietnamese(name);
   const existing = await Category.findOne({ slug });
   if (existing) return { error: "SLUG_TAKEN" };
 
-  const category = await Category.create({ name: name.trim(), slug, icon, description });
+  const category = await Category.create({ name: name.trim(), slug, icon, description, group: group ?? "khac" });
 
   await AuditLog.create({
     actorId: adminId,
@@ -68,6 +66,7 @@ interface UpdateCategoryInput {
   icon?: string;
   description?: string;
   isActive?: boolean;
+  group?: CategoryGroup;
 }
 
 export async function updateCategory({
@@ -77,6 +76,7 @@ export async function updateCategory({
   icon,
   description,
   isActive,
+  group,
 }: UpdateCategoryInput): Promise<{ error: CategoryError | null }> {
   await connectDB();
   const category = await Category.findById(categoryId);
@@ -85,7 +85,9 @@ export async function updateCategory({
   if (typeof name === "string" && name.trim()) category.name = name.trim();
   if (typeof icon === "string") category.icon = icon;
   if (typeof description === "string") category.description = description;
-  if (typeof isActive === "boolean") category.isActive = isActive;
+  // Danh mục hệ thống "Khác" luôn bật — tắt đi thì món đang tạm ở đó sẽ mất danh mục.
+  if (typeof isActive === "boolean" && category.slug !== FALLBACK_CATEGORY_SLUG) category.isActive = isActive;
+  if (group) category.group = group;
   await category.save();
 
   await AuditLog.create({
@@ -101,63 +103,50 @@ export async function updateCategory({
 
 export async function getCategoryProposals(): Promise<AdminCategoryProposalRow[]> {
   await connectDB();
-  const proposals = await CategoryProposal.find({})
-    .sort({ createdAt: -1 })
+  const proposals = (await CategoryProposal.find({})
+    .sort({ status: 1, createdAt: -1 })
     .populate("proposedBy", "name")
     .populate("reviewedBy", "name")
-    .lean();
+    .lean()) as unknown as LeanProposal[];
+
+  const foodIds = proposals.flatMap((proposal) => proposal.foodIds ?? []);
+  const foods = (await Food.find({ _id: { $in: foodIds } })
+    .select("name moderationStatus visibility proposedCategoryId")
+    .lean()) as unknown as { _id: unknown; name: string; moderationStatus: string; visibility: string; proposedCategoryId?: unknown }[];
+  const foodById = new Map(foods.map((food) => [String(food._id), food]));
 
   return proposals.map((proposal) => {
-    const proposedBy = proposal.proposedBy as unknown as { _id?: unknown; name?: string } | null;
-    const reviewedBy = proposal.reviewedBy as unknown as { _id?: unknown; name?: string } | null;
+    const proposedBy = proposal.proposedBy as { _id?: unknown; name?: string } | null;
+    const reviewedBy = proposal.reviewedBy as { _id?: unknown; name?: string } | null;
+    const linkedFoods = (proposal.foodIds ?? [])
+      .map((id) => foodById.get(String(id)))
+      .filter((food): food is NonNullable<typeof food> => Boolean(food && food.visibility !== "deleted"));
+    // "Đang dùng" = món còn gắn đề xuất và chưa bị từ chối — đúng tập món mà quyết định sẽ áp dụng.
+    const activeFoods = linkedFoods.filter(
+      (food) => String(food.proposedCategoryId) === String(proposal._id) && food.moderationStatus !== "rejected",
+    );
     return {
       id: String(proposal._id),
       name: proposal.name,
-      status: proposal.status as "pending" | "approved" | "rejected",
+      status: proposal.status,
+      proposalCount: proposal.proposalCount ?? 1,
+      foods: activeFoods.map((food) => ({ id: String(food._id), name: food.name, status: food.moderationStatus })),
       proposedBy: { id: String(proposedBy?._id ?? ""), name: proposedBy?.name ?? "Người dùng đã xoá" },
       reviewedBy: reviewedBy?._id ? { id: String(reviewedBy._id), name: reviewedBy.name ?? "" } : null,
-      reviewedAt: proposal.reviewedAt ? proposal.reviewedAt.toISOString() : null,
-      createdAt: (proposal.createdAt ?? new Date()).toISOString(),
+      reviewedAt: proposal.reviewedAt ? new Date(proposal.reviewedAt).toISOString() : null,
+      createdAt: new Date(proposal.createdAt ?? Date.now()).toISOString(),
     };
   });
 }
 
-type ProposalDecisionError = "NOT_FOUND" | "NOT_PENDING" | "SLUG_TAKEN";
-
-export async function decideCategoryProposal({
-  adminId,
-  proposalId,
-  decision,
-}: {
-  adminId: string;
-  proposalId: string;
-  decision: "approved" | "rejected";
-}): Promise<{ error: ProposalDecisionError | null }> {
-  await connectDB();
-  const proposal = await CategoryProposal.findById(proposalId);
-  if (!proposal) return { error: "NOT_FOUND" };
-  if (proposal.status !== "pending") return { error: "NOT_PENDING" };
-
-  if (decision === "approved") {
-    const slug = slugify(proposal.name);
-    const existing = await Category.findOne({ slug });
-    if (existing) return { error: "SLUG_TAKEN" };
-    await Category.create({ name: proposal.name, slug });
-  }
-
-  proposal.status = decision;
-  proposal.reviewedBy = adminId as unknown as typeof proposal.reviewedBy;
-  proposal.reviewedAt = new Date();
-  await proposal.save();
-
-  await AuditLog.create({
-    actorId: adminId,
-    action: decision === "approved" ? "category_create" : "category_update",
-    targetType: "category",
-    targetId: proposal._id,
-    reason: `Đề xuất danh mục "${proposal.name}" — ${decision === "approved" ? "đã duyệt" : "đã từ chối"}`,
-    metadata: { name: proposal.name },
-  });
-
-  return { error: null };
+interface LeanProposal {
+  _id: unknown;
+  name: string;
+  status: AdminCategoryProposalRow["status"];
+  proposalCount?: number;
+  foodIds?: unknown[];
+  proposedBy?: unknown;
+  reviewedBy?: unknown;
+  reviewedAt?: Date;
+  createdAt?: Date;
 }

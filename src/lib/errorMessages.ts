@@ -11,6 +11,7 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   CredentialsSignin: "Tên đăng nhập hoặc mật khẩu không đúng.",
   "Email hoặc mật khẩu không đúng.": "Tên đăng nhập hoặc mật khẩu không đúng.",
   "Tài khoản của bạn đã bị khóa.": "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.",
+  AccountLocked: "Tài khoản đang tạm khoá do nhập sai mã xác thực quá nhiều lần. Vui lòng kiểm tra email để mở khoá.",
   AccessDenied: "Bạn không có quyền đăng nhập bằng phương thức này.",
   Configuration: "Hệ thống đăng nhập đang gặp sự cố, vui lòng thử lại sau.",
   Verification: "Liên kết xác thực đã hết hạn hoặc không còn hợp lệ.",

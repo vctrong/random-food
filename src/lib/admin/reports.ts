@@ -1,4 +1,5 @@
 import { connectDB } from "@/lib/mongodb";
+import { recountCategoriesOfFood } from "@/lib/categoryCounts";
 import { Report } from "@/lib/models/Report";
 import { Food } from "@/lib/models/Food";
 import { Restaurant } from "@/lib/models/Restaurant";
@@ -78,7 +79,10 @@ async function getOwnerId(targetType: ReportTargetType, targetId: unknown): Prom
 
 async function applyTargetAction(targetType: ReportTargetType, targetId: unknown, action: "hide" | "remove") {
   const visibility = action === "remove" ? "deleted" : "hidden";
-  if (targetType === "food") await Food.findByIdAndUpdate(targetId, { visibility, updatedAt: new Date() });
+  if (targetType === "food") {
+    await Food.findByIdAndUpdate(targetId, { visibility, updatedAt: new Date() });
+    await recountCategoriesOfFood(targetId);
+  }
   else if (targetType === "restaurant")
     await Restaurant.findByIdAndUpdate(targetId, { visibility, updatedAt: new Date() });
   else await Review.findByIdAndUpdate(targetId, { status: "hidden", updatedAt: new Date() });

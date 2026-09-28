@@ -3,9 +3,16 @@
 import { useMemo, useState } from "react";
 import type { EatingLevel, Food } from "@/types/food";
 import type { HistoryEntry } from "@/types/history";
-import { removeHistoryEntry, clearAllHistory, submitReview, deleteMyReview } from "@/services/historyService";
+import {
+  removeHistoryEntry,
+  clearAllHistory,
+  submitReview,
+  updateMyReview,
+  deleteMyReview,
+} from "@/services/historyService";
 import { addSavedFood, removeSavedFood } from "@/services/savedFoodService";
 import { useToast } from "@/components/ui/ToastProvider";
+import { REVIEW_EDIT_WINDOW_HOURS } from "@/constants/limits";
 import {
   computeEatingLevelBreakdown,
   computeStats,
@@ -112,27 +119,71 @@ export function useHistoryLog({ initialEntries, allFoods, totalFoodsInMenu }: Us
 
     setRawEntries((prev) =>
       prev.map((e) =>
-        e.foodId === entry.foodId ? { ...e, review: { id: result.id!, rating, comment: comment.trim() || null } } : e,
+        e.foodId === entry.foodId
+          ? {
+              ...e,
+              review: {
+                id: result.id!,
+                rating,
+                comment: comment.trim() || null,
+                createdAt: new Date().toISOString(),
+                isDeleted: false,
+              },
+            }
+          : e,
       ),
     );
     showToast("Đã gửi đánh giá của bạn!", "success");
     return true;
   };
 
-  /** Xoá đánh giá — bỏ review khỏi mọi entry cùng foodId. */
+  /** Sửa đánh giá (trong 24h) — cập nhật review cho mọi entry cùng foodId. */
+  const updateEntryReview = async (entryId: string, rating: number, comment: string) => {
+    const entry = rawEntries.find((e) => e.id === entryId);
+    if (!entry?.review) return false;
+    const review = entry.review;
+
+    const result = await updateMyReview(review.id, rating, comment);
+    if (!result.ok) {
+      showToast(result.error ?? "Không thể sửa đánh giá.", "error");
+      return false;
+    }
+
+    setRawEntries((prev) =>
+      prev.map((e) =>
+        e.foodId === entry.foodId ? { ...e, review: { ...review, rating, comment: comment.trim() || null } } : e,
+      ),
+    );
+    showToast("Đã cập nhật đánh giá của bạn!", "success");
+    return true;
+  };
+
+  /**
+   * Xoá đánh giá. Trong 24h: xoá hẳn (review = null, còn hạn 72h thì viết lại được).
+   * Sau 24h: server xoá mềm → giữ review với isDeleted để UI báo không thể đánh giá lại.
+   */
   const removeEntryReview = async (entryId: string) => {
     const entry = rawEntries.find((e) => e.id === entryId);
     if (!entry?.review) return;
-    const reviewId = entry.review.id;
-    const snapshot = rawEntries;
+    const review = entry.review;
 
-    setRawEntries((prev) => prev.map((e) => (e.foodId === entry.foodId ? { ...e, review: null } : e)));
-
-    const ok = await deleteMyReview(reviewId);
-    if (!ok) {
-      setRawEntries(snapshot);
+    const result = await deleteMyReview(review.id);
+    if (!result.ok) {
       showToast("Không thể xoá đánh giá, vui lòng thử lại.", "error");
+      return;
     }
+
+    setRawEntries((prev) =>
+      prev.map((e) =>
+        e.foodId === entry.foodId ? { ...e, review: result.locked ? { ...review, isDeleted: true } : null } : e,
+      ),
+    );
+    showToast(
+      result.locked
+        ? `Đã xoá đánh giá. Vì đã quá ${REVIEW_EDIT_WINDOW_HOURS} giờ nên bạn không thể đánh giá lại món này.`
+        : "Đã xoá đánh giá.",
+      "success",
+    );
   };
 
   return {
@@ -155,6 +206,7 @@ export function useHistoryLog({ initialEntries, allFoods, totalFoodsInMenu }: Us
     clearAll,
     toggleSaved,
     submitEntryReview,
+    updateEntryReview,
     removeEntryReview,
     isEmpty: entries.length === 0,
     hasNoFilterMatch: entries.length > 0 && filteredEntries.length === 0,

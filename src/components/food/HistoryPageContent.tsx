@@ -47,6 +47,7 @@ export function HistoryPageContent({
     clearAll,
     toggleSaved,
     submitEntryReview,
+    updateEntryReview,
     removeEntryReview,
     isEmpty,
     hasNoFilterMatch,
@@ -221,6 +222,7 @@ export function HistoryPageContent({
                           onToggleSaved={toggleSaved}
                           onRemove={removeEntry}
                           onSubmitReview={submitEntryReview}
+                          onUpdateReview={updateEntryReview}
                           onRemoveReview={removeEntryReview}
                         />
                       </div>

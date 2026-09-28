@@ -1,33 +1,38 @@
 /**
- * Seed 7 category chính thức (taxonomy đã chốt của app trong
- * src/constants/categories.ts — không phải dữ liệu bịa) vào collection
- * `categories`. Idempotent — chạy lại nhiều lần không tạo trùng, chỉ upsert
- * theo slug. Viết bằng plain JS (không cần ts-node/tsx, tránh thêm dependency
- * mới) — nếu đổi CATEGORY_LABELS trong constants/categories.ts thì cập nhật
- * lại danh sách CATEGORIES bên dưới cho khớp.
+ * Seed danh mục chính thức — đồng bộ đúng với DB đang chạy (5 danh mục gốc từ
+ * seedFoods.mjs + "Chay" + danh mục hệ thống "Khác"), kèm `group` và
+ * `nameNormalized` theo docs/database.md. Idempotent — upsert theo slug,
+ * không đụng `foodCount` (tính bởi migrate:contribution-flow / lúc duyệt món).
  *
  * Chạy: node --env-file=.env.local scripts/seedCategories.mjs
  */
 import mongoose from "mongoose";
 
 const CATEGORIES = [
-  { slug: "com", name: "Cơm", icon: "Utensils" },
-  { slug: "bun-pho-hu-tieu", name: "Bún / Phở / Hủ tiếu", icon: "Soup" },
-  { slug: "an-vat", name: "Ăn vặt", icon: "Cookie" },
-  { slug: "mon-nuoc", name: "Món nước", icon: "Flame" },
-  { slug: "chay", name: "Chay", icon: "Salad" },
-  { slug: "banh-mi", name: "Bánh mì", icon: "Sandwich" },
-  { slug: "do-uong", name: "Đồ uống", icon: "Coffee" },
+  { slug: "banh", name: "Bánh", icon: "🥟", group: "banh" },
+  { slug: "bun", name: "Bún", icon: "🍜", group: "mon-nuoc" },
+  { slug: "com", name: "Cơm", icon: "🍚", group: "com" },
+  { slug: "hu-tieu", name: "Hủ tiếu", icon: "🍲", group: "mon-nuoc" },
+  { slug: "che-trang-mieng", name: "Chè / Tráng miệng", icon: "🍧", group: "trang-mieng" },
+  { slug: "chay", name: "Chay", icon: "🥗", group: "chay" },
+  { slug: "khac", name: "Khác", icon: "🍽️", group: "khac" },
 ];
 
-const categorySchema = new mongoose.Schema({
-  name: String,
-  slug: String,
-  icon: String,
-  description: String,
-  isActive: Boolean,
-  createdAt: { type: Date, default: Date.now },
-});
+/** Bản JS của normalizeVietnamese (src/lib/vietnameseText.ts). */
+function normalizeVietnamese(value) {
+  return String(value ?? "")
+    .normalize("NFC")
+    .split("")
+    .map((char) => {
+      const lower = char.toLowerCase();
+      if (lower === "đ") return "d";
+      const folded = lower.normalize("NFD").replace(/[̀-ͯ]/g, "");
+      return folded.length === 1 ? folded : lower;
+    })
+    .join("")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
 
 async function main() {
   const uri = process.env.MONGODB_URI;
@@ -36,15 +41,18 @@ async function main() {
   }
 
   await mongoose.connect(uri);
-  const Category = mongoose.models.Category ?? mongoose.model("Category", categorySchema);
+  const categories = mongoose.connection.collection("categories");
 
-  for (const { slug, name, icon } of CATEGORIES) {
-    await Category.updateOne(
+  for (const { slug, name, icon, group } of CATEGORIES) {
+    await categories.updateOne(
       { slug },
-      { $set: { name, slug, icon, isActive: true } },
+      {
+        $set: { name, slug, icon, group, nameNormalized: normalizeVietnamese(name), isActive: true },
+        $setOnInsert: { foodCount: 0, createdAt: new Date() },
+      },
       { upsert: true },
     );
-    console.log(`✓ ${slug} → ${name}`);
+    console.log(`✓ ${slug} → ${name} (${group})`);
   }
 
   await mongoose.disconnect();

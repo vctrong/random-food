@@ -23,11 +23,21 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
-import { useToast } from "@/components/ui/ToastProvider";
+import { queueToastForNextPage, useToast } from "@/components/ui/ToastProvider";
+import { useGuestOnlyRedirect } from "@/features/auth/useGuestOnlyRedirect";
 import { getApiErrorMessage, getNetworkErrorMessage } from "@/lib/errorMessages";
 import { isPasswordValid, PASSWORD_POLICY_MESSAGE } from "@/lib/password";
-import { sanitizeCallbackUrl } from "@/lib/safe-redirect";
+import { resolvePostLoginRedirect } from "@/lib/safe-redirect";
+import { usePasswordLinkFlow } from "@/features/auth/usePasswordLinkFlow";
+import { isValidEmail, normalizeEmail } from "@/features/password-reset/passwordResetLogic";
+import { checkRegisterEmail, type RegisterEmailStatus } from "@/services/accountLinkService";
 import { GoogleIcon } from "./GoogleIcon";
+import { LinkGoogleAccountStep } from "./LinkGoogleAccountStep";
+
+const EMAIL_TAKEN_MESSAGE = "Email đã được sử dụng.";
+const GOOGLE_ONLY_HINT = "Email này đang đăng nhập bằng Google — bấm Tiếp tục để thêm đăng nhập bằng mật khẩu.";
+/** Chờ ngắn sau khi rời ô email để không gọi API 2 lần khi người dùng rời ô bằng cách bấm "Tiếp tục". */
+const EMAIL_CHECK_DEBOUNCE_MS = 400;
 
 const TRUST_BADGES = [
   "Không quảng cáo phiền toái",
@@ -50,10 +60,10 @@ export function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // Chống open-redirect: callbackUrl đến từ query string do client kiểm soát được.
-  const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
+  const callbackUrl = resolvePostLoginRedirect(searchParams.get("callbackUrl"));
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [step, setStep] = useState<"form" | "avatar">("form");
+  const [step, setStep] = useState<"form" | "avatar" | "link">("form");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -63,14 +73,110 @@ export function RegisterForm() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailHint, setEmailHint] = useState<string | null>(null);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [isLinkSigningIn, setIsLinkSigningIn] = useState(false);
+  /** Kết quả kiểm tra gần nhất theo email đã chuẩn hoá — rời ô rồi bấm Tiếp tục không gọi API 2 lần. */
+  const emailCheckRef = useRef<{ email: string; status: RegisterEmailStatus } | null>(null);
+  const latestEmailRef = useRef("");
+  const blurTimerRef = useRef<number | null>(null);
+  const link = usePasswordLinkFlow();
   const { showToast } = useToast();
+  useGuestOnlyRedirect(callbackUrl, isSubmitting || isLinkSigningIn);
 
   const strength = useMemo(() => getPasswordStrength(password), [password]);
   const passwordsMatch = confirmPassword.length > 0 && confirmPassword === password;
 
-  function handleContinue(event: FormEvent<HTMLFormElement>) {
+  function handleEmailChange(value: string) {
+    setEmail(value);
+    latestEmailRef.current = value;
+    setEmailError(null);
+    setEmailHint(null);
+  }
+
+  /** null = lỗi mạng/hệ thống (đã báo nếu không `silent`). Server vẫn kiểm tra lại ở mọi bước sau. */
+  async function checkEmail(rawEmail: string, silent: boolean): Promise<RegisterEmailStatus | null> {
+    const normalized = normalizeEmail(rawEmail);
+    if (emailCheckRef.current?.email === normalized) return emailCheckRef.current.status;
+    const result = await checkRegisterEmail(normalized);
+    if (!result.ok) {
+      if (!silent) {
+        setError(result.message);
+        showToast(result.message, "error");
+      }
+      return null;
+    }
+    emailCheckRef.current = { email: normalized, status: result.data.status };
+    return result.data.status;
+  }
+
+  function handleEmailBlur() {
+    if (blurTimerRef.current) window.clearTimeout(blurTimerRef.current);
+    const value = email;
+    if (!isValidEmail(normalizeEmail(value))) return;
+    blurTimerRef.current = window.setTimeout(async () => {
+      const status = await checkEmail(value, true);
+      // Người dùng đã sửa email trong lúc chờ → bỏ kết quả cũ.
+      if (normalizeEmail(latestEmailRef.current) !== normalizeEmail(value)) return;
+      if (status === "taken") setEmailError(EMAIL_TAKEN_MESSAGE);
+      if (status === "google_only") setEmailHint(GOOGLE_ONLY_HINT);
+    }, EMAIL_CHECK_DEBOUNCE_MS);
+  }
+
+  function showEmailTaken() {
+    setStep("form");
+    setEmailHint(null);
+    setEmailError(EMAIL_TAKEN_MESSAGE);
+    window.setTimeout(() => document.getElementById("register-email-field")?.focus(), 0);
+  }
+
+  /** Email thuộc tài khoản chỉ có Google: gửi OTP, CHƯA gán mật khẩu cho tới khi mã đúng (server giữ hash tạm). */
+  async function enterLinkStep() {
+    setStep("link");
+    const outcome = await link.start(email, password);
+    if (outcome === "available") {
+      emailCheckRef.current = null;
+      setStep("avatar");
+    } else if (outcome === "taken") {
+      emailCheckRef.current = null;
+      showEmailTaken();
+    }
+  }
+
+  async function handleLinkVerify(code: string) {
+    const outcome = await link.confirm(email, code);
+    if (outcome.kind === "sessionEnded") {
+      emailCheckRef.current = null;
+      link.reset();
+      setStep("form");
+      setError(outcome.message);
+      return;
+    }
+    if (outcome.kind !== "linked") return;
+
+    setIsLinkSigningIn(true);
+    const result = await signIn("credentials", { email, password, remember: "true", redirect: false });
+    if (!result?.ok || result.error) {
+      setIsLinkSigningIn(false);
+      showToast("Đã thêm mật khẩu cho tài khoản! Vui lòng đăng nhập để tiếp tục.", "info");
+      router.replace(`/dang-nhap?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+      return;
+    }
+    // Điều hướng toàn trang như LoginForm — xem lý do ở đó.
+    queueToastForNextPage("Đã thêm đăng nhập bằng mật khẩu! Từ giờ bạn đăng nhập được bằng cả Google lẫn mật khẩu.", "success");
+    window.location.replace(callbackUrl);
+  }
+
+  function leaveLinkStep() {
+    link.reset();
+    setStep("form");
+  }
+
+  async function handleContinue(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    if (blurTimerRef.current) window.clearTimeout(blurTimerRef.current);
 
     if (!isPasswordValid(password)) {
       setError(PASSWORD_POLICY_MESSAGE);
@@ -83,6 +189,18 @@ export function RegisterForm() {
       return;
     }
 
+    setIsCheckingEmail(true);
+    const status = await checkEmail(email, false);
+    setIsCheckingEmail(false);
+    if (status === null) return;
+    if (status === "taken") {
+      showEmailTaken();
+      return;
+    }
+    if (status === "google_only") {
+      await enterLinkStep();
+      return;
+    }
     setStep("avatar");
   }
 
@@ -117,6 +235,14 @@ export function RegisterForm() {
       const data = await response.json();
 
       if (!response.ok) {
+        // Kiểm tra lại ở server phát hiện email vừa bị dùng / là tài khoản Google (race với bước 1).
+        if (response.status === 409 && (data.code === "GOOGLE_ACCOUNT" || data.code === "EMAIL_TAKEN")) {
+          setIsSubmitting(false);
+          emailCheckRef.current = null;
+          if (data.code === "GOOGLE_ACCOUNT") await enterLinkStep();
+          else showEmailTaken();
+          return;
+        }
         const message = getApiErrorMessage(response.status, data.error);
         setError(message);
         showToast(message, "error");
@@ -128,16 +254,16 @@ export function RegisterForm() {
       // đăng xuất sau 30 phút idle ngay sau khi vừa đăng ký.
       const result = await signIn("credentials", { email, password, remember: "true", redirect: false });
 
-      setIsSubmitting(false);
-
-      if (result?.error) {
-        router.push(`/dang-nhap?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+      if (!result?.ok || result.error) {
+        setIsSubmitting(false);
+        showToast("Tạo tài khoản thành công! Vui lòng đăng nhập để tiếp tục.", "info");
+        router.replace(`/dang-nhap?callbackUrl=${encodeURIComponent(callbackUrl)}`);
         return;
       }
 
-      showToast("Tạo tài khoản thành công! Chào mừng bạn.", "success");
-      router.push(callbackUrl);
-      router.refresh();
+      // Điều hướng toàn trang như LoginForm — xem lý do ở đó.
+      queueToastForNextPage("Tạo tài khoản thành công! Chào mừng bạn.", "success");
+      window.location.replace(callbackUrl);
     } catch {
       setIsSubmitting(false);
       showToast(getNetworkErrorMessage(), "error");
@@ -209,10 +335,25 @@ export function RegisterForm() {
                       type="email"
                       required
                       value={email}
-                      onChange={(event) => setEmail(event.target.value)}
+                      onChange={(event) => handleEmailChange(event.target.value)}
+                      onBlur={handleEmailBlur}
+                      aria-invalid={emailError ? true : undefined}
+                      aria-describedby="register-email-feedback"
                       placeholder="Nhập email của bạn"
-                      className="w-full h-12 pl-11 pr-4 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                      className="w-full h-12 pl-11 pr-4 rounded-xl border border-border bg-surface text-text-primary placeholder:text-text-secondary/70 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary aria-[invalid=true]:border-accent-strong aria-[invalid=true]:focus:ring-accent/40"
                     />
+                  </div>
+                  <div id="register-email-feedback" aria-live="polite">
+                    {emailError ? (
+                      <p role="alert" className="text-sm leading-snug text-accent-ink">
+                        {emailError}{" "}
+                        <Link href="/dang-nhap" className="font-semibold underline-offset-2 hover:underline">
+                          Đăng nhập?
+                        </Link>
+                      </p>
+                    ) : (
+                      emailHint && <p className="text-xs leading-snug text-text-secondary">{emailHint}</p>
+                    )}
                   </div>
                 </div>
 
@@ -301,8 +442,14 @@ export function RegisterForm() {
 
                 {error && <p className="text-sm text-red-600 -mt-1">{error}</p>}
 
-                <Button type="submit" size="lg" fullWidth rightIcon={<ArrowRight className="size-4.5" aria-hidden />}>
-                  Tiếp tục
+                <Button
+                  type="submit"
+                  size="lg"
+                  fullWidth
+                  isLoading={isCheckingEmail || link.pending === "start"}
+                  rightIcon={<ArrowRight className="size-4.5" aria-hidden />}
+                >
+                  {isCheckingEmail ? "Đang kiểm tra email..." : "Tiếp tục"}
                 </Button>
               </form>
 
@@ -331,6 +478,17 @@ export function RegisterForm() {
                 </p>
               </div>
             </>
+          ) : step === "link" ? (
+            <LinkGoogleAccountStep
+              otpState={link.otpState}
+              inputKey={link.inputKey}
+              pending={isLinkSigningIn ? "signin" : link.pending}
+              error={link.error}
+              onVerify={(code) => void handleLinkVerify(code)}
+              onResend={() => void link.resend(email)}
+              onRetryStart={() => void enterLinkStep()}
+              onBack={leaveLinkStep}
+            />
           ) : (
             <>
               <button

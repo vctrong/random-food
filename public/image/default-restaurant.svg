@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Ảnh quán mặc định">
+  <rect width="400" height="300" fill="#EAF3FD"/>
+  <circle cx="330" cy="62" r="46" fill="#FDF1F9"/>
+  <circle cx="64" cy="250" r="64" fill="#FFFFFF" opacity="0.55"/>
+  <!-- Thân quán -->
+  <rect x="112" y="118" width="176" height="122" rx="10" fill="#FFFFFF" stroke="#C4DCF7" stroke-width="3"/>
+  <rect x="136" y="160" width="58" height="80" rx="6" fill="#EAF3FD" stroke="#C4DCF7" stroke-width="3"/>
+  <rect x="210" y="160" width="56" height="44" rx="6" fill="#EAF3FD" stroke="#C4DCF7" stroke-width="3"/>
+  <!-- Mái hiên sọc -->
+  <path d="M100 96h200l-8 30H108z" fill="#5B9EEB"/>
+  <path d="M100 126h25v10a12.5 12.5 0 0 1-25 0zM150 126h25v10a12.5 12.5 0 0 1-25 0zM200 126h25v10a12.5 12.5 0 0 1-25 0zM250 126h25v10a12.5 12.5 0 0 1-25 0z" fill="#5B9EEB"/>
+  <path d="M125 126h25v10a12.5 12.5 0 0 1-25 0zM175 126h25v10a12.5 12.5 0 0 1-25 0zM225 126h25v10a12.5 12.5 0 0 1-25 0zM275 126h25v10a12.5 12.5 0 0 1-25 0z" fill="#FFFFFF"/>
+  <rect x="96" y="88" width="208" height="12" rx="6" fill="#2F6FB8"/>
+  <!-- Tô ăn trên bảng hiệu -->
+  <path d="M218 184h40a20 20 0 0 1-40 0z" fill="#F4B2E0"/>
+  <path d="M230 176c0-6 6-6 6-12M242 176c0-6 6-6 6-12" stroke="#B8488F" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <rect x="100" y="238" width="200" height="6" rx="3" fill="#C4DCF7"/>
+</svg>

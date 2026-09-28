@@ -36,6 +36,7 @@ export async function getLatestReviewQuotes(foodIds: string[]): Promise<Record<s
   const reviews = (await Review.find({
     foodId: { $in: foodIds },
     status: "visible",
+    deletedAt: null,
     comment: { $exists: true, $nin: ["", null] },
   })
     .sort({ createdAt: -1 })

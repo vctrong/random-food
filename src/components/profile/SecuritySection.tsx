@@ -13,10 +13,12 @@ import { getApiErrorMessage, getNetworkErrorMessage } from "@/lib/errorMessages"
 import { isPasswordValid, PASSWORD_POLICY_MESSAGE } from "@/lib/password";
 
 interface SecuritySectionProps {
-  authProvider: "local" | "google";
+  /** Dựa vào mật khẩu chứ không dựa vào authProvider: tài khoản Google đã thêm mật khẩu cũng đổi được. */
+  hasPassword: boolean;
+  isEmailVerified: boolean;
 }
 
-export function SecuritySection({ authProvider }: SecuritySectionProps) {
+export function SecuritySection({ hasPassword, isEmailVerified }: SecuritySectionProps) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
@@ -89,7 +91,7 @@ export function SecuritySection({ authProvider }: SecuritySectionProps) {
 
   return (
     <div id="bao-mat" className="scroll-mt-24 flex flex-col gap-4">
-      {authProvider === "local" ? (
+      {hasPassword ? (
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
             <KeyRound className="size-5 text-primary" aria-hidden />
@@ -124,7 +126,11 @@ export function SecuritySection({ authProvider }: SecuritySectionProps) {
         <Card className="p-6 flex items-center gap-3">
           <ShieldCheck className="size-5 text-primary shrink-0" aria-hidden />
           <p className="text-sm text-text-secondary">
-            Tài khoản đăng nhập bằng Google — mật khẩu được quản lý bởi Google, không đổi được tại đây.
+            Tài khoản đang chỉ đăng nhập bằng Google và chưa có mật khẩu.{" "}
+            <a href="#xac-thuc-email" className="font-semibold text-primary-strong hover:underline dark:text-primary">
+              {isEmailVerified ? "Tạo mật khẩu" : "Xác thực email để tạo mật khẩu"}
+            </a>{" "}
+            để đăng nhập được bằng email và mật khẩu.
           </p>
         </Card>
       )}

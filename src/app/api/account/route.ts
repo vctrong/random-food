@@ -30,9 +30,10 @@ export async function PATCH(request: Request) {
   const userId = (session.user as { id: string }).id;
   const user = await User.findById(userId);
 
-  if (!user || user.authProvider !== "local" || !user.passwordHash) {
+  // Dựa vào passwordHash chứ không dựa vào authProvider: tài khoản Google đã thêm mật khẩu cũng đổi được.
+  if (!user || !user.passwordHash) {
     return NextResponse.json(
-      { error: "Tài khoản đăng nhập bằng Google không thể đổi mật khẩu tại đây." },
+      { error: "Tài khoản chưa có mật khẩu. Hãy xác thực email trong trang Hồ sơ để tạo mật khẩu." },
       { status: 400 },
     );
   }

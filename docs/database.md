@@ -20,6 +20,7 @@ erDiagram
     users ||--o{ categoryProposals : "đề xuất"
     users ||--o{ foodReviewerApplications : "nộp đơn"
     users ||--o{ reports : "báo cáo"
+    users ||--o| passwordResets : "quên mật khẩu"
 
     restaurants ||--o{ foods : "có nhiều món"
     categories ||--o{ foods : "phân loại"
@@ -39,27 +40,44 @@ erDiagram
 {
   _id: ObjectId,
   email: "trong@example.com",       // unique, required, lowercase
-  passwordHash: "...",              // optional — null nếu đăng nhập bằng Google
+  passwordHash: "...",              // optional — không có nếu tài khoản chỉ đăng nhập bằng Google. Tài khoản Google
+                                     // có thể thêm sau (docs/email-verification.md mục 6–7) → đăng nhập được cả 2 cách.
+                                     // "Có mật khẩu hay không" LUÔN dựa vào field này, không dựa vào authProvider.
   name: "Ttong",                    // required
   avatarUrl: "https://res.cloudinary.com/.../avatar.jpg",
   phone: "0901234567",
   role: "user",                     // "user" | "foodreviewer" | "admin"
-  authProvider: "local",            // "local" | "google"
+  authProvider: "local",            // "local" | "google" — cách TẠO tài khoản ban đầu (Google: events.createUser gán
+                                     // "google" từ bản cập nhật này; user Google cũ backfill bằng `npm run migrate:google-auth-provider`).
   googleId: null,
   accountStatus: "active",          // "active" | "banned"
   warningCount: 0,                  // số lần bị Admin cảnh cáo (BR-M05)
-  isVerified: false,
+  isVerified: false,                // đã xác thực email chưa (BR-S15). Mọi tài khoản mới (kể cả Google) = false,
+                                     // bật qua OTP ở trang Hồ sơ hoặc khi thêm mật khẩu từ form Đăng ký
+                                     // (collection emailVerifications). User Google tạo TRƯỚC bản cập nhật này vẫn
+                                     // giữ true (không migrate — đã chốt). Chưa xác thực → không dùng được Quên mật khẩu.
   lastLoginAt: ISODate,
   createdAt: ISODate,
   // Không có field `updatedAt` trên User (khác bản thiết kế cũ).
   sessionVersion: 0,                // tăng lên để thu hồi mọi session đang hoạt động
                                      // (đổi mật khẩu, khoá tài khoản, "đăng xuất khỏi mọi thiết bị")
-  lastActiveAt: ISODate             // mốc hoạt động gần nhất, dùng cho idle-timeout 30 phút
+  lastActiveAt: ISODate,            // mốc hoạt động gần nhất, dùng cho idle-timeout 30 phút
                                      // khi user không tick "ghi nhớ đăng nhập" (xem lib/auth.ts)
+  securityLock: {                   // OPTIONAL — chỉ có khi đang TẠM KHOÁ do sai OTP quên mật khẩu 5 lần
+    lockedAt: ISODate,              // (khác accountStatus "banned" do Admin khoá). Không có field = không bị khoá.
+    reason: "otp_failed",
+    unlockTokenHash: "hex",         // HMAC-SHA256 của token trong link mở khoá — không lưu token thô
+    unlockTokenExpiresAt: ISODate,  // 24h
+    unlockEmailHistory: [ISODate],  // các lần gửi email mở khoá trong 1 giờ gần nhất (cooldown/giới hạn)
+    lockIp: "1.2.3.4",
+    lockUserAgent: "Mozilla/5.0..."
+  }
 }
 ```
 
-**Index:** `{ email: 1 }` unique (khai báo qua `unique: true` trong schema)
+**Index:** `{ email: 1 }` unique (khai báo qua `unique: true` trong schema) · `{ "securityLock.unlockTokenHash": 1 }` sparse
+
+> `securityLock` thêm cho luồng Quên mật khẩu — chi tiết ở [`forgot-password.md`](forgot-password.md). Đang khoá: không đăng nhập được (Credentials + Google), không yêu cầu OTP được; phiên đang đăng nhập không bị đăng xuất.
 
 *(Guest không có bản ghi — không lưu trữ theo BR-U01.)*
 
@@ -107,11 +125,16 @@ erDiagram
 {
   _id: ObjectId,
   name: "Quán Bún Bò Cô Ba",
-  address: "123 Nguyễn Văn Cừ, Ninh Kiều, Cần Thơ",
-  location: {                       // GeoJSON, bắt buộc [lng, lat]
-    type: "Point",
-    coordinates: [105.7469, 10.0333]
+  address: "123 Nguyễn Văn Cừ, Ninh Kiều, Cần Thơ",   // BẮT BUỘC (BR-C03)
+  location: {                       // KHÔNG bắt buộc — quán chưa ghim thì KHÔNG có field này
+    type: "Point",                  // (subdocument default: undefined; không để { type:"Point" } thiếu coordinates)
+    coordinates: [105.7469, 10.0333] // [lng, lat]
   },
+  locationSource: "pin_confirmed",  // "gps" | "pin_confirmed" | "geocoded" | "none" — độ tin cậy vị trí
+  images: ["https://res.cloudinary.com/.../nayangi/restaurants/a.jpg"], // 0–3 ảnh; [] nếu không có.
+                                     // KHÔNG lưu URL ảnh mặc định — fallback khi hiển thị (RestaurantImage)
+  nameNormalized: "quan bun bo co ba",          // không dấu, lowercase — tự cập nhật khi save (pre validate)
+  addressNormalized: "123 nguyen van cu ninh kieu can tho",
   openingHours: "06:00 - 21:00",
   moderationStatus: "pending",      // "pending" | "approved" | "rejected" | "needs_revision"
   visibility: "visible",            // "visible" | "hidden" | "deleted"
@@ -127,7 +150,9 @@ erDiagram
 }
 ```
 
-**Index:** `{ location: "2dsphere" }` · `{ moderationStatus: 1, visibility: 1 }`
+**Index:** `{ location: "2dsphere" }` (bỏ qua quán không có `location`) · `{ moderationStatus: 1, visibility: 1 }` · `{ moderationStatus: 1, visibility: 1, _id: -1 }` (danh sách chọn quán "mới thêm gần đây", phân trang cursor)
+
+**Atlas Search index `restaurants_search`** (tạo tay trên Atlas — xem [`contribute-food.md`](contribute-food.md) mục 6): fuzzy + autocomplete + bỏ dấu trên `name`/`address`. Chưa có index thì API tự fallback regex trên `nameNormalized`/`addressNormalized`.
 
 ---
 
@@ -138,8 +163,11 @@ erDiagram
   _id: ObjectId,
   restaurantId: ObjectId,           // ref restaurants — BẮT BUỘC (BR-C02)
   name: "Bún bò Huế đặc biệt",
-  description: "Bún bò đậm vị, quán nhỏ ngay trung tâm",
-  categoryIds: [ObjectId],          // ref categories, có thể nhiều category
+  description: "Bún bò đậm vị, quán nhỏ ngay trung tâm",   // KHÔNG bắt buộc (BR-C04 cập nhật)
+  categoryIds: [ObjectId],          // ref categories, 0–3 phần tử (tổng với đề xuất: 1–3). Có thể chứa
+                                     // danh mục hệ thống "Khác" khi đề xuất chưa xử lý/bị từ chối (BR-CA06/CA08)
+  proposedCategoryId: ObjectId,     // OPTIONAL, ref categoryProposals — danh mục user đề xuất kèm món (tối đa 1);
+                                     // gỡ khi đề xuất được gộp/tạo mới/từ chối
   eatingLevels: ["normal", "hearty"], // BẮT BUỘC, ít nhất 1 phần tử (validate ở schema)
                                        // "snack" | "normal" | "hearty" | "full" (BR-R01)
   images: [
@@ -184,25 +212,42 @@ erDiagram
   icon: "🍚",
   description: "Các món cơm",
   isActive: true,
+  group: "com",                     // nhóm cha: "mon-nuoc" | "com" | "banh" | "an-vat" | "do-uong" |
+                                     // "trang-mieng" | "chay" | "khac" (src/constants/categoryGroups.ts)
+  nameNormalized: "com",            // không dấu, lowercase — tự cập nhật khi save
+  foodCount: 2,                     // số món approved + visible — denormalized, tính lại bởi
+                                     // lib/categoryCounts.ts mỗi khi duyệt món / Admin ẩn-xoá / xử lý đề xuất
   createdAt: ISODate
 }
 ```
 
 **Index:** `{ slug: 1 }` unique
 
+**Danh mục trong DB (2026-09):** Bánh, Bún, Cơm, Hủ tiếu, Chè / Tráng miệng (từ `seedFoods.mjs`) + **Chay** (nhóm Chay) + **Khác** (slug `khac`, danh mục hệ thống: user không tự chọn, Admin không tắt được, tự tạo nếu thiếu). `scripts/seedCategories.mjs` đã đồng bộ đúng danh sách này.
+
 ## 5b. `categoryProposals` (`src/lib/models/CategoryProposal.ts`)
 
 ```js
 {
   _id: ObjectId,
-  name: "Đồ chay",
-  proposedBy: ObjectId,             // ref users, required
-  status: "pending",                // "pending" | "approved" | "rejected"
+  name: "Đồ nướng",                 // tên gốc lần đề xuất đầu tiên
+  nameNormalized: "do nuong",       // khoá gộp đề xuất trùng tên
+  proposedBy: ObjectId,             // ref users — người đề xuất ĐẦU TIÊN (giữ field cũ)
+  proposerIds: [ObjectId],          // mọi người đã đề xuất tên này
+  proposalCount: 3,                 // số lượt đề xuất (mỗi món gửi kèm = 1 lượt)
+  foodIds: [ObjectId],              // món đã gửi kèm đề xuất này
+  status: "pending",                // "pending" | "approved" | "merged" | "rejected"
+  mergedIntoCategoryId: ObjectId,   // khi status = merged
+  createdCategoryId: ObjectId,      // khi status = approved (chỉ Admin)
   reviewedBy: ObjectId,
   reviewedAt: ISODate,
   createdAt: ISODate
 }
 ```
+
+**Index:** `{ nameNormalized: 1 }` **unique một phần** (`status: "pending"`, tên `nameNormalized_pending_unique`) — gộp đề xuất bằng upsert an toàn khi nhiều người gửi cùng lúc · `{ status: 1, createdAt: -1 }`
+
+> Luồng xử lý + phân quyền: [`contribute-food.md`](contribute-food.md) và BR-CA04→CA09 trong [`BR_UC.md`](BR_UC.md).
 
 ---
 
@@ -251,12 +296,20 @@ erDiagram
   rating: 4.5,                      // Number, min 1, max 5
   comment: "Ngon, giá hợp lý",
   status: "visible",                // "visible" | "hidden" (Admin moderation)
-  createdAt: ISODate,
-  updatedAt: ISODate
+  createdAt: ISODate,               // mốc tính hạn sửa 24h (BR-RV09)
+  updatedAt: ISODate,
+  deletedAt: ISODate                // optional — xóa mềm khi User tự xóa review đã quá 24h (BR-RV11)
 }
 ```
 
 **Index:** `{ userId: 1, foodId: 1, restaurantId: 1 }` unique (chặn trùng review — BR-RV02) · `{ foodId: 1, status: 1 }`
+
+**Thời hạn đánh giá (kiểm tra ở tầng API — `src/lib/reviews.ts`, hàm thuần ở `src/lib/reviewWindow.ts`, hằng số ở `src/constants/limits.ts`):**
+- **Viết** (`POST /api/reviews`): chỉ khi `experiences.createdAt` của lần check-in được gửi lên còn trong **72h** (BR-RV10) → quá hạn trả `403`.
+- **Sửa** (`PATCH /api/reviews/:id`, body `{ rating, comment? }`, comment rỗng = bỏ comment): chỉ khi `reviews.createdAt` còn trong **24h** (BR-RV09) → quá hạn trả `403`.
+- **Xóa** (`DELETE /api/reviews/:id`): trong 24h → xóa thật (hard delete); sau 24h → set `deletedAt` (xóa mềm), response `{ success: true, locked: true }`. Bản ghi xóa mềm vẫn giữ unique index nên `POST` lại cho cùng (Food, Restaurant) trả `409` "không thể đánh giá lại" (BR-RV11).
+
+**Quy ước truy vấn với `deletedAt`:** mọi truy vấn review công khai / tính điểm / trang Admin phải lọc `deletedAt: null` (khớp cả document cũ chưa có field này — không cần migration). Riêng `GET /api/reviews/mine` trả cả review đã xóa mềm kèm `isDeleted: true` để trang Lịch sử biết món nào đã bị khoá đánh giá.
 
 > Khi tạo/sửa/xóa review: cần tự cập nhật lại `avgRating`/`ratingCount` trên `foods` tương ứng ở tầng API (không có trigger tự động trong schema).
 
@@ -349,7 +402,8 @@ erDiagram
                                      // approve_food | reject_food | needs_revision | ban_user | unban_user |
                                      // hide_review | delete_food | assign_reviewer | remove_reviewer |
                                      // approve_reviewer_application | reject_reviewer_application |
-                                     // category_create | category_update | category_delete | handle_report
+                                     // category_create | category_update | category_delete | handle_report |
+                                     // category_proposal_merge | category_proposal_reject | category_proposal_approve
   targetType: "food",               // "food" | "restaurant" | "review" | "user" | "category" | "report", required
   targetId: ObjectId,               // required
   reason: "Đã kiểm tra tại chỗ, thông tin đúng",
@@ -369,6 +423,10 @@ erDiagram
   _id: ObjectId,
   userId: ObjectId,                 // ref users, optional — null nếu Guest/anonymous
   action: "spin_random",            // required, string tự do — vd "login" | "spin_random" | "search" | "error"
+                                     // + sự kiện bảo mật Quên mật khẩu: password_reset_requested | password_reset_email_failed |
+                                     //   password_reset_otp_failed | password_reset_otp_verified | account_locked |
+                                     //   account_unlock_email_resent | account_unlocked | password_reset_completed
+                                     //   (metadata không bao giờ chứa OTP/token thô; email luôn ở dạng đã che)
   metadata: {},                     // Mixed, default {}
   ip: "1.2.3.4",
   userAgent: "Mozilla/5.0...",
@@ -425,7 +483,73 @@ erDiagram
 - **`sessions`** — do dùng chiến lược JWT (session nằm trong cookie, không lưu DB) nên **collection này không được adapter sử dụng** trong luồng hiện tại.
 - **`verification_tokens`** — chưa dùng vì chưa có Email Provider (magic link).
 
-Adapter tạo document `users` cho tài khoản Google bằng field riêng (`name`/`email`/`image`/`emailVerified`), không đi qua Mongoose schema `User` nên thiếu `role`/`isVerified`/`avatarUrl`/`createdAt`/`sessionVersion`. `events.createUser` trong `src/lib/auth.ts` bổ sung lại các field này ngay khi user Google được tạo lần đầu — **không tự sửa logic này** nếu không hiểu rõ luồng, vì sai sót ở đây có thể khiến user Google thiếu field bắt buộc.
+Adapter tạo document `users` cho tài khoản Google bằng field riêng (`name`/`email`/`image`/`emailVerified`), không đi qua Mongoose schema `User` nên thiếu `role`/`authProvider`/`isVerified`/`avatarUrl`/`createdAt`/`sessionVersion`. `events.createUser` trong `src/lib/auth.ts` bổ sung lại các field này ngay khi user Google được tạo lần đầu — **không tự sửa logic này** nếu không hiểu rõ luồng, vì sai sót ở đây có thể khiến user Google thiếu field bắt buộc.
+
+`accounts` còn được **đọc** (không sửa) để nhận biết "tài khoản chỉ có Google": `users` không có `passwordHash` **và** có bản ghi `accounts` `{ userId, provider: "google" }` (`findAccountByEmail` trong `src/lib/emailVerificationStore.ts`).
+
+---
+
+## 16. `passwordResets` (mới — luồng Quên mật khẩu) — `src/lib/models/PasswordReset.ts`
+
+```js
+{
+  _id: ObjectId,
+  email: "trong@gmail.com",         // unique, lowercase — 1 bản ghi / email nên OTP/token mới luôn ghi đè cái cũ
+  userId: ObjectId | null,          // null nếu email KHÔNG tồn tại (vẫn có bản ghi để chống dò email)
+  otpHash: "hex",                   // HMAC-SHA256(NEXTAUTH_SECRET, "otp:<email>:<otp>") — không lưu OTP thô
+  otpExpiresAt: ISODate,            // 5 phút
+  attempts: 0,                      // số lần nhập sai OTP hiện tại, về 0 khi gửi OTP mới
+  sendHistory: [ISODate],           // các lần gửi OTP trong 1 giờ gần nhất (cooldown 60s, tối đa 5/giờ)
+  resetTokenHash: "hex",            // cấp sau khi OTP đúng, 15 phút, dùng 1 lần (token thô nằm trong cookie httpOnly)
+  resetTokenExpiresAt: ISODate,
+  lockedAt: ISODate,                // bị khoá do sai OTP 5 lần (với email không tồn tại = "khoá giả")
+  expireAt: ISODate,                // TTL — 24h sau lần cập nhật cuối
+  createdAt: ISODate
+}
+```
+
+**Index:** `{ email: 1 }` unique · `{ expireAt: 1 }` TTL (`expireAfterSeconds: 0`) · `{ resetTokenHash: 1 }` sparse
+
+---
+
+## 17. `rateLimits` (mới) — `src/lib/models/RateLimit.ts`
+
+```js
+{
+  _id: ObjectId,
+  key: "pwreset:requestOtp:ip:1.2.3.4",  // unique — "<nhóm>:<endpoint>:ip:<ip>"
+  count: 3,                               // số request trong cửa sổ hiện tại
+  expireAt: ISODate                       // hết cửa sổ → xoá (TTL) / mở cửa sổ mới
+}
+```
+
+**Index:** `{ key: 1 }` unique · `{ expireAt: 1 }` TTL. Lưu Mongo (không lưu bộ nhớ process) để đúng khi chạy nhiều instance/serverless.
+
+> Tạo index chủ động trên production: `npm run migrate:password-reset -- --apply` (idempotent, không sửa dữ liệu cũ).
+
+---
+
+## 18. `emailVerifications` (mới — xác thực email bằng OTP) — `src/lib/models/EmailVerification.ts`
+
+```js
+{
+  _id: ObjectId,
+  userId: ObjectId,                 // unique, ref users — 1 bản ghi / user nên mã mới luôn ghi đè mã cũ (kể cả khác purpose)
+  email: "trong@gmail.com",         // địa chỉ đã gửi mã tới
+  purpose: "verify",                // "verify" (Hồ sơ) | "link_password" (thêm mật khẩu cho tài khoản Google từ form Đăng ký)
+  otpHash: "hex",                   // HMAC-SHA256(NEXTAUTH_SECRET, "<scope>:<otp>") — scope "verify-email:<userId>" hoặc
+                                     // "link-password:<userId>" nên mã của luồng này không dùng được ở luồng kia
+  otpExpiresAt: ISODate,            // 10 phút
+  attempts: 0,                      // số lần sai; đủ 5 thì mã bị huỷ (không khoá tài khoản)
+  sendHistory: [ISODate],           // các lần gửi trong 1 giờ gần nhất (cooldown 60s, tối đa 5/giờ) — chung mọi purpose
+  pendingPasswordHash: "bcrypt",    // CHỈ purpose "link_password": mật khẩu chờ gán, chỉ ghi vào users.passwordHash khi OTP đúng
+  flowTokenHash: "hex",             // CHỈ purpose "link_password": hash token của trình duyệt đã bắt đầu (token thô ở cookie httpOnly)
+  expireAt: ISODate,                // TTL — "verify": 24h, "link_password": 1h sau lần gửi mã cuối
+  createdAt: ISODate
+}
+```
+
+**Index:** `{ userId: 1 }` unique · `{ expireAt: 1 }` TTL. Xác thực đúng mã → xoá bản ghi + `users.isVerified = true` (purpose `link_password`: thêm gán `users.passwordHash` từ `pendingPasswordHash`). Không cần migration: bản ghi cũ không có `purpose` được đọc là `"verify"`. Chi tiết: [`email-verification.md`](email-verification.md).
 
 ---
 
@@ -443,4 +567,6 @@ Adapter tạo document `users` cho tài khoản Google bằng field riêng (`nam
 7. **`sessionVersion` / `lastActiveAt` (users)** là cơ chế thu hồi phiên đăng nhập + idle-timeout, phát sinh khi làm tính năng đăng nhập — không có trong thiết kế nghiệp vụ gốc nhưng đã là một phần chính thức của schema hiện tại.
 8. **`notificationPrefs` (userProfiles)** cho phép user bật/tắt từng loại notification — phát sinh cùng lúc với hệ thống notification.
 9. **`articles` là collection độc lập, mới, chưa nằm trong bản thiết kế nghiệp vụ gốc** — phục vụ mục Tin tức, hiện không có moderation/owner.
-10. **Restaurant tạo kèm Food mới** (BR-C07): khi submit Food tại quán chưa có trong hệ thống, tạo đồng thời `restaurants` (status `pending`) — FoodReviewer duyệt cả hai cùng lúc. *(Lưu ý: luồng đóng góp Food/Restaurant từ User chưa được code — mục này vẫn là thiết kế dự kiến, chưa có API tương ứng.)*
+10. **Restaurant tạo kèm Food mới** (BR-C07): khi submit Food tại quán chưa có trong hệ thống, tạo đồng thời `restaurants` (status `pending`) — FoodReviewer duyệt cả hai cùng lúc. Đã có code: `POST /api/foods` (`lib/foodSubmission.ts`), chi tiết ở [`contribute-food.md`](contribute-food.md).
+11. **Ảnh (Cloudinary) upload thẳng từ trình duyệt** qua chữ ký `/api/uploads/signature`; ảnh mới gắn tag `unattached`, gỡ tag khi form gửi thành công. **Việc cần làm sau:** script dọn ảnh còn tag `unattached` quá N ngày (user bỏ ngang form).
+12. **Migration 2026-09:** `npm run migrate:contribution-flow` (dry-run) / `-- --apply` — thêm field chuẩn hoá, `group`, `foodCount`, `locationSource`, danh mục Chay + Khác, index mới. Idempotent, chỉ thêm field.

@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { Lock, MapPin, UtensilsCrossed } from "lucide-react";
+import { Lock, MapPin, Tags, UtensilsCrossed } from "lucide-react";
+import { RestaurantImage } from "@/components/restaurant/RestaurantImage";
 import { cn, formatPriceRange, formatRelativeTime } from "@/lib/utils";
 import type { ReviewQueueItem } from "@/types/reviewer";
 
@@ -29,7 +30,9 @@ export function QueueCard({ item, isActive, onSelect }: QueueCardProps) {
       {isActive && <div className="absolute left-0 top-3 bottom-3 w-1 bg-primary rounded-r-full" aria-hidden />}
       <div className={cn("flex items-start gap-3", isActive && "pl-2")}>
         <div className="relative size-16 rounded-xl overflow-hidden shrink-0 bg-primary-soft flex items-center justify-center">
-          {thumbnail ? (
+          {item.targetType === "restaurant" ? (
+            <RestaurantImage images={item.restaurantImages} alt="" sizes="64px" />
+          ) : thumbnail ? (
             <Image
               src={thumbnail}
               alt=""
@@ -55,6 +58,12 @@ export function QueueCard({ item, isActive, onSelect }: QueueCardProps) {
             <span className="text-[11px] text-text-secondary whitespace-nowrap">{formatRelativeTime(item.createdAt)}</span>
           </div>
           <h3 className="text-sm font-semibold text-text-primary truncate">{item.name}</h3>
+          {item.proposal?.status === "pending" && (
+            <span className="self-start inline-flex items-center gap-1 rounded-full border border-dashed border-accent-strong/50 bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent-ink">
+              <Tags className="size-3" aria-hidden />
+              <span className="truncate max-w-[10rem]">Đề xuất: {item.proposal.name}</span>
+            </span>
+          )}
           <div className="flex items-center gap-1 text-xs text-text-secondary">
             <MapPin className="size-3 shrink-0" aria-hidden />
             <span className="truncate">{item.address ?? "Chưa có địa chỉ"}</span>

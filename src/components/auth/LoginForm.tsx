@@ -1,28 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck, Soup } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { useToast } from "@/components/ui/ToastProvider";
+import { queueToastForNextPage, useToast } from "@/components/ui/ToastProvider";
+import { useGuestOnlyRedirect } from "@/features/auth/useGuestOnlyRedirect";
 import { getAuthErrorMessage, getNetworkErrorMessage } from "@/lib/errorMessages";
-import { sanitizeCallbackUrl } from "@/lib/safe-redirect";
+import { resolvePostLoginRedirect } from "@/lib/safe-redirect";
 import { GoogleIcon } from "./GoogleIcon";
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   // Chống open-redirect: callbackUrl đến từ query string do client kiểm soát được.
-  const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"));
+  const callbackUrl = resolvePostLoginRedirect(searchParams.get("callbackUrl"));
+  const oauthError = searchParams.get("error");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
+  useGuestOnlyRedirect(callbackUrl, isSubmitting);
+
+  // Google OAuth thất bại → NextAuth quay về /dang-nhap?error=<mã>.
+  const shownOauthError = useRef<string | null>(null);
+  useEffect(() => {
+    if (!oauthError || shownOauthError.current === oauthError) return;
+    shownOauthError.current = oauthError;
+    showToast(getAuthErrorMessage(oauthError), "error");
+  }, [oauthError, showToast]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,16 +46,20 @@ export function LoginForm() {
         redirect: false,
       });
 
-      setIsSubmitting(false);
-
-      if (result?.error) {
-        showToast(getAuthErrorMessage(result.error), "error");
+      if (!result?.ok || result.error) {
+        setIsSubmitting(false);
+        showToast(getAuthErrorMessage(result?.error), "error");
         return;
       }
 
-      showToast("Đăng nhập thành công!", "success");
-      router.push(callbackUrl);
-      router.refresh();
+      // Điều hướng toàn trang (không dùng router.push): Router Cache phía client
+      // vẫn giữ payload render lúc còn là khách — kể cả bản prefetch của trang
+      // cần đăng nhập đã bị proxy redirect về /dang-nhap — router.refresh() chỉ
+      // xoá cache của route hiện tại nên router.push(callbackUrl) quay lại đúng
+      // trang login. replace() để Back không về form đăng nhập; toast được xếp
+      // hàng qua sessionStorage vì ToastProvider sẽ mount lại ở trang mới.
+      queueToastForNextPage("Đăng nhập thành công!", "success");
+      window.location.replace(callbackUrl);
     } catch {
       setIsSubmitting(false);
       showToast(getNetworkErrorMessage(), "error");

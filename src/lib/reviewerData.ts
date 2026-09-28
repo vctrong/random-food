@@ -8,7 +8,10 @@ import { User } from "@/lib/models/User";
 // Đăng ký model Category để .populate("categoryIds") hoạt động (Mongoose cần
 // model đã register trước, dù không dùng trực tiếp import này).
 import "@/lib/models/Category";
+import { CategoryProposal } from "@/lib/models/CategoryProposal";
 import { createNotification } from "@/lib/notify";
+import { ensureFallbackCategory } from "@/lib/categoryProposals";
+import { recountCategoriesOfFood } from "@/lib/categoryCounts";
 import { getContributionOverview } from "@/lib/achievements";
 import type {
   ModerationDecision,
@@ -17,8 +20,10 @@ import type {
   ReviewHistorySummary,
   ReviewHistoryStatusFilter,
   ReviewQueueItem,
+  ReviewQueueProposal,
   ReviewSubmitter,
 } from "@/types/reviewer";
+import type { LocationSource } from "@/types/restaurant";
 
 /**
  * Lớp truy vấn dữ liệu cho khu vực thẩm định FoodReviewer (BR_UC mục 3.3).
@@ -104,20 +109,40 @@ export async function getPendingQueue(reviewerId: string): Promise<ReviewQueueIt
   const [foods, restaurants, otherReviewerCount] = await Promise.all([
     Food.find({ moderationStatus: "pending" })
       .sort({ createdAt: 1 })
-      .populate("restaurantId", "name address location openingHours")
+      .populate("restaurantId", "name address location locationSource images openingHours")
       .populate("categoryIds", "name")
       .populate("createdBy", "name avatarUrl")
+      .populate("proposedCategoryId", "name proposalCount status")
       .lean(),
     Restaurant.find({ moderationStatus: "pending" }).sort({ createdAt: 1 }).populate("createdBy", "name avatarUrl").lean(),
     User.countDocuments({ role: "foodreviewer", accountStatus: "active", _id: { $ne: reviewerId } }),
   ]);
+
+  const proposalIds = foods
+    .map((food) => (food.proposedCategoryId as { _id?: unknown } | null)?._id)
+    .filter(Boolean);
+  const proposalUsage = await Food.aggregate([
+    { $match: { proposedCategoryId: { $in: proposalIds }, visibility: { $ne: "deleted" }, moderationStatus: { $ne: "rejected" } } },
+    { $group: { _id: "$proposedCategoryId", count: { $sum: 1 } } },
+  ]);
+  const usageByProposal = new Map<string, number>(
+    proposalUsage.map((row: { _id: unknown; count: number }) => [String(row._id), row.count]),
+  );
 
   const foodItems: ReviewQueueItem[] = foods.map((food) => {
     const restaurant = food.restaurantId as unknown as {
       name?: string;
       address?: string;
       openingHours?: string;
+      images?: string[];
+      locationSource?: LocationSource;
       location?: { coordinates?: [number, number] };
+    } | null;
+    const proposal = food.proposedCategoryId as unknown as {
+      _id: unknown;
+      name: string;
+      proposalCount?: number;
+      status: ReviewQueueProposal["status"];
     } | null;
     const isSelfSubmitted = String(food.createdBy && (food.createdBy as { _id?: unknown })._id) === reviewerId;
     const coordinates = restaurant?.location?.coordinates;
@@ -136,6 +161,17 @@ export async function getPendingQueue(reviewerId: string): Promise<ReviewQueueIt
       eatingLevels: food.eatingLevels ?? [],
       restaurantName: restaurant?.name ?? null,
       openingHours: restaurant?.openingHours ?? null,
+      restaurantImages: restaurant?.images ?? [],
+      locationSource: restaurant?.locationSource ?? null,
+      proposal: proposal
+        ? {
+            id: String(proposal._id),
+            name: proposal.name,
+            proposalCount: proposal.proposalCount ?? 1,
+            foodCount: usageByProposal.get(String(proposal._id)) ?? 1,
+            status: proposal.status,
+          }
+        : null,
       submitter: toSubmitter(food.createdBy),
       createdAt: (food.createdAt ?? new Date()).toISOString(),
       isSelfSubmitted,
@@ -161,6 +197,9 @@ export async function getPendingQueue(reviewerId: string): Promise<ReviewQueueIt
       eatingLevels: [],
       restaurantName: null,
       openingHours: restaurant.openingHours ?? null,
+      restaurantImages: restaurant.images ?? [],
+      locationSource: (restaurant.locationSource as LocationSource | undefined) ?? null,
+      proposal: null,
       submitter: toSubmitter(restaurant.createdBy),
       createdAt: (restaurant.createdAt ?? new Date()).toISOString(),
       isSelfSubmitted,
@@ -214,6 +253,14 @@ export async function applyModerationDecision({
   if (String(item.createdBy) === reviewerId) return { error: "SELF_SUBMITTED" }; // BR-F02/F03
 
   item.moderationStatus = decision;
+  if (decision === "approved" && targetType === "food" && item.proposedCategoryId) {
+    // Đề xuất danh mục chưa được xử lý → món chưa có danh mục nào thì tạm vào "Khác",
+    // đề xuất ở lại cho Admin (lib/categoryProposals.ts).
+    const proposal = (await CategoryProposal.findById(item.proposedCategoryId).select("status").lean()) as {
+      status?: string;
+    } | null;
+    if (proposal?.status === "pending") await ensureFallbackCategory(item);
+  }
   if (decision === "approved") {
     // BR-F04/F05: approve phải ghi người duyệt, ngày xác minh, ghi chú thẩm định.
     item.verification = { verifiedBy: reviewerId, verifiedAt: new Date(), note: note.trim() || undefined };
@@ -223,6 +270,7 @@ export async function applyModerationDecision({
   }
   item.updatedAt = new Date();
   await item.save();
+  if (targetType === "food") await recountCategoriesOfFood(targetId);
 
   await AuditLog.create({
     actorId: reviewerId,

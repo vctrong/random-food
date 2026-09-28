@@ -25,6 +25,8 @@ interface MyReviewApiRecord {
   foodId: string;
   rating: number;
   comment: string | null;
+  createdAt: string;
+  isDeleted: boolean;
 }
 
 export async function getAllHistory(allFoods: Food[]): Promise<HistoryEntry[]> {
@@ -40,7 +42,16 @@ export async function getAllHistory(allFoods: Food[]): Promise<HistoryEntry[]> {
     const myReviews = reviewsRes.ok ? ((await reviewsRes.json()) as MyReviewApiRecord[]) : [];
     const favoriteFoodIds = new Set(favorites.map((favorite) => favorite.foodId));
     const reviewsByFoodId = new Map<string, HistoryReviewSummary>(
-      myReviews.map((review) => [review.foodId, { id: review.id, rating: review.rating, comment: review.comment }]),
+      myReviews.map((review) => [
+        review.foodId,
+        {
+          id: review.id,
+          rating: review.rating,
+          comment: review.comment,
+          createdAt: review.createdAt,
+          isDeleted: review.isDeleted,
+        },
+      ]),
     );
 
     return mapExperiencesToHistoryEntries(experiences, favoriteFoodIds, allFoods, reviewsByFoodId);
@@ -97,11 +108,33 @@ export async function submitReview(
   }
 }
 
-export async function deleteMyReview(reviewId: string): Promise<boolean> {
+/** Sửa đánh giá — server chỉ cho phép trong 24h kể từ lúc tạo. */
+export async function updateMyReview(
+  reviewId: string,
+  rating: number,
+  comment: string,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const response = await fetch(`/api/reviews/${encodeURIComponent(reviewId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rating, ...(comment.trim() && { comment: comment.trim() }) }),
+    });
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
+    if (!response.ok) return { ok: false, error: body.error ?? "Không thể sửa đánh giá." };
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Không thể sửa đánh giá, vui lòng thử lại." };
+  }
+}
+
+/** `locked: true` = đánh giá đã quá 24h nên bị xoá mềm, không thể đánh giá lại món này. */
+export async function deleteMyReview(reviewId: string): Promise<{ ok: boolean; locked: boolean }> {
   try {
     const response = await fetch(`/api/reviews/${encodeURIComponent(reviewId)}`, { method: "DELETE" });
-    return response.ok;
+    const body = (await response.json().catch(() => ({}))) as { locked?: boolean };
+    return { ok: response.ok, locked: Boolean(body.locked) };
   } catch {
-    return false;
+    return { ok: false, locked: false };
   }
 }

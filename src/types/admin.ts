@@ -1,3 +1,4 @@
+import type { CategoryGroup } from "@/constants/categoryGroups";
 /** Type cho toàn bộ khu vực Admin (src/app/admin, src/lib/admin, src/app/api/admin). */
 
 export interface AdminOverviewStats {
@@ -88,13 +89,20 @@ export interface AdminCategoryRow {
   icon: string | null;
   description: string | null;
   isActive: boolean;
+  group: CategoryGroup;
+  foodCount: number;
+  /** Danh mục hệ thống "Khác" — không tắt/xoá được. */
+  isSystem: boolean;
   createdAt: string;
 }
 
 export interface AdminCategoryProposalRow {
   id: string;
   name: string;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "merged";
+  proposalCount: number;
+  /** Món đang dùng đề xuất — quyết định áp dụng cho tất cả. */
+  foods: { id: string; name: string; status: string }[];
   proposedBy: { id: string; name: string };
   reviewedBy: { id: string; name: string } | null;
   reviewedAt: string | null;

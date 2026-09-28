@@ -8,6 +8,7 @@ import { Category } from "@/lib/models/Category";
 import { RequireLoginState } from "@/components/auth/RequireLoginState";
 import { ProfilePageContent } from "@/components/profile/ProfilePageContent";
 import { formatDate } from "@/lib/utils";
+import { getEmailVerificationService } from "@/lib/emailVerificationStore";
 
 interface UserProfileLean {
   displayName?: string;
@@ -26,7 +27,8 @@ interface UserProfileLean {
 interface UserLean {
   email: string;
   role: string;
-  authProvider?: "local" | "google";
+  passwordHash?: string | null;
+  isVerified?: boolean;
   createdAt?: Date;
 }
 
@@ -47,17 +49,26 @@ export default async function ProfilePage() {
   await connectDB();
   const userId = (session.user as { id: string }).id;
   const [user, profile, categories] = await Promise.all([
-    User.findById(userId).select("email role authProvider createdAt").lean() as Promise<UserLean | null>,
+    User.findById(userId).select("email role passwordHash isVerified createdAt").lean() as Promise<UserLean | null>,
     UserProfile.findOne({ userId }).lean() as Promise<UserProfileLean | null>,
     Category.find({ isActive: true }).sort({ name: 1 }).lean(),
   ]);
+
+  const isEmailVerified = user?.isVerified === true;
+  // Chỉ gửi xuống client dạng boolean — không bao giờ truyền hash mật khẩu ra ngoài server.
+  const hasPassword = Boolean(user?.passwordHash);
+  // Chưa xác thực: lấy mã đang còn hạn (nếu có) để reload trang vẫn nhập tiếp được.
+  const verificationStatus = isEmailVerified ? null : await getEmailVerificationService().getStatus(userId);
 
   return (
     <ProfilePageContent
       email={user?.email ?? session.user.email ?? "—"}
       role={user?.role ?? "user"}
       joinedAtLabel={user?.createdAt ? formatDate(user.createdAt.toISOString()) : "—"}
-      authProvider={user?.authProvider ?? "local"}
+      hasPassword={hasPassword}
+      isEmailVerified={isEmailVerified}
+      emailVerificationPending={verificationStatus?.pending ?? null}
+      serverTime={verificationStatus?.serverTime ?? 0}
       initialDisplayName={profile?.displayName ?? session.user.name ?? ""}
       initialAvatarUrl={profile?.avatarUrl ?? session.user.image ?? null}
       initialPriceRange={profile?.preferences?.priceRange ?? null}

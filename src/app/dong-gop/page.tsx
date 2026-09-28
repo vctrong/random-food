@@ -3,6 +3,7 @@ import { ChefHat } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
 import { Category } from "@/lib/models/Category";
+import { FALLBACK_CATEGORY_SLUG } from "@/constants/categoryGroups";
 import { getContributionOverview } from "@/lib/achievements";
 import { RequireLoginState } from "@/components/auth/RequireLoginState";
 import { ContributionsPageContent } from "@/components/food/ContributionsPageContent";
@@ -27,7 +28,8 @@ export default async function ContributionsPage() {
   await connectDB();
   const [{ contributions, achievements }, categories] = await Promise.all([
     getContributionOverview(userId),
-    Category.find({ isActive: true }).sort({ name: 1 }).lean(),
+    // Không gồm danh mục hệ thống "Khác" — user không tự chọn được (món đang ở "Khác" vẫn giữ được khi sửa).
+    Category.find({ isActive: true, slug: { $ne: FALLBACK_CATEGORY_SLUG } }).sort({ name: 1 }).lean(),
   ]);
 
   return (

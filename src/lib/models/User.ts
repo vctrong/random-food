@@ -21,7 +21,27 @@ const userSchema = new Schema({
   /** Mốc hoạt động gần nhất — dùng để tự động hết hạn phiên không "ghi nhớ đăng
    * nhập" sau 30 phút không hoạt động (IDLE_LIMIT_MS trong lib/auth.ts). */
   lastActiveAt: { type: Date },
+  /** Tạm khoá do nhập sai OTP quên mật khẩu quá số lần (docs/forgot-password.md).
+   * Khác accountStatus "banned" (Admin khoá): người dùng tự mở bằng link trong email.
+   * Không có field này = không bị khoá. Chỉ lưu hash của token mở khoá. */
+  securityLock: {
+    type: new Schema(
+      {
+        lockedAt: { type: Date, required: true },
+        reason: { type: String, enum: ["otp_failed"], default: "otp_failed" },
+        unlockTokenHash: { type: String },
+        unlockTokenExpiresAt: { type: Date },
+        unlockEmailHistory: { type: [Date], default: [] },
+        lockIp: { type: String },
+        lockUserAgent: { type: String },
+      },
+      { _id: false },
+    ),
+    default: undefined,
+  },
 });
+
+userSchema.index({ "securityLock.unlockTokenHash": 1 }, { sparse: true });
 
 export type UserDocument = InferSchemaType<typeof userSchema>;
 

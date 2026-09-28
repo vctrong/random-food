@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import Image from "next/image";
-import { AlertTriangle, Camera, Check, Leaf, History, Loader2 } from "lucide-react";
+import { AlertTriangle, Camera, Check, Leaf, History, Loader2, MailCheck, MailWarning } from "lucide-react";
 import { PRICE_RANGE_OPTIONS, SPICE_OPTIONS } from "@/features/settings/settingsLogic";
 import type { PriceRangePreference, SpicePreference } from "@/types/settings";
 import { Button } from "@/components/ui/Button";
@@ -46,6 +46,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 interface ProfileFormProps {
   email: string;
+  isEmailVerified: boolean;
   role: string;
   joinedAtLabel: string;
   initialDisplayName: string;
@@ -62,6 +63,7 @@ interface ProfileFormProps {
 
 export function ProfileForm({
   email,
+  isEmailVerified,
   role,
   joinedAtLabel,
   initialDisplayName,
@@ -249,6 +251,20 @@ export function ProfileForm({
           <div>
             <p className="text-xs text-text-secondary uppercase tracking-wide mb-1">Email</p>
             <p className="text-sm font-medium text-text-primary truncate">{email}</p>
+            {isEmailVerified ? (
+              <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-xs font-semibold text-text-primary">
+                <MailCheck className="size-3.5 text-success" aria-hidden />
+                Đã xác thực
+              </span>
+            ) : (
+              <a
+                href="#xac-thuc-email"
+                className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-warning/20 px-2 py-0.5 text-xs font-semibold text-secondary-strong hover:underline dark:text-warning"
+              >
+                <MailWarning className="size-3.5" aria-hidden />
+                Chưa xác thực
+              </a>
+            )}
           </div>
           <div>
             <p className="text-xs text-text-secondary uppercase tracking-wide mb-1">Vai trò</p>

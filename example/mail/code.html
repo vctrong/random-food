@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_blank" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"secondary-fixed":"#ffd9e2","tertiary":"#3f608a","on-primary":"#ffffff","on-secondary-fixed":"#3e001d","surface-container-lowest":"#ffffff","inverse-on-surface":"#eaf1ff","on-secondary-fixed-variant":"#7f2449","surface-bright":"#f8f9ff","secondary-fixed-dim":"#ffb1c7","tertiary-fixed":"#d3e3ff","on-secondary-container":"#781f43","tertiary-container":"#7c9dcb","on-surface-variant":"#414751","surface-container-highest":"#d9e3f6","primary":"#0060a8","on-primary-container":"#00345f","tertiary-fixed-dim":"#a8c9f9","surface":"#f8f9ff","primary-fixed-dim":"#a1c9ff","surface-tint":"#0060a8","secondary-container":"#fd8ab0","primary-fixed":"#d3e4ff","surface-container":"#e6eeff","error-container":"#ffdad6","surface-variant":"#d9e3f6","surface-container-low":"#eff4ff","on-error":"#ffffff","inverse-surface":"#27313f","on-surface":"#121c2a","surface-dim":"#d0dbed","on-background":"#121c2a","error":"#ba1a1a","on-tertiary-fixed":"#001c39","on-tertiary-container":"#0b345c","on-error-container":"#93000a","background":"#f8f9ff","on-tertiary-fixed-variant":"#254871","outline":"#717782","on-primary-fixed":"#001c38","on-primary-fixed-variant":"#004880","secondary":"#9d3c60","on-tertiary":"#ffffff","outline-variant":"#c1c7d3","primary-container":"#5b9eeb","inverse-primary":"#a1c9ff","surface-container-high":"#dee9fc","on-secondary":"#ffffff"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-md":"1rem","gutter-md":"1.5rem","gutter-lg":"2rem","gutter":"1rem","margin-md":"1.5rem","space-sm":"0.5rem","space-xl":"2.5rem","margin":"1rem","margin-lg":"3rem","space-xs":"0.25rem","space-lg":"1.5rem"},"fontFamily":{"body-sm":["Plus Jakarta Sans"],"title-md":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"],"headline-sm":["Plus Jakarta Sans"],"label-sm":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"display-lg-mobile":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"label-md":["Plus Jakarta Sans"],"body-md":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"display-lg":["Plus Jakarta Sans"]},"fontSize":{"body-sm":["13px",{"lineHeight":"18px","fontWeight":"400"}],"title-md":["16px",{"lineHeight":"24px","fontWeight":"600"}],"headline-lg":["28px",{"lineHeight":"36px","letterSpacing":"-0.015em","fontWeight":"700"}],"headline-sm":["18px",{"lineHeight":"26px","letterSpacing":"-0.005em","fontWeight":"600"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.02em","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"display-lg-mobile":["32px",{"lineHeight":"40px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-md":["22px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"600"}],"label-md":["13px",{"lineHeight":"16px","letterSpacing":"0.01em","fontWeight":"600"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"headline-lg-mobile":["24px",{"lineHeight":"32px","letterSpacing":"-0.01em","fontWeight":"700"}],"display-lg":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"700"}]}}}}</script></head><body class="bg-background font-body-md text-on-surface min-h-screen flex items-center justify-center p-6"><main class="w-full max-w-4xl"><div class="flex flex-col w-full items-center justify-center py-6 px-2 sm:px-4">
+<!-- Email Client Simulator Window -->
+<div class="w-full max-w-[680px] bg-surface-container-low rounded-2xl shadow-xl overflow-hidden">
+<!-- Top Mail Client Bar (Chrome / Mail App Style) -->
+<div class="bg-surface-container-highest px-5 py-3 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-error/70"></div>
+<div class="w-3 h-3 rounded-full bg-secondary-container"></div>
+<div class="w-3 h-3 rounded-full bg-primary-container"></div>
+<span class="ml-2 font-label-sm text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px]">mail</span>
+          Hộp thư đến — Mã bảo mật NayAnGi
+        </span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="font-label-sm hidden sm:inline">14:25 (GMT+7)</span>
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</div>
+</div>
+<!-- Mail Canvas Area -->
+<div class="p-4 sm:p-8 flex flex-col items-center">
+<!-- Hidden preheader text preview -->
+<div class="hidden max-h-0 text-[0px] leading-none opacity-0 overflow-hidden m-0">
+        Mã xác nhận bảo mật của bạn là 849 205. Vui lòng không chia sẻ mã này.
+      </div>
+<!-- Pre-header & Brand Logo Header -->
+<div class="w-full max-w-[600px] text-center pt-2 pb-5 flex flex-col items-center">
+<div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-surface-container mb-3 shadow-sm">
+<div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[17px]">ramen_dining</span>
+</div>
+<span class="font-headline-sm text-on-surface tracking-tight">
+            Nay<span class="text-primary">AnGi</span>
+</span>
+<span class="font-label-sm px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed">
+            Cần Thơ
+          </span>
+</div>
+<p class="font-body-sm text-on-surface-variant">
+          Mã xác nhận bảo mật của bạn là <strong class="text-primary font-semibold">849 205</strong>. Vui lòng không chia sẻ mã này.
+        </p>
+</div>
+<!-- Main 600px Email Card Container -->
+<table cellpadding="0" cellspacing="0" class="w-full max-w-[600px] bg-surface-container-lowest rounded-[24px] shadow-lg overflow-hidden" role="presentation">
+<tbody>
+<!-- Hero Header Image -->
+<tr>
+<td class="p-0 leading-none">
+<div class="relative w-full overflow-hidden bg-primary-fixed">
+<img alt="NayAnGi Security Header - Khóa bảo mật &amp; món ngon Cần Thơ" class="w-full max-h-[220px] object-cover block" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFK6nL8fknEhy0Jd-XhlkpNUmM4Plwx0kcJ-k38zFoBVCfA1NWKv3CDKfQFD7ZCnjGrZNO-En8kADMCJvURX8q2S5zZrx1hKjjMnS1CAf9Od4qPV0H8znik7F_kJV5_qVR9JrbUMOUBZJKxPD1LcW5_d3OgdkESLdQzw40hc02KcURy4F5htysbAjStgymtnEDmexJOkSBCp9YaYL8yRLP-QrENkc7zwYgxsylsE39how2cAQXmSMR"/>
+</div>
+</td>
+</tr>
+<!-- Main Content Body -->
+<tr>
+<td class="px-6 py-8 sm:px-10 sm:py-10">
+<div class="flex flex-col items-center text-center">
+<!-- Security Badge Pill -->
+<div class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-surface-container text-primary font-label-md shadow-sm mb-4">
+<span class="material-symbols-outlined text-[16px]">lock_reset</span>
+                  YÊU CẦU BẢO MẬT
+                </div>
+<!-- Main Heading -->
+<h1 class="font-headline-lg text-on-surface mb-2 tracking-tight">
+                  Đặt lại mật khẩu của bạn
+                </h1>
+<!-- Personalized Greeting & Intro -->
+<p class="font-body-lg text-on-surface font-semibold mb-2">
+                  Chào Minh Khang,
+                </p>
+<p class="font-body-md text-on-surface-variant max-w-[480px] mb-8">
+                  Bạn vừa yêu cầu đặt lại mật khẩu cho tài khoản NayAnGi tại Cần Thơ. Đừng lo lắng, hãy dùng mã xác thực gồm 6 chữ số dưới đây nhé:
+                </p>
+<!-- OTP DISPLAY BOX (Centerpiece) -->
+<div class="w-full py-4 px-2 sm:px-6 rounded-2xl bg-surface-container-low mb-3">
+<div class="flex items-center justify-center gap-2 sm:gap-3">
+<!-- Digit 1 -->
+<div class="w-11 sm:w-14 h-16 rounded-xl bg-surface-container-lowest shadow-md flex items-center justify-center">
+<span class="font-display-lg text-primary select-all">8</span>
+</div>
+<!-- Digit 2 -->
+<div class="w-11 sm:w-14 h-16 rounded-xl bg-surface-container-lowest shadow-md flex items-center justify-center">
+<span class="font-display-lg text-primary select-all">4</span>
+</div>
+<!-- Digit 3 -->
+<div class="w-11 sm:w-14 h-16 rounded-xl bg-surface-container-lowest shadow-md flex items-center justify-center">
+<span class="font-display-lg text-primary select-all">9</span>
+</div>
+<!-- Digit 4 -->
+<div class="w-11 sm:w-14 h-16 rounded-xl bg-surface-container-lowest shadow-md flex items-center justify-center">
+<span class="font-display-lg text-primary select-all">2</span>
+</div>
+<!-- Digit 5 -->
+<div class="w-11 sm:w-14 h-16 rounded-xl bg-surface-container-lowest shadow-md flex items-center justify-center">
+<span class="font-display-lg text-primary select-all">0</span>
+</div>
+<!-- Digit 6 -->
+<div class="w-11 sm:w-14 h-16 rounded-xl bg-surface-container-lowest shadow-md flex items-center justify-center">
+<span class="font-display-lg text-primary select-all">5</span>
+</div>
+</div>
+</div>
+<!-- One-click Copy Chip with Interactive Feedback -->
+<button class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-primary font-label-md transition-all shadow-sm cursor-pointer mb-4" id="copyOtpBtn" onclick="copyOtp()" type="button">
+<span class="material-symbols-outlined text-[16px]" id="copyIcon">content_copy</span>
+<span id="copyText">Sao chép mã 849205</span>
+</button>
+<!-- Expiry Indicator -->
+<div class="flex items-center gap-1.5 font-body-sm text-on-surface-variant mb-7">
+<span class="material-symbols-outlined text-[16px] text-tertiary">schedule</span>
+<span>Mã có hiệu lực trong vòng <strong class="text-on-surface font-semibold">10 phút</strong> (hết hạn lúc 14:35).</span>
+</div>
+<!-- Primary Action CTA Button -->
+<a class="w-full max-w-[300px] h-12 rounded-full bg-primary hover:bg-on-primary-container text-on-primary font-label-md flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95 mb-8 text-decoration-none" href="#">
+<span>Đặt lại mật khẩu trực tiếp</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</a>
+<!-- Security Warning Box -->
+<div class="w-full text-left p-4 sm:p-5 rounded-2xl bg-secondary-fixed/30 mb-8">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center shrink-0 text-secondary">
+<span class="material-symbols-outlined text-[18px]">shield</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-on-surface mb-1">Khuyên bảo mật quan trọng</span>
+<p class="font-body-sm text-on-surface-variant leading-relaxed">
+                        Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email. Tuyệt đối không chia sẻ mã OTP này với bất kỳ ai, kể cả nhân viên tự nhận là đội ngũ hỗ trợ NayAnGi.
+                      </p>
+</div>
+</div>
+</div>
+<!-- Sign-off & Warm Message -->
+<div class="w-full pt-4 flex flex-col items-center">
+<div class="flex items-center gap-2 mb-2">
+<span class="text-xl">🥟</span>
+<span class="text-xl">🍲</span>
+<span class="text-xl">🥢</span>
+<span class="text-xl">🧋</span>
+</div>
+<p class="font-body-md text-on-surface italic mb-2">
+                    "Chúc bạn luôn tìm được món ngon ưng ý mỗi ngày!"
+                  </p>
+<p class="font-body-sm text-on-surface-variant">
+                    Thân mến,
+                  </p>
+<p class="font-title-md text-primary flex items-center gap-1 mt-0.5">
+                    Đội ngũ NayAnGi Cần Thơ
+                    <span class="material-symbols-outlined text-[16px]">arrow_back_ios_new</span>
+</p>
+</div>
+</div>
+</td>
+</tr>
+<!-- Email Footer -->
+<tr>
+<td class="bg-surface-container px-6 py-7 sm:px-10">
+<div class="flex flex-col items-center text-center">
+<!-- Social & Contact Quick Links -->
+<div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 font-label-sm text-tertiary mb-4">
+<a class="hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[14px]">language</span>
+                    nayangi.io.vn
+                  </a>
+<span class="text-outline-variant">•</span>
+<a class="hover:text-primary transition-colors flex items-center gap-1" href="mailto:trongvc.work913@gmail.com">
+<span class="material-symbols-outlined text-[14px]">alternate_email</span>
+                    trongvc.work913@gmail.com
+                  </a>
+<span class="text-outline-variant">•</span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">call</span>
+                    0336 922 235
+                  </span>
+<span class="text-outline-variant">•</span>
+<a class="hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[14px]">public</span>
+                    facebook.com/nayangi.social
+                  </a>
+</div>
+<!-- Legal Disclaimers -->
+<p class="font-label-sm text-outline mb-2">
+                  Email này được gửi tự động từ hệ thống NayAnGi Cần Thơ, vui lòng không trả lời trực tiếp email này.
+                </p>
+<p class="font-label-sm text-on-surface-variant">
+                  © 2026 NayAnGi — Nền tảng gợi ý ẩm thực Tây Đô. Bảo lưu mọi quyền.
+                </p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<!-- Bottom Preview Controls & Helper -->
+<div class="w-full max-w-[600px] mt-4 flex items-center justify-between px-2">
+<span class="font-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+          HTML Email 600px Render Mode
+        </span>
+<button class="font-label-sm text-primary hover:underline flex items-center gap-1 cursor-pointer" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+          Lên đầu thư
+        </button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  function copyOtp() {
+    const code = "849205";
+    navigator.clipboard.writeText(code).then(() => {
+      const copyText = document.getElementById("copyText");
+      const copyIcon = document.getElementById("copyIcon");
+      const copyBtn = document.getElementById("copyOtpBtn");
+      
+      copyText.innerText = "Đã sao chép 849205!";
+      copyIcon.innerText = "check";
+      copyBtn.classList.add("bg-secondary-fixed", "text-on-secondary-fixed");
+
+      setTimeout(() => {
+        copyText.innerText = "Sao chép mã 849205";
+        copyIcon.innerText = "content_copy";
+        copyBtn.classList.remove("bg-secondary-fixed", "text-on-secondary-fixed");
+      }, 2400);
+    });
+  }
+</script></main></body></html>

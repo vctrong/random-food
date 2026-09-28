@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeCallbackUrl } from "./safe-redirect";
+import { resolvePostLoginRedirect, sanitizeCallbackUrl } from "./safe-redirect";
 
 describe("sanitizeCallbackUrl", () => {
   it("giữ nguyên đường dẫn nội bộ hợp lệ", () => {
@@ -31,5 +31,25 @@ describe("sanitizeCallbackUrl", () => {
 
   it("chặn giá trị encode để lách (%2F%2Fevil.com)", () => {
     expect(sanitizeCallbackUrl("%2F%2Fevil.com")).toBe("/");
+  });
+});
+
+describe("resolvePostLoginRedirect", () => {
+  it("giữ trang dự định truy cập (kèm query)", () => {
+    expect(resolvePostLoginRedirect("/lich-su?tab=1")).toBe("/lich-su?tab=1");
+  });
+
+  it("không có callbackUrl → trang chủ", () => {
+    expect(resolvePostLoginRedirect(null)).toBe("/");
+  });
+
+  it("callbackUrl độc hại → trang chủ", () => {
+    expect(resolvePostLoginRedirect("//evil.com")).toBe("/");
+    expect(resolvePostLoginRedirect("https://evil.com")).toBe("/");
+  });
+
+  it("callbackUrl trỏ về trang chỉ dành cho khách → trang chủ", () => {
+    expect(resolvePostLoginRedirect("/dang-nhap?callbackUrl=/lich-su")).toBe("/");
+    expect(resolvePostLoginRedirect("/dang-ky/")).toBe("/");
   });
 });

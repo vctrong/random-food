@@ -5,6 +5,8 @@ import { SectionSidebar, type SectionNavItem } from "@/components/ui/SectionSide
 import { ProfileForm } from "./ProfileForm";
 import { SecuritySection } from "./SecuritySection";
 import { DangerZoneSection } from "./DangerZoneSection";
+import { EmailVerificationCard } from "./EmailVerificationCard";
+import type { OtpState } from "@/services/passwordResetService";
 
 const NAV_ITEMS: SectionNavItem[] = [
   { id: "tai-khoan", label: "Thông tin tài khoản", icon: User },
@@ -17,7 +19,12 @@ interface ProfilePageContentProps {
   email: string;
   role: string;
   joinedAtLabel: string;
-  authProvider: "local" | "google";
+  /** Tài khoản đã có mật khẩu chưa (tài khoản chỉ có Google thì chưa). */
+  hasPassword: boolean;
+  isEmailVerified: boolean;
+  emailVerificationPending: OtpState | null;
+  /** Date.now() lúc server render — bù lệch đồng hồ cho bộ đếm ngược của mã xác thực. */
+  serverTime: number;
   initialDisplayName: string;
   initialAvatarUrl: string | null;
   initialPriceRange: { min: number; max?: number } | null;
@@ -45,8 +52,16 @@ export function ProfilePageContent(props: ProfilePageContentProps) {
         <SectionSidebar items={NAV_ITEMS} />
 
         <div className="lg:col-span-9 space-y-4">
+          <EmailVerificationCard
+            email={props.email}
+            isVerified={props.isEmailVerified}
+            hasPassword={props.hasPassword}
+            initialPending={props.emailVerificationPending}
+            serverTime={props.serverTime}
+          />
           <ProfileForm
             email={props.email}
+            isEmailVerified={props.isEmailVerified}
             role={props.role}
             joinedAtLabel={props.joinedAtLabel}
             initialDisplayName={props.initialDisplayName}
@@ -60,7 +75,7 @@ export function ProfilePageContent(props: ProfilePageContentProps) {
             initialVegetarianMode={props.initialVegetarianMode}
             initialAllowRepeatWithin24h={props.initialAllowRepeatWithin24h}
           />
-          <SecuritySection authProvider={props.authProvider} />
+          <SecuritySection hasPassword={props.hasPassword} isEmailVerified={props.isEmailVerified} />
           <DangerZoneSection email={props.email} />
         </div>
       </div>

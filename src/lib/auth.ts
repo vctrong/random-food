@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import bcrypt from "bcryptjs";
+import { Types } from "mongoose";
 import clientPromise, { connectDB } from "@/lib/mongodb";
 import { User } from "@/lib/models/User";
 import { createNotification } from "@/lib/notify";
@@ -50,6 +51,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Tài khoản của bạn đã bị khóa.");
         }
 
+        // Tạm khoá do sai OTP quên mật khẩu (docs/forgot-password.md) — mở bằng link trong email.
+        if (user.securityLock?.lockedAt) {
+          throw new Error("AccountLocked");
+        }
+
         const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!isValid) {
           await createNotification({
@@ -81,6 +87,13 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    /** Google cũng không được vào khi tài khoản đang tạm khoá (Credentials đã chặn trong authorize()). */
+    async signIn({ user, account }) {
+      if (account?.provider !== "google" || !Types.ObjectId.isValid(user.id)) return true;
+      await connectDB();
+      const dbUser = (await User.findById(user.id).select("securityLock").lean()) as { securityLock?: { lockedAt?: Date } } | null;
+      return dbUser?.securityLock?.lockedAt ? "/dang-nhap?error=AccountLocked" : true;
+    },
     async jwt({ token, user, account, trigger }) {
       if (user) {
         token.id = user.id;
@@ -151,7 +164,8 @@ export const authOptions: NextAuthOptions = {
      * MongoDBAdapter tạo document `users` cho tài khoản OAuth (Google) bằng field
      * riêng (name/email/image/emailVerified), không đi qua Mongoose schema User
      * (mục 7.2) nên thiếu role/isVerified/avatarUrl/createdAt. Bổ sung lại đúng
-     * schema đã chốt ngay khi user mới được tạo lần đầu.
+     * schema đã chốt ngay khi user mới được tạo lần đầu. Tài khoản Google cũng bắt
+     * đầu ở trạng thái CHƯA xác thực (BR-S15) — xác thực bằng OTP trong trang Hồ sơ.
      */
     async createUser({ user }) {
       await connectDB();
@@ -160,7 +174,8 @@ export const authOptions: NextAuthOptions = {
         {
           $set: {
             role: "user",
-            isVerified: true,
+            authProvider: "google",
+            isVerified: false,
             avatarUrl: user.image ?? undefined,
             createdAt: new Date(),
             lastLoginAt: new Date(),
