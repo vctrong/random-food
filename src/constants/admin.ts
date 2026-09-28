@@ -47,6 +47,7 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   announcement_update: "Sửa thông báo chính thức",
   announcement_publish: "Đăng thông báo chính thức",
   announcement_delete: "Gỡ thông báo chính thức",
+  media_cleanup: "Dọn ảnh rác",
 };
 
 export const AUDIT_TARGET_LABELS: Record<string, string> = {
@@ -57,6 +58,7 @@ export const AUDIT_TARGET_LABELS: Record<string, string> = {
   category: "Danh mục",
   report: "Báo cáo",
   announcement: "Thông báo chính thức",
+  media: "Ảnh (Cloudinary)",
 };
 
 /** Lý do chọn nhanh khi Admin gỡ (ẩn) nội dung — gửi kèm thông báo content_removed tới tác giả. */

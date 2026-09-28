@@ -1,7 +1,8 @@
 import { Schema, model, models, type InferSchemaType } from "mongoose";
 
 const auditLogSchema = new Schema({
-  actorId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  // Không bắt buộc: việc tự động (cron dọn ảnh) không có người thực hiện — UI hiện "Tự động".
+  actorId: { type: Schema.Types.ObjectId, ref: "User" },
   action: {
     type: String,
     enum: [
@@ -35,12 +36,13 @@ const auditLogSchema = new Schema({
       "announcement_update",
       "announcement_publish",
       "announcement_delete",
+      "media_cleanup",
     ],
     required: true,
   },
   targetType: {
     type: String,
-    enum: ["food", "restaurant", "review", "user", "category", "report", "announcement"],
+    enum: ["food", "restaurant", "review", "user", "category", "report", "announcement", "media"],
     required: true,
   },
   targetId: { type: Schema.Types.ObjectId, required: true },

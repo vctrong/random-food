@@ -16,7 +16,8 @@
     "migrate:google-auth-provider": "node --env-file=.env.local scripts/backfillGoogleAuthProvider.mjs",
     "migrate:contribution-flow": "node --env-file=.env.local scripts/migrateContributionFlow.mjs",
     "migrate:report-flow": "node --env-file=.env.local scripts/migrateReportFlow.mjs",
-    "reset:notifications": "node --env-file=.env.local scripts/resetNotifications.mjs"
+    "reset:notifications": "node --env-file=.env.local scripts/resetNotifications.mjs",
+    "cleanup:images": "tsx --env-file=.env.local scripts/cleanupImages.ts"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.11.3",
@@ -53,6 +54,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^5.0.2"
   },
