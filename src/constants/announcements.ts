@@ -54,6 +54,12 @@ export const ANNOUNCEMENT_LIMITS = {
   contentMaxChars: 200_000,
 } as const;
 
+/** Định dạng ảnh nhận trong bộ ảnh — HEIC không có vì đa số trình duyệt không đọc được để nén/cắt. */
+export const ANNOUNCEMENT_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
+export const ANNOUNCEMENT_IMAGE_TYPE_LABEL = "JPG, PNG, WebP, GIF";
+/** Dung lượng file gốc tối đa trước khi nén (sau nén vẫn phải ≤ MAX_FOOD_IMAGE_BYTES = 5MB). */
+export const ANNOUNCEMENT_IMAGE_SOURCE_MAX_BYTES = 20 * 1024 * 1024;
+
 /** Slug trùng tên route con của /api/announcements — không được dùng. */
 export const RESERVED_ANNOUNCEMENT_SLUGS: ReadonlySet<string> = new Set(["seen", "banner"]);
 

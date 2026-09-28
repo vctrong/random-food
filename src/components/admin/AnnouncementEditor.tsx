@@ -17,6 +17,7 @@ import {
 } from "@/constants/announcements";
 import { createAnnouncement, updateAnnouncement } from "@/services/announcementService";
 import { cn } from "@/lib/utils";
+import { collectImageSources, type TipTapNode } from "@/lib/announcementContent";
 import type { AdminAnnouncementDetail, AnnouncementHighlight, AnnouncementInput } from "@/types/announcement";
 
 // TipTap cần DOM — tải phía client, có khung giữ chỗ để form không nhảy.
@@ -70,6 +71,10 @@ export function AnnouncementEditor({ existing, onDone, onCancel }: AnnouncementE
   const [publishAt, setPublishAt] = useState(toLocalInput(existing?.status === "published" ? existing.publishAt : null));
   const [expireAt, setExpireAt] = useState(toLocalInput(existing?.expireAt ?? null));
   const [isSaving, setIsSaving] = useState(false);
+  const [savedImageSrcs] = useState<ReadonlySet<string>>(
+    () => new Set(existing?.content ? collectImageSources(existing.content as TipTapNode) : []),
+  );
+  const [discardedSrcs, setDiscardedSrcs] = useState<ReadonlySet<string>>(() => new Set());
 
   const isAllTargets = targets.includes("all");
   const isLive = existing?.displayStatus === "live";
@@ -89,7 +94,16 @@ export function AnnouncementEditor({ existing, onDone, onCancel }: AnnouncementE
     if (summary.trim().length < 10) return "Mô tả ngắn cần ít nhất 10 ký tự.";
     if (targets.length === 0) return "Chọn ít nhất 1 nhóm đối tượng.";
     if (highlights.some((item) => !item.label.trim() || !item.value.trim())) return "Mỗi ô tóm tắt cần có nhãn và giá trị.";
-    if (!content || !(content.content ?? []).some((node) => node.content?.length || node.type === "image")) return "Nội dung đang trống.";
+    if (!content || !(content.content ?? []).some((node) => node.content?.length || node.type === "image" || node.type === "gallery")) {
+      return "Nội dung đang trống.";
+    }
+    const imageSrcs = collectImageSources(content as TipTapNode);
+    if (new Set(imageSrcs).size > ANNOUNCEMENT_LIMITS.imagesMax) {
+      return `Mỗi bài tối đa ${ANNOUNCEMENT_LIMITS.imagesMax} ảnh — bớt ảnh rồi lưu lại nha.`;
+    }
+    if (imageSrcs.some((src) => discardedSrcs.has(src))) {
+      return "Bài đang chứa ảnh đã bị xoá (có thể do Hoàn tác) — mở bộ ảnh đó và gỡ ảnh bị lỗi.";
+    }
     if (mode === "schedule") {
       if (!publishAt) return "Chọn thời điểm hẹn đăng.";
       if (new Date(publishAt).getTime() <= Date.now()) return "Thời điểm hẹn đăng phải ở tương lai.";
@@ -282,7 +296,16 @@ export function AnnouncementEditor({ existing, onDone, onCancel }: AnnouncementE
 
           <section className="space-y-2">
             <h2 id={ids.content} className="text-h4 text-text-primary">Nội dung</h2>
-            <AnnouncementRichEditor initialContent={content} onChange={setContent} labelledBy={ids.content} />
+            <AnnouncementRichEditor
+              initialContent={content}
+              onChange={setContent}
+              labelledBy={ids.content}
+              savedImageSrcs={savedImageSrcs}
+              onImagesDiscarded={(srcs) => setDiscardedSrcs((prev) => new Set([...prev, ...srcs]))}
+            />
+            <p className="text-xs text-text-secondary">
+              Tối đa {ANNOUNCEMENT_LIMITS.imagesMax} ảnh/bài. Bấm vào bộ ảnh trong nội dung (hoặc chọn rồi nhấn Enter) để sửa.
+            </p>
             <p className="text-xs text-text-secondary">Chữ ký “Trân trọng, Đội ngũ NayAnGi” và khối liên hệ được tự thêm cuối bài.</p>
           </section>
         </div>

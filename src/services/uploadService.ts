@@ -56,6 +56,39 @@ export async function compressImage(file: File): Promise<File> {
   return new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" });
 }
 
+export interface CropRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Cắt ảnh theo vùng tính bằng pixel ảnh gốc (canvas, không cần thư viện). PNG giữ
+ * PNG (nền trong suốt), còn lại JPEG chất lượng cao — compressImage nén tiếp lúc upload.
+ */
+export async function cropImageFile(file: File, rect: CropRect): Promise<File> {
+  const image = await loadImage(file);
+  const x = Math.max(0, Math.round(rect.x));
+  const y = Math.max(0, Math.round(rect.y));
+  const width = Math.min(image.naturalWidth - x, Math.round(rect.width));
+  const height = Math.min(image.naturalHeight - y, Math.round(rect.height));
+  if (width < 1 || height < 1) throw new UploadError("Vùng cắt không hợp lệ, chọn lại nha.");
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) throw new UploadError("Trình duyệt không cắt được ảnh này.");
+  context.drawImage(image, x, y, width, height, 0, 0, width, height);
+
+  const type = file.type === "image/png" ? "image/png" : "image/jpeg";
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, 0.92));
+  if (!blob) throw new UploadError("Trình duyệt không cắt được ảnh này.");
+  const extension = type === "image/png" ? ".png" : ".jpg";
+  return new File([blob], file.name.replace(/\.\w+$/, "") + extension, { type });
+}
+
 async function getSignature(kind: UploadKind): Promise<UploadSignature> {
   const response = await fetch("/api/uploads/signature", {
     method: "POST",

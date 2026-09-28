@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { EditorContent, useEditor, type Editor, type JSONContent } from "@tiptap/react";
+import { NodeSelection } from "@tiptap/pm/state";
 import {
   Bold,
   Heading2,
   Heading3,
-  ImagePlus,
+  Images,
   Italic,
   Link2,
   List,
@@ -21,8 +22,10 @@ import {
 } from "lucide-react";
 import { announcementExtensions } from "@/lib/announcementEditor";
 import { isSafeLinkHref } from "@/lib/announcementContent";
-import { UploadError, uploadImage } from "@/services/uploadService";
+import { discardAnnouncementImage } from "@/services/announcementService";
 import { useToast } from "@/components/ui/ToastProvider";
+import { GalleryManagerModal, type GalleryModalResult } from "@/components/admin/GalleryManagerModal";
+import type { GalleryImage } from "@/lib/media/galleryLayout";
 import { ANNOUNCEMENT_PROSE_CLASS } from "@/components/announcements/announcementProse";
 import { cn } from "@/lib/utils";
 
@@ -30,10 +33,46 @@ interface AnnouncementRichEditorProps {
   initialContent: JSONContent | null;
   onChange: (content: JSONContent) => void;
   labelledBy: string;
+  /** URL ảnh có trong bản đã lưu — ảnh này KHÔNG được xoá ngay khi bỏ khỏi editor (lưu bài mới xử lý). */
+  savedImageSrcs: ReadonlySet<string>;
+  /** Báo các URL vừa bị xoá thật khỏi Cloudinary (để chặn lưu nếu Hoàn tác đưa chúng trở lại). */
+  onImagesDiscarded: (srcs: string[]) => void;
+}
+
+interface GalleryModalState {
+  mode: "insert" | "edit";
+  /** Vị trí node gallery đang sửa (chế độ edit). */
+  pos: number | null;
+  images: GalleryImage[];
+  otherImageSrcs: string[];
+  /** Đổi mỗi lần mở để modal khởi tạo lại trạng thái. */
+  openId: number;
+}
+
+/** Mọi URL ảnh trong doc (ảnh lẻ cũ + bộ ảnh), bỏ qua node tại `skipPos`. */
+function imageSrcsInDoc(editor: Editor, skipPos: number | null = null): string[] {
+  const srcs: string[] = [];
+  editor.state.doc.descendants((node, pos) => {
+    if (pos === skipPos) return false;
+    if (node.type.name === "image" && typeof node.attrs.src === "string") srcs.push(node.attrs.src);
+    if (node.type.name === "gallery") srcs.push(...((node.attrs.images ?? []) as GalleryImage[]).map((image) => image.src));
+    return true;
+  });
+  return srcs;
 }
 
 /** Trình soạn thảo nội dung thông báo chính thức — chỉ các định dạng có trong announcementExtensions. */
-export function AnnouncementRichEditor({ initialContent, onChange, labelledBy }: AnnouncementRichEditorProps) {
+export function AnnouncementRichEditor({
+  initialContent,
+  onChange,
+  labelledBy,
+  savedImageSrcs,
+  onImagesDiscarded,
+}: AnnouncementRichEditorProps) {
+  const [galleryModal, setGalleryModal] = useState<GalleryModalState | null>(null);
+  // editorProps được tạo 1 lần lúc khởi tạo editor → gọi qua ref để luôn dùng hàm mới nhất.
+  const openGalleryRef = useRef<(pos: number | null, images: GalleryImage[]) => void>(() => {});
+
   const editor = useEditor({
     extensions: announcementExtensions,
     content: initialContent ?? "",
@@ -42,19 +81,112 @@ export function AnnouncementRichEditor({ initialContent, onChange, labelledBy }:
     shouldRerenderOnTransaction: true,
     editorProps: {
       attributes: {
-        class: cn(ANNOUNCEMENT_PROSE_CLASS, "min-h-[320px] px-4 py-4 focus:outline-none"),
+        class: cn(
+          ANNOUNCEMENT_PROSE_CLASS,
+          "min-h-[320px] px-4 py-4 focus:outline-none",
+          // Bộ ảnh trong editor: bấm để sửa, khi được chọn có viền nhấn.
+          "[&_figure[data-gallery]]:cursor-pointer [&_figure[data-gallery]_a]:cursor-pointer",
+          "[&_figure.ProseMirror-selectednode]:rounded-2xl [&_figure.ProseMirror-selectednode]:ring-4 [&_figure.ProseMirror-selectednode]:ring-primary/40",
+        ),
         "aria-labelledby": labelledBy,
         "aria-multiline": "true",
         role: "textbox",
+      },
+      handleDOMEvents: {
+        // Bấm bộ ảnh trong bài → mở modal sửa (không đi theo link ảnh). Node atom có
+        // DOM contenteditable=false nên bắt click trực tiếp rồi dò vị trí node.
+        click: (view, event) => {
+          const figure = event.target instanceof Element ? event.target.closest("figure[data-gallery]") : null;
+          if (!figure || !view.dom.contains(figure)) return false;
+          event.preventDefault();
+          const domPos = view.posAtDOM(figure, 0);
+          const pos = [domPos, domPos - 1].find((candidate) => view.state.doc.nodeAt(candidate)?.type.name === "gallery");
+          if (pos === undefined) return true;
+          openGalleryRef.current(pos, (view.state.doc.nodeAt(pos)?.attrs.images ?? []) as GalleryImage[]);
+          return true;
+        },
+      },
+      // Chọn bộ ảnh bằng bàn phím rồi Enter → mở modal sửa.
+      handleKeyDown: (view, event) => {
+        const { selection } = view.state;
+        if (event.key !== "Enter" || !(selection instanceof NodeSelection) || selection.node.type.name !== "gallery") return false;
+        openGalleryRef.current(selection.from, (selection.node.attrs.images ?? []) as GalleryImage[]);
+        return true;
       },
     },
     onUpdate: ({ editor: current }) => onChange(current.getJSON()),
   });
 
+  function openGallery(pos: number | null, images: GalleryImage[]) {
+    if (!editor) return;
+    setGalleryModal({
+      mode: pos === null ? "insert" : "edit",
+      pos,
+      images,
+      otherImageSrcs: imageSrcsInDoc(editor, pos),
+      openId: Date.now(),
+    });
+  }
+  useEffect(() => {
+    openGalleryRef.current = openGallery;
+  });
+
+  /** Ảnh bị bỏ mà chưa từng nằm trong bản đã lưu và không còn trong bài → xoá khỏi Cloudinary ngay. */
+  function discardUnsaved(srcs: string[]) {
+    if (!editor || srcs.length === 0) return;
+    const inDoc = new Set(imageSrcsInDoc(editor));
+    const toDiscard = [...new Set(srcs)].filter((src) => !savedImageSrcs.has(src) && !inDoc.has(src));
+    if (toDiscard.length === 0) return;
+    onImagesDiscarded(toDiscard);
+    // Không chặn UI; xoá hụt thì ảnh vẫn mang tag `unattached` → cron dọn sau.
+    toDiscard.forEach((src) => void discardAnnouncementImage(src));
+  }
+
+  function applyGallery({ images, droppedSrcs }: GalleryModalResult) {
+    const state = galleryModal;
+    setGalleryModal(null);
+    if (!editor || !state) return;
+    if (state.pos === null) {
+      if (images.length > 0) editor.chain().focus().insertGallery(images).run();
+    } else {
+      const pos = state.pos;
+      const node = editor.state.doc.nodeAt(pos);
+      if (node?.type.name === "gallery") {
+        editor
+          .chain()
+          .focus()
+          .command(({ tr }) => {
+            if (images.length === 0) tr.delete(pos, pos + node.nodeSize);
+            else tr.setNodeMarkup(pos, undefined, { ...node.attrs, images });
+            return true;
+          })
+          .run();
+      }
+    }
+    discardUnsaved(droppedSrcs);
+  }
+
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-surface focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/15">
-      {editor ? <Toolbar editor={editor} /> : <div className="h-11 border-b border-border bg-background" />}
+      {editor ? (
+        <Toolbar editor={editor} onOpenGallery={() => openGallery(null, [])} />
+      ) : (
+        <div className="h-11 border-b border-border bg-background" />
+      )}
       <EditorContent editor={editor} />
+      {galleryModal && (
+        <GalleryManagerModal
+          key={galleryModal.openId}
+          mode={galleryModal.mode}
+          initialImages={galleryModal.images}
+          otherImageSrcs={galleryModal.otherImageSrcs}
+          onApply={applyGallery}
+          onCancel={(uploadedSrcs) => {
+            setGalleryModal(null);
+            discardUnsaved(uploadedSrcs);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -94,11 +226,9 @@ function Divider() {
   return <span aria-hidden className="mx-1 h-5 w-px bg-border" />;
 }
 
-function Toolbar({ editor }: { editor: Editor }) {
+function Toolbar({ editor, onOpenGallery }: { editor: Editor; onOpenGallery: () => void }) {
   const { showToast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [linkDraft, setLinkDraft] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const chain = () => editor.chain().focus();
 
   function openLinkInput() {
@@ -117,20 +247,6 @@ function Toolbar({ editor }: { editor: Editor }) {
       chain().extendMarkRange("link").setLink({ href }).run();
     }
     setLinkDraft(null);
-  }
-
-  async function handleImage(file: File | undefined) {
-    if (!file) return;
-    setUploadProgress(0);
-    try {
-      const url = await uploadImage(file, "announcement", { onProgress: setUploadProgress });
-      chain().setImage({ src: url, alt: file.name.replace(/\.\w+$/, "") }).run();
-    } catch (error) {
-      showToast(error instanceof UploadError ? error.message : "Tải ảnh thất bại, thử lại nha.", "error");
-    } finally {
-      setUploadProgress(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
   }
 
   return (
@@ -177,16 +293,9 @@ function Toolbar({ editor }: { editor: Editor }) {
             <Unlink className="size-4" aria-hidden />
           </ToolButton>
         )}
-        <ToolButton label="Chèn ảnh" disabled={uploadProgress !== null} onClick={() => fileInputRef.current?.click()}>
-          <ImagePlus className="size-4" aria-hidden />
+        <ToolButton label="Chèn bộ ảnh (1 hoặc nhiều ảnh)" onClick={onOpenGallery}>
+          <Images className="size-4" aria-hidden />
         </ToolButton>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(event) => void handleImage(event.target.files?.[0])}
-        />
         <Divider />
         <ToolButton label="Hoàn tác" disabled={!editor.can().undo()} onClick={() => chain().undo().run()}>
           <Undo2 className="size-4" aria-hidden />
@@ -194,9 +303,6 @@ function Toolbar({ editor }: { editor: Editor }) {
         <ToolButton label="Làm lại" disabled={!editor.can().redo()} onClick={() => chain().redo().run()}>
           <Redo2 className="size-4" aria-hidden />
         </ToolButton>
-        {uploadProgress !== null && (
-          <span className="ml-2 text-xs font-semibold text-primary-strong tabular-nums dark:text-primary">Đang tải ảnh {uploadProgress}%</span>
-        )}
       </div>
 
       {linkDraft !== null && (
