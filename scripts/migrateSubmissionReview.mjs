@@ -15,8 +15,8 @@ const APPLY = process.argv.includes("--apply");
 
 async function main() {
   const uri = process.env.MONGODB_URI;
-  if (!uri) throw new Error("Thiếu biến môi trường MONGODB_URI");
-  await mongoose.connect(uri);
+  if (!uri) throw Object.assign(new Error("missing"), { name: "MissingMongoUri" });
+  await mongoose.connect(uri, { serverSelectionTimeoutMS: 15000 });
   const db = mongoose.connection.db;
   const foods = db.collection("foods");
   const notes = db.collection("submissionnotes");
@@ -54,7 +54,9 @@ async function main() {
   await mongoose.disconnect();
 }
 
-main().catch((error) => {
-  console.error(error);
+main().catch(async (error) => {
+  // Chỉ in tên/mã lỗi — message có thể chứa connection string.
+  console.error(`Lỗi: ${error?.name ?? "Error"}${error?.code ? ` (code ${error.code})` : ""}`);
+  await mongoose.disconnect().catch(() => undefined);
   process.exit(1);
 });
