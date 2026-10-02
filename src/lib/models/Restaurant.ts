@@ -16,6 +16,31 @@ const pointSchema = new Schema(
   { _id: false },
 );
 
+const openingRangeSchema = new Schema({ open: { type: String, required: true }, close: { type: String, required: true } }, { _id: false });
+
+const openingDaySchema = new Schema(
+  {
+    day: { type: Number, min: 0, max: 6, required: true },
+    closed: { type: Boolean, default: false },
+    allDay: { type: Boolean, default: false },
+    ranges: { type: [openingRangeSchema], default: [] },
+  },
+  { _id: false },
+);
+
+/**
+ * Giờ mở cửa có cấu trúc — validate đầy đủ bằng zod (features/opening-hours/openingHours.ts) trước khi ghi.
+ * `status: "unknown"` = "Không rõ giờ" rõ ràng (không có `mode`/`days`).
+ */
+const openingScheduleSchema = new Schema(
+  {
+    status: { type: String, enum: ["known", "unknown"], required: true },
+    mode: { type: String, enum: ["daily", "weekly"] },
+    days: { type: [openingDaySchema], default: undefined },
+  },
+  { _id: false },
+);
+
 const restaurantSchema = new Schema({
   name: { type: String, required: true },
   address: { type: String, required: true },
@@ -26,7 +51,9 @@ const restaurantSchema = new Schema({
   images: { type: [String], default: [] },
   nameNormalized: { type: String },
   addressNormalized: { type: String },
+  /** Chuỗi tóm tắt sinh từ `openingSchedule` (formatOpeningSchedule) — giữ cho các chỗ cũ đọc chuỗi. */
   openingHours: { type: String },
+  openingSchedule: { type: openingScheduleSchema, default: undefined },
   /** Quán đã ngừng hoạt động: ẩn khỏi random, danh sách món, chọn quán — không xoá dữ liệu (BR-M12). */
   businessStatus: { type: String, enum: ["open", "closed"], default: "open" },
   closedAt: { type: Date },

@@ -17,6 +17,7 @@
     "migrate:contribution-flow": "node --env-file=.env.local scripts/migrateContributionFlow.mjs",
     "migrate:report-flow": "node --env-file=.env.local scripts/migrateReportFlow.mjs",
     "migrate:submission-review": "node --env-file=.env.local scripts/migrateSubmissionReview.mjs",
+    "migrate:opening-schedule": "node --env-file=.env.local scripts/migrateOpeningSchedule.mjs",
     "reset:notifications": "node --env-file=.env.local scripts/resetNotifications.mjs",
     "cleanup:images": "tsx --env-file=.env.local scripts/cleanupImages.ts"
   },
