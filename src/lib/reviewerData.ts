@@ -8,29 +8,28 @@ import { User } from "@/lib/models/User";
 // Đăng ký model Category để .populate("categoryIds") hoạt động (Mongoose cần
 // model đã register trước, dù không dùng trực tiếp import này).
 import "@/lib/models/Category";
-import { CategoryProposal } from "@/lib/models/CategoryProposal";
-import { notify } from "@/lib/notifications/notify";
-import { ensureFallbackCategory } from "@/lib/categoryProposals";
-import { recountCategoriesOfFood } from "@/lib/categoryCounts";
-import { getContributionOverview } from "@/lib/achievements";
+import { SubmissionNote } from "@/lib/models/SubmissionNote";
+import { releaseExpiredClaims } from "@/lib/submissionClaims";
+import { ACTIVE_SUBMISSION_STATUSES, claimCutoff, claimExpiresAt } from "@/features/contributions/submissionRules";
 import type {
   ModerationDecision,
   ModerationTargetType,
   ReviewHistoryEntry,
   ReviewHistorySummary,
   ReviewHistoryStatusFilter,
+  ReviewQueue,
   ReviewQueueItem,
+  ReviewQueueNote,
   ReviewQueueProposal,
   ReviewSubmitter,
 } from "@/types/reviewer";
 import type { LocationSource } from "@/types/restaurant";
 
 /**
- * Lớp truy vấn dữ liệu cho khu vực thẩm định FoodReviewer (BR_UC mục 3.3).
- * Không có model DB riêng — ghép từ Food/Restaurant (moderationStatus=pending)
- * và AuditLog (lịch sử approve_food/reject_food/needs_revision). Dùng trực
- * tiếp trong app/reviewer/*​/page.tsx (SSR ban đầu, cùng cách cai-dat/page.tsx
- * đã làm) và trong app/api/reviewer/*​/route.ts (client refetch/mutation).
+ * Lớp truy vấn dữ liệu cho khu vực thẩm định FoodReviewer (BR_UC mục 3.3) — chỉ đọc.
+ * Ghép từ Food/Restaurant + AuditLog (lịch sử approve_food/reject_food/needs_revision)
+ * + SubmissionNote. Mọi chuyển trạng thái nằm ở lib/submissionWorkflow.ts. Dùng trực
+ * tiếp trong các page của khu vực /reviewer (SSR ban đầu) và các route /api/reviewer.
  */
 
 /**
@@ -103,53 +102,116 @@ function buildLock(isSelfSubmitted: boolean, otherReviewerCount: number) {
   return { canDecide: false, lockReason };
 }
 
-export async function getPendingQueue(reviewerId: string): Promise<ReviewQueueItem[]> {
-  await connectDB();
+/** Shape của Food trong hàng chờ sau `.lean()` + populate. */
+interface LeanQueueFood {
+  _id: unknown;
+  name: string;
+  description?: string;
+  images?: string[];
+  priceRange?: { min?: number; max?: number };
+  categoryIds?: unknown;
+  eatingLevels?: string[];
+  restaurantId?: {
+    _id: unknown;
+    name?: string;
+    address?: string;
+    openingHours?: string;
+    images?: string[];
+    locationSource?: LocationSource;
+    location?: { coordinates?: [number, number] };
+    moderationStatus?: string;
+    createdBy?: unknown;
+  } | null;
+  proposedCategoryId?: { _id: unknown; name: string; proposalCount?: number; status: ReviewQueueProposal["status"] } | null;
+  createdBy?: unknown;
+  moderationStatus: string;
+  claimedAt?: Date;
+  editCount?: number;
+  createdAt?: Date;
+}
 
-  const [foods, restaurants, otherReviewerCount] = await Promise.all([
-    Food.find({ moderationStatus: "pending" })
-      .sort({ createdAt: 1 })
-      .populate("restaurantId", "name address location locationSource images openingHours")
-      .populate("categoryIds", "name")
-      .populate("createdBy", "name avatarUrl")
-      .populate("proposedCategoryId", "name proposalCount status")
-      .lean(),
+const QUEUE_RESTAURANT_FIELDS = "name address location locationSource images openingHours moderationStatus createdBy";
+
+async function findQueueFoods(filter: Record<string, unknown>): Promise<LeanQueueFood[]> {
+  return (await Food.find(filter)
+    .sort({ createdAt: 1 })
+    .populate("restaurantId", QUEUE_RESTAURANT_FIELDS)
+    .populate("categoryIds", "name")
+    .populate("createdBy", "name avatarUrl")
+    .populate("proposedCategoryId", "name proposalCount status")
+    .lean()) as unknown as LeanQueueFood[];
+}
+
+/** _id các quán đang đi kèm 1 đề xuất món còn mở — không hiện thành mục riêng. */
+async function findLinkedRestaurantIds(): Promise<unknown[]> {
+  return Food.distinct("restaurantId", { moderationStatus: { $in: ACTIVE_SUBMISSION_STATUSES }, visibility: { $ne: "deleted" } });
+}
+
+/**
+ * UC-F01: hàng chờ tách 2 tab (docs/contribute-food.md mục 8).
+ *  - available: món `pending` (chờ nhận) + quán `pending` đứng riêng (dữ liệu cũ, quyết định thẳng).
+ *  - mine: món `in_review` do reviewer này giữ, còn hạn — kèm ghi chú đính chính.
+ * Quán mới đi kèm món không còn là mục riêng: hiển thị và được quyết định cùng món.
+ */
+export async function getReviewerQueue(reviewerId: string): Promise<ReviewQueue> {
+  await connectDB();
+  await releaseExpiredClaims();
+
+  const [pendingFoods, mineFoods, pendingRestaurants, linkedRestaurantIds, otherReviewerCount] = await Promise.all([
+    findQueueFoods({ moderationStatus: "pending", visibility: { $ne: "deleted" } }),
+    findQueueFoods({ moderationStatus: "in_review", reviewerId, claimedAt: { $gte: claimCutoff() } }),
     Restaurant.find({ moderationStatus: "pending" }).sort({ createdAt: 1 }).populate("createdBy", "name avatarUrl").lean(),
+    findLinkedRestaurantIds(),
     User.countDocuments({ role: "foodreviewer", accountStatus: "active", _id: { $ne: reviewerId } }),
   ]);
+  const foods = [...pendingFoods, ...mineFoods];
 
-  const proposalIds = foods
-    .map((food) => (food.proposedCategoryId as { _id?: unknown } | null)?._id)
-    .filter(Boolean);
-  const proposalUsage = await Food.aggregate([
-    { $match: { proposedCategoryId: { $in: proposalIds }, visibility: { $ne: "deleted" }, moderationStatus: { $ne: "rejected" } } },
-    { $group: { _id: "$proposedCategoryId", count: { $sum: 1 } } },
+  const proposalIds = foods.map((food) => food.proposedCategoryId?._id).filter(Boolean);
+  const [proposalUsage, notes] = await Promise.all([
+    Food.aggregate([
+      {
+        $match: {
+          proposedCategoryId: { $in: proposalIds },
+          visibility: { $ne: "deleted" },
+          moderationStatus: { $nin: ["rejected", "withdrawn"] },
+        },
+      },
+      { $group: { _id: "$proposedCategoryId", count: { $sum: 1 } } },
+    ]),
+    SubmissionNote.find({ submissionId: { $in: mineFoods.map((food) => food._id) } })
+      .sort({ createdAt: 1 })
+      .lean(),
   ]);
   const usageByProposal = new Map<string, number>(
     proposalUsage.map((row: { _id: unknown; count: number }) => [String(row._id), row.count]),
   );
+  const notesByFood = new Map<string, ReviewQueueNote[]>();
+  for (const note of notes as unknown as { _id: unknown; submissionId: unknown; content: string; createdAt?: Date }[]) {
+    const key = String(note.submissionId);
+    const item = { id: String(note._id), content: note.content, createdAt: new Date(note.createdAt ?? Date.now()).toISOString() };
+    notesByFood.set(key, [...(notesByFood.get(key) ?? []), item]);
+  }
 
-  const foodItems: ReviewQueueItem[] = foods.map((food) => {
-    const restaurant = food.restaurantId as unknown as {
-      name?: string;
-      address?: string;
-      openingHours?: string;
-      images?: string[];
-      locationSource?: LocationSource;
-      location?: { coordinates?: [number, number] };
-    } | null;
-    const proposal = food.proposedCategoryId as unknown as {
-      _id: unknown;
-      name: string;
-      proposalCount?: number;
-      status: ReviewQueueProposal["status"];
-    } | null;
-    const isSelfSubmitted = String(food.createdBy && (food.createdBy as { _id?: unknown })._id) === reviewerId;
+  const toFoodItem = (food: LeanQueueFood): ReviewQueueItem => {
+    const restaurant = food.restaurantId ?? null;
+    const proposal = food.proposedCategoryId ?? null;
+    const submitterId = String((food.createdBy as { _id?: unknown } | null)?._id);
+    const isSelfSubmitted = submitterId === reviewerId;
     const coordinates = restaurant?.location?.coordinates;
+    const isMine = food.moderationStatus === "in_review";
+    const lock = buildLock(isSelfSubmitted, otherReviewerCount);
 
     return {
       targetType: "food",
       id: String(food._id),
+      status: isMine ? "in_review" : "pending",
+      requiresClaim: true,
+      claimedAt: isMine && food.claimedAt ? new Date(food.claimedAt).toISOString() : null,
+      claimExpiresAt: isMine && food.claimedAt ? claimExpiresAt(food.claimedAt).toISOString() : null,
+      hasNewRestaurant: Boolean(restaurant && restaurant.moderationStatus === "pending" && String(restaurant.createdBy) === submitterId),
+      restaurantId: restaurant ? String(restaurant._id) : null,
+      editCount: food.editCount ?? 0,
+      notes: notesByFood.get(String(food._id)) ?? [],
       name: food.name,
       description: food.description ?? "",
       images: food.images ?? [],
@@ -175,135 +237,85 @@ export async function getPendingQueue(reviewerId: string): Promise<ReviewQueueIt
       submitter: toSubmitter(food.createdBy),
       createdAt: (food.createdAt ?? new Date()).toISOString(),
       isSelfSubmitted,
-      ...buildLock(isSelfSubmitted, otherReviewerCount),
+      // Chưa nhận thì chưa quyết định được; lockReason chỉ dành cho BR-F02/F03.
+      canDecide: isMine && lock.canDecide,
+      lockReason: lock.lockReason,
     };
-  });
+  };
 
-  const restaurantItems: ReviewQueueItem[] = restaurants.map((restaurant) => {
-    const isSelfSubmitted = String(restaurant.createdBy && (restaurant.createdBy as { _id?: unknown })._id) === reviewerId;
-    const coordinates = restaurant.location?.coordinates;
+  const linked = new Set(linkedRestaurantIds.map(String));
+  const restaurantItems: ReviewQueueItem[] = pendingRestaurants
+    .filter((restaurant) => !linked.has(String(restaurant._id)))
+    .map((restaurant) => {
+      const isSelfSubmitted = String(restaurant.createdBy && (restaurant.createdBy as { _id?: unknown })._id) === reviewerId;
+      const coordinates = restaurant.location?.coordinates;
 
-    return {
-      targetType: "restaurant",
-      id: String(restaurant._id),
-      name: restaurant.name,
-      description: "",
-      images: [],
-      priceMin: null,
-      priceMax: null,
-      address: restaurant.address,
-      location: coordinates ? { lat: coordinates[1], lng: coordinates[0] } : null,
-      categoryNames: [],
-      eatingLevels: [],
-      restaurantName: null,
-      openingHours: restaurant.openingHours ?? null,
-      restaurantImages: restaurant.images ?? [],
-      locationSource: (restaurant.locationSource as LocationSource | undefined) ?? null,
-      proposal: null,
-      submitter: toSubmitter(restaurant.createdBy),
-      createdAt: (restaurant.createdAt ?? new Date()).toISOString(),
-      isSelfSubmitted,
-      ...buildLock(isSelfSubmitted, otherReviewerCount),
-    };
-  });
+      return {
+        targetType: "restaurant",
+        id: String(restaurant._id),
+        status: "pending",
+        requiresClaim: false,
+        claimedAt: null,
+        claimExpiresAt: null,
+        hasNewRestaurant: false,
+        restaurantId: null,
+        editCount: 0,
+        notes: [],
+        name: restaurant.name,
+        description: "",
+        images: [],
+        priceMin: null,
+        priceMax: null,
+        address: restaurant.address,
+        location: coordinates ? { lat: coordinates[1], lng: coordinates[0] } : null,
+        categoryNames: [],
+        eatingLevels: [],
+        restaurantName: null,
+        openingHours: restaurant.openingHours ?? null,
+        restaurantImages: restaurant.images ?? [],
+        locationSource: (restaurant.locationSource as LocationSource | undefined) ?? null,
+        proposal: null,
+        submitter: toSubmitter(restaurant.createdBy),
+        createdAt: (restaurant.createdAt ?? new Date()).toISOString(),
+        isSelfSubmitted,
+        ...buildLock(isSelfSubmitted, otherReviewerCount),
+      };
+    });
 
-  return [...foodItems, ...restaurantItems].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-  );
+  const byCreatedAt = (a: ReviewQueueItem, b: ReviewQueueItem) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  return {
+    available: [...pendingFoods.map(toFoodItem), ...restaurantItems].sort(byCreatedAt),
+    mine: mineFoods.map(toFoodItem).sort(byCreatedAt),
+  };
 }
 
+/** Badge hàng chờ: món chờ nhận + quán đứng riêng (dữ liệu cũ). Không tính món đang có người giữ. */
 export async function getPendingQueueCount(): Promise<number> {
   await connectDB();
-  const [foodCount, restaurantCount] = await Promise.all([
-    Food.countDocuments({ moderationStatus: "pending" }),
-    Restaurant.countDocuments({ moderationStatus: "pending" }),
+  const [foodCount, linkedRestaurantIds] = await Promise.all([
+    Food.countDocuments({ moderationStatus: "pending", visibility: { $ne: "deleted" } }),
+    findLinkedRestaurantIds(),
   ]);
+  const restaurantCount = await Restaurant.countDocuments({ moderationStatus: "pending", _id: { $nin: linkedRestaurantIds } });
   return foodCount + restaurantCount;
 }
 
-type DecisionError = "NOT_FOUND" | "NOT_PENDING" | "SELF_SUBMITTED" | "REASON_REQUIRED";
-
-interface ApplyDecisionInput {
-  reviewerId: string;
-  targetType: ModerationTargetType;
-  targetId: string;
-  decision: ModerationDecision;
-  note: string;
+/** Reviewer đang giữ món còn hạn — điều kiện cho các thao tác phụ khi thẩm định (sửa dữ kiện, đề xuất danh mục). */
+export async function isHeldByReviewer(reviewerId: string, foodId: string): Promise<boolean> {
+  await connectDB();
+  return Boolean(await Food.exists({ _id: foodId, moderationStatus: "in_review", reviewerId, claimedAt: { $gte: claimCutoff() } }));
 }
 
-/** BR-F01→F09: approve/reject/needs_revision + audit log + notification. */
-export async function applyModerationDecision({
-  reviewerId,
-  targetType,
-  targetId,
-  decision,
-  note,
-}: ApplyDecisionInput): Promise<{ error: DecisionError | null }> {
-  if (decision !== "approved" && !note.trim()) {
-    // BR-F06 (reject) / BR-F07 (needs_revision) bắt buộc có lý do.
-    return { error: "REASON_REQUIRED" };
-  }
-
+/** Quán `pending` reviewer được đụng tới: quán của món mình đang giữ, hoặc quán đứng riêng (dữ liệu cũ). */
+export async function canReviewerTouchRestaurant(reviewerId: string, restaurantId: string): Promise<boolean> {
   await connectDB();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Food/Restaurant có shape verification/moderationStatus giống nhau, nhưng khác model TS nên union type gây lỗi thừa.
-  const Model: any = targetType === "food" ? Food : Restaurant;
-  const item = await Model.findById(targetId);
-  if (!item) return { error: "NOT_FOUND" };
-  if (item.moderationStatus !== "pending") return { error: "NOT_PENDING" }; // BR-F01
-  if (String(item.createdBy) === reviewerId) return { error: "SELF_SUBMITTED" }; // BR-F02/F03
-
-  item.moderationStatus = decision;
-  if (decision === "approved" && targetType === "food" && item.proposedCategoryId) {
-    // Đề xuất danh mục chưa được xử lý → món chưa có danh mục nào thì tạm vào "Khác",
-    // đề xuất ở lại cho Admin (lib/categoryProposals.ts).
-    const proposal = (await CategoryProposal.findById(item.proposedCategoryId).select("status").lean()) as {
-      status?: string;
-    } | null;
-    if (proposal?.status === "pending") await ensureFallbackCategory(item);
-  }
-  if (decision === "approved") {
-    // BR-F04/F05: approve phải ghi người duyệt, ngày xác minh, ghi chú thẩm định.
-    item.verification = { verifiedBy: reviewerId, verifiedAt: new Date(), note: note.trim() || undefined };
-    item.moderationNote = undefined;
-  } else {
-    item.moderationNote = note.trim();
-  }
-  item.updatedAt = new Date();
-  await item.save();
-  if (targetType === "food") await recountCategoriesOfFood(targetId);
-
-  await AuditLog.create({
-    actorId: reviewerId,
-    action: DECISION_TO_ACTION[decision],
-    targetType,
-    targetId,
-    reason: note.trim() || undefined,
-    metadata: { name: item.name },
-  });
-
-  const recipientId = String(item.createdBy);
-  let foodId: string | undefined;
-  if (targetType === "restaurant") {
-    const ownFood = (await Food.findOne({ restaurantId: targetId, createdBy: item.createdBy }).select("_id").lean()) as {
-      _id: unknown;
-    } | null;
-    foodId = ownFood ? String(ownFood._id) : undefined;
-  }
-  const target = { targetType, targetId, name: item.name as string, ...(foodId && { foodId }) };
-  if (decision === "approved") {
-    await notify(recipientId, { type: "food_approved", payload: target, actorId: reviewerId });
-  } else if (decision === "rejected") {
-    await notify(recipientId, { type: "food_rejected", payload: { ...target, reason: note.trim() }, actorId: reviewerId });
-  } else {
-    await notify(recipientId, { type: "food_needs_revision", payload: { ...target, feedback: note.trim() }, actorId: reviewerId });
-  }
-
-  if (decision === "approved") {
-    // Trao thành tựu ngay khi duyệt; lỗi ở bước phụ này không được làm hỏng quyết định đã ghi.
-    await getContributionOverview(String(item.createdBy)).catch(() => undefined);
-  }
-
-  return { error: null };
+  const restaurant = (await Restaurant.findById(restaurantId).select("moderationStatus").lean()) as { moderationStatus?: string } | null;
+  if (restaurant?.moderationStatus !== "pending") return false;
+  const [heldFood, activeFood] = await Promise.all([
+    Food.exists({ restaurantId, moderationStatus: "in_review", reviewerId, claimedAt: { $gte: claimCutoff() } }),
+    Food.exists({ restaurantId, moderationStatus: { $in: ACTIVE_SUBMISSION_STATUSES }, visibility: { $ne: "deleted" } }),
+  ]);
+  return Boolean(heldFood) || !activeFood;
 }
 
 interface HistoryQuery {

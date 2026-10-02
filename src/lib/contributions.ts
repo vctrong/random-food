@@ -1,25 +1,20 @@
-import { isValidObjectId } from "mongoose";
 import { connectDB } from "@/lib/mongodb";
-import { uploadImageFile } from "@/lib/cloudinary";
 import { Food } from "@/lib/models/Food";
-import { Restaurant } from "@/lib/models/Restaurant";
 import { Favorite } from "@/lib/models/Favorite";
 import { AuditLog } from "@/lib/models/AuditLog";
-import { getFallbackCategoryId } from "@/lib/categoryProposals";
-import { validateFoodCategories } from "@/lib/foodSubmission";
+import { SubmissionNote } from "@/lib/models/SubmissionNote";
 // Đăng ký model User để .populate("verification.verifiedBy") hoạt động.
-import { User } from "@/lib/models/User";
-import { notify } from "@/lib/notifications/notify";
-import { isEatingLevel } from "@/constants/categories";
-import { MAX_FOOD_IMAGES, MAX_FOOD_IMAGE_BYTES } from "@/constants/limits";
+import "@/lib/models/User";
+import { releaseExpiredClaims } from "@/lib/submissionClaims";
 import { deriveContributionStatus } from "@/features/contributions/contributionLogic";
-import type { Contribution, ContributionFeedback, ContributionStatus } from "@/types/contribution";
-import type { LocationSource } from "@/types/restaurant";
+import { getEditPermission, isClaimExpired, remainingEdits } from "@/features/contributions/submissionRules";
+import type { Contribution, ContributionFeedback, ContributionStatus, SubmissionNoteItem } from "@/types/contribution";
 
 /**
- * Lớp dữ liệu cho trang "Món đã đóng góp" (UC-U11, UC-U12). Không có model DB
- * riêng — ghép từ Food (createdBy = user) + Restaurant (quán kèm theo) +
- * Favorite (lượt lưu) + AuditLog (lịch sử phản hồi của FoodReviewer).
+ * Lớp dữ liệu cho trang "Món đã đóng góp" (UC-U11, UC-U12) — chỉ đọc. Ghép từ Food
+ * (createdBy = user) + Restaurant (quán kèm theo) + Favorite (lượt lưu) + AuditLog
+ * (lịch sử phản hồi) + SubmissionNote (ghi chú đính chính). Sửa / rút / gửi ghi chú:
+ * lib/submissionWorkflow.ts.
  */
 
 const DECISION_BY_ACTION: Record<string, ContributionFeedback["decision"]> = {
@@ -51,6 +46,8 @@ interface LeanFood {
   moderationStatus: ContributionStatus;
   moderationNote?: string;
   visibility: string;
+  claimedAt?: Date;
+  editCount?: number;
   verification?: { verifiedBy?: { name?: string } | null; verifiedAt?: Date; note?: string };
   avgRating?: number;
   ratingCount?: number;
@@ -60,6 +57,7 @@ interface LeanFood {
 
 export async function listContributionsForUser(userId: string): Promise<Contribution[]> {
   await connectDB();
+  await releaseExpiredClaims();
 
   // visibility = deleted là soft-delete của Admin (BR-S05) — không hiện lại cho user.
   const foods = (await Food.find({ createdBy: userId, visibility: { $ne: "deleted" } })
@@ -76,7 +74,7 @@ export async function listContributionsForUser(userId: string): Promise<Contribu
     .filter((restaurant): restaurant is PopulatedRestaurant => Boolean(restaurant && String(restaurant.createdBy) === userId))
     .map((restaurant) => restaurant._id);
 
-  const [saveGroups, logs] = await Promise.all([
+  const [saveGroups, logs, notes] = await Promise.all([
     Favorite.aggregate([{ $match: { foodId: { $in: foodIds } } }, { $group: { _id: "$foodId", count: { $sum: 1 } } }]),
     AuditLog.find({
       targetId: { $in: [...foodIds, ...ownedRestaurantIds] },
@@ -84,7 +82,15 @@ export async function listContributionsForUser(userId: string): Promise<Contribu
     })
       .sort({ createdAt: 1 })
       .lean(),
+    SubmissionNote.find({ submissionId: { $in: foodIds }, authorId: userId }).sort({ createdAt: 1 }).lean(),
   ]);
+
+  const notesByFood = new Map<string, SubmissionNoteItem[]>();
+  for (const note of notes as unknown as { _id: unknown; submissionId: unknown; content: string; createdAt?: Date }[]) {
+    const key = String(note.submissionId);
+    const item = { id: String(note._id), content: note.content, createdAt: new Date(note.createdAt ?? Date.now()).toISOString() };
+    notesByFood.set(key, [...(notesByFood.get(key) ?? []), item]);
+  }
 
   const saveCountByFood = new Map<string, number>(
     saveGroups.map((group: { _id: unknown; count: number }) => [String(group._id), group.count]),
@@ -92,6 +98,7 @@ export async function listContributionsForUser(userId: string): Promise<Contribu
   const feedbackByTarget = new Map<string, ContributionFeedback[]>();
   for (const log of logs) {
     const key = String(log.targetId);
+    if (!DECISION_BY_ACTION[log.action]) continue;
     const entry: ContributionFeedback = {
       id: String(log._id),
       targetType: log.targetType === "restaurant" ? "restaurant" : "food",
@@ -108,6 +115,9 @@ export async function listContributionsForUser(userId: string): Promise<Contribu
     const foodStatus = food.moderationStatus;
     const coordinates = restaurantDoc?.location?.coordinates;
     const verifier = food.verification?.verifiedBy;
+    const permission = getEditPermission(foodStatus);
+    const editsLeft = remainingEdits(foodStatus, food.editCount ?? 0);
+    const hasEditsLeft = editsLeft === null || editsLeft > 0;
 
     const feedbackHistory = [
       ...(feedbackByTarget.get(String(food._id)) ?? []),
@@ -142,6 +152,7 @@ export async function listContributionsForUser(userId: string): Promise<Contribu
             status: restaurantDoc.moderationStatus,
             moderationNote: restaurantDoc.moderationNote ?? null,
             isOwnedByUser: isOwnedRestaurant,
+            canEditDetails: Boolean(permission.heavy && isOwnedRestaurant && restaurantDoc.moderationStatus === "pending"),
           }
         : null,
       verifiedByName: verifier?.name ?? null,
@@ -151,163 +162,13 @@ export async function listContributionsForUser(userId: string): Promise<Contribu
       avgRating: food.avgRating ?? 0,
       ratingCount: food.ratingCount ?? 0,
       feedbackHistory,
-      editable: {
-        food: foodStatus === "needs_revision",
-        restaurant: Boolean(isOwnedRestaurant && restaurantDoc?.moderationStatus === "needs_revision"),
-      },
+      editable: { food: permission.light && hasEditsLeft, restaurant: permission.heavy && hasEditsLeft },
+      remainingEdits: editsLeft,
+      canWithdraw: foodStatus === "pending" || foodStatus === "in_review" || foodStatus === "needs_revision",
+      canSendNote: foodStatus === "in_review" && !isClaimExpired(food.claimedAt),
+      notes: notesByFood.get(String(food._id)) ?? [],
       createdAt: new Date(food.createdAt ?? Date.now()).toISOString(),
       updatedAt: new Date(food.updatedAt ?? food.createdAt ?? Date.now()).toISOString(),
     };
   });
-}
-
-export interface UpdateContributionInput {
-  food?: {
-    name: string;
-    description: string;
-    priceMin: number;
-    priceMax: number;
-    categoryIds: string[];
-    eatingLevels: string[];
-    /** URL ảnh cũ user giữ lại — phải nằm trong `food.images` hiện có. */
-    keepImages: string[];
-    newImages: File[];
-  };
-  restaurant?: {
-    name: string;
-    address: string;
-    location: { lat: number; lng: number } | null;
-    locationSource: LocationSource;
-  };
-}
-
-export type UpdateContributionError =
-  | "INVALID_ID"
-  | "NOT_FOUND"
-  | "NOTHING_TO_UPDATE"
-  | "NOT_EDITABLE"
-  | "INVALID_FOOD"
-  | "INVALID_PRICE"
-  | "INVALID_CATEGORY"
-  | "TOO_MANY_CATEGORIES"
-  | "INVALID_EATING_LEVEL"
-  | "INVALID_IMAGES"
-  | "INVALID_RESTAURANT";
-
-/**
- * Báo cho Reviewer đã yêu cầu sửa (actor của AuditLog needs_revision gần nhất).
- * Không tìm được hoặc người đó không còn quyền kiểm duyệt → bỏ qua; mục vẫn có badge hàng chờ.
- */
-async function notifyRevisionRequester(targetType: "food" | "restaurant", targetId: string, name: string, contributorId: string) {
-  const log = (await AuditLog.findOne({ action: "needs_revision", targetType, targetId })
-    .sort({ createdAt: -1 })
-    .select("actorId")
-    .lean()) as { actorId?: unknown } | null;
-  if (!log?.actorId) return;
-  const reviewer = (await User.findOne({
-    _id: log.actorId,
-    role: { $in: ["foodreviewer", "admin"] },
-    accountStatus: { $ne: "banned" },
-  })
-    .select("_id")
-    .lean()) as { _id: unknown } | null;
-  if (!reviewer) return;
-  await notify(String(reviewer._id), {
-    type: "contribution_resubmitted",
-    payload: { targetType, targetId, name },
-    actorId: contributorId,
-  });
-}
-
-/**
- * UC-U12 / BR-U10: user sửa đóng góp của CHÍNH MÌNH khi đang `needs_revision`,
- * rồi gửi lại → `pending` để FoodReviewer duyệt lại (BR_UC mục 4). Mỗi phần
- * (món / quán kèm theo) chỉ sửa được khi phần đó đang `needs_revision`; user
- * không bao giờ tự đặt `approved` (BR-U09). Lý do phản hồi cũ vẫn còn trong
- * AuditLog nên xoá `moderationNote` khi nộp lại không làm mất lịch sử.
- */
-export async function updateContribution(
-  userId: string,
-  foodId: string,
-  input: UpdateContributionInput,
-): Promise<{ error: UpdateContributionError | null }> {
-  if (!isValidObjectId(foodId)) return { error: "INVALID_ID" };
-  if (!input.food && !input.restaurant) return { error: "NOTHING_TO_UPDATE" };
-
-  await connectDB();
-
-  const food = await Food.findOne({ _id: foodId, createdBy: userId, visibility: { $ne: "deleted" } });
-  if (!food) return { error: "NOT_FOUND" };
-
-  const restaurant = await Restaurant.findById(food.restaurantId);
-  const canEditFood = food.moderationStatus === "needs_revision";
-  const canEditRestaurant = Boolean(
-    restaurant && String(restaurant.createdBy) === userId && restaurant.moderationStatus === "needs_revision",
-  );
-  if ((input.food && !canEditFood) || (input.restaurant && !canEditRestaurant)) return { error: "NOT_EDITABLE" };
-
-  // Kiểm tra phần quán trước khi upload ảnh để không tạo ảnh mồ côi trên Cloudinary khi input lỗi.
-  if (input.restaurant) {
-    const { name, address, location } = input.restaurant;
-    const isValidCoordinate =
-      !location ||
-      (Number.isFinite(location.lat) && Number.isFinite(location.lng) && Math.abs(location.lat) <= 90 && Math.abs(location.lng) <= 180);
-    if (!name.trim() || !address.trim() || !isValidCoordinate) return { error: "INVALID_RESTAURANT" };
-  }
-
-  if (input.food) {
-    const { name, description, priceMin, priceMax, categoryIds, eatingLevels, keepImages, newImages } = input.food;
-    if (!name.trim()) return { error: "INVALID_FOOD" };
-    if (!Number.isFinite(priceMin) || !Number.isFinite(priceMax) || priceMin < 0 || priceMax < priceMin) {
-      return { error: "INVALID_PRICE" };
-    }
-    if (eatingLevels.length === 0 || eatingLevels.some((level) => !isEatingLevel(level))) {
-      return { error: "INVALID_EATING_LEVEL" };
-    }
-    // Luật danh mục chung với lúc tạo món (lib/foodSubmission.ts); "Khác" chỉ giữ lại được nếu món đang ở đó sẵn.
-    const fallbackId = await getFallbackCategoryId();
-    const hadFallback = (food.categoryIds ?? []).map(String).includes(fallbackId);
-    const categoryError = await validateFoodCategories(categoryIds, food.proposedCategoryId ? 1 : 0, hadFallback);
-    if (categoryError) return { error: categoryError };
-
-    const currentImages = new Set<string>(food.images ?? []);
-    const keptImages = keepImages.filter((url) => currentImages.has(url));
-    const isValidUpload = (file: File) => file.type.startsWith("image/") && file.size > 0 && file.size <= MAX_FOOD_IMAGE_BYTES;
-    const totalImages = keptImages.length + newImages.length;
-    if (totalImages < 1 || totalImages > MAX_FOOD_IMAGES || !newImages.every(isValidUpload)) {
-      return { error: "INVALID_IMAGES" };
-    }
-
-    const uploadedUrls = await Promise.all(newImages.map((file) => uploadImageFile(file, "nayangi/foods")));
-
-    food.name = name.trim();
-    food.description = description.trim();
-    food.priceRange = { min: priceMin, max: priceMax };
-    food.categoryIds = [...new Set(categoryIds)];
-    food.eatingLevels = eatingLevels;
-    food.images = [...keptImages, ...uploadedUrls];
-    food.moderationStatus = "pending";
-    food.moderationNote = undefined;
-    food.updatedAt = new Date();
-  }
-
-  if (input.restaurant && restaurant) {
-    const { name, address, location, locationSource } = input.restaurant;
-
-    restaurant.name = name.trim();
-    restaurant.address = address.trim();
-    restaurant.location = location ? { type: "Point", coordinates: [location.lng, location.lat] } : undefined;
-    restaurant.locationSource = location ? (locationSource === "none" ? "pin_confirmed" : locationSource) : "none";
-    restaurant.moderationStatus = "pending";
-    restaurant.moderationNote = undefined;
-    restaurant.updatedAt = new Date();
-  }
-
-  if (input.food) await food.save();
-  if (input.restaurant && restaurant) await restaurant.save();
-
-  if (input.food) await notifyRevisionRequester("food", String(food._id), food.name, userId);
-  if (input.restaurant && restaurant) await notifyRevisionRequester("restaurant", String(restaurant._id), restaurant.name, userId);
-
-  return { error: null };
 }

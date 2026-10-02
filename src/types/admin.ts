@@ -68,7 +68,7 @@ export interface AdminReviewerApplicationRow {
 }
 
 export type ContentTargetType = "food" | "restaurant";
-export type ModerationStatus = "pending" | "approved" | "rejected" | "needs_revision";
+export type ModerationStatus = "pending" | "in_review" | "approved" | "rejected" | "needs_revision" | "withdrawn";
 
 export interface AdminContentRow {
   targetType: ContentTargetType;

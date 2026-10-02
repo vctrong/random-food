@@ -102,13 +102,13 @@ async function loadProposalFoods(proposalId: string): Promise<ProposalFoodDoc[]>
   return (await Food.find({ proposedCategoryId: proposalId, visibility: { $ne: "deleted" } })) as unknown as ProposalFoodDoc[];
 }
 
-/** Số món "đang dùng" đề xuất — hiển thị "Áp dụng cho N món…" (không tính món đã bị từ chối). */
+/** Số món "đang dùng" đề xuất — hiển thị "Áp dụng cho N món…" (không tính món đã bị từ chối / đã rút). */
 export async function countFoodsUsingProposal(proposalId: string): Promise<number> {
   await connectDB();
   return Food.countDocuments({
     proposedCategoryId: proposalId,
     visibility: { $ne: "deleted" },
-    moderationStatus: { $ne: "rejected" },
+    moderationStatus: { $nin: ["rejected", "withdrawn"] },
   });
 }
 

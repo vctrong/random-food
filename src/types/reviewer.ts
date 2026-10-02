@@ -26,9 +26,30 @@ export interface ReviewQueueProposal {
   status: "pending" | "approved" | "rejected" | "merged";
 }
 
+export interface ReviewQueueNote {
+  id: string;
+  content: string;
+  createdAt: string;
+}
+
 export interface ReviewQueueItem {
   targetType: ModerationTargetType;
   id: string;
+  /** Món: pending (chờ nhận) | in_review (tôi đang giữ). Quán đứng riêng (dữ liệu cũ) luôn pending. */
+  status: "pending" | "in_review";
+  /** false = quán đứng riêng (dữ liệu cũ) — quyết định thẳng, không cần nhận. */
+  requiresClaim: boolean;
+  claimedAt: string | null;
+  /** Mốc tự nhả nếu chưa xử lý (claimedAt + CLAIM_TTL_HOURS). */
+  claimExpiresAt: string | null;
+  /** Món kèm quán mới user tạo (đang chờ duyệt) — duyệt/từ chối món sẽ áp dụng luôn cho quán. */
+  hasNewRestaurant: boolean;
+  /** Quán của món (null với mục quán đứng riêng — khi đó `id` chính là quán). */
+  restaurantId: string | null;
+  /** Số lần user đã tự sửa khi còn chờ nhận. */
+  editCount: number;
+  /** Ghi chú đính chính của người gửi — chỉ có với đề xuất tôi đang giữ. */
+  notes: ReviewQueueNote[];
   name: string;
   description: string;
   images: string[];
@@ -49,9 +70,16 @@ export interface ReviewQueueItem {
   createdAt: string;
   /** BR-F02/F03: true nếu chính reviewer đang xem là người đóng góp. */
   isSelfSubmitted: boolean;
-  /** false khi BR-F02/F03 áp dụng — không cho phép reviewer này tự quyết định. */
+  /** false khi BR-F02/F03 áp dụng, hoặc chưa nhận xác minh — không cho phép quyết định. */
   canDecide: boolean;
   lockReason: string | null;
+}
+
+export interface ReviewQueue {
+  /** Tab "Chờ nhận": món pending + quán đứng riêng (dữ liệu cũ). */
+  available: ReviewQueueItem[];
+  /** Tab "Đang giữ": món in_review do tôi giữ, còn hạn. */
+  mine: ReviewQueueItem[];
 }
 
 export interface ReviewHistoryEntry {

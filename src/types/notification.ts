@@ -21,6 +21,14 @@ export interface NotificationPayloadMap {
   food_needs_revision: ContributionRef & { feedback: string };
   content_corrected: ContributionRef & { fields: string[] };
   contribution_resubmitted: ContributionRef;
+  /** Gửi user: đề xuất vừa được reviewer nhận xác minh — từ giờ không sửa được nữa. */
+  submission_claimed: ContributionRef;
+  /** Gửi reviewer đang giữ: user đã rút đề xuất. */
+  submission_withdrawn: ContributionRef;
+  /** Gửi reviewer đang giữ: user gửi ghi chú đính chính. */
+  submission_note_added: ContributionRef & { excerpt: string };
+  /** Gửi reviewer đang giữ: Admin đã quyết định thay đề xuất này. */
+  submission_overridden: ContributionRef & { decision: "approved" | "rejected" | "needs_revision" };
   category_proposal_approved: { proposalName: string; categoryId: string; categoryName: string };
   category_proposal_rejected: { proposalName: string; reason?: string };
   category_proposal_merged: { proposalName: string; categoryId: string; categoryName: string };

@@ -10,16 +10,22 @@ export const ACCOUNT_STATUS_LABELS: Record<string, string> = {
 };
 
 export const MODERATION_STATUS_LABELS: Record<string, string> = {
-  pending: "Chờ duyệt",
+  pending: "Chờ xác minh",
+  in_review: "Đang xác minh",
   approved: "Đã duyệt",
   rejected: "Từ chối",
   needs_revision: "Cần sửa",
+  withdrawn: "Đã rút",
 };
 
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
   approve_food: "Duyệt nội dung",
   reject_food: "Từ chối nội dung",
   needs_revision: "Yêu cầu chỉnh sửa",
+  claim_submission: "Nhận xác minh đề xuất",
+  release_submission: "Nhả đề xuất",
+  withdraw_submission: "Người gửi rút đề xuất",
+  admin_override_decision: "Admin quyết định thay Reviewer",
   ban_user: "Khoá tài khoản",
   unban_user: "Mở khoá tài khoản",
   hide_review: "Đổi trạng thái đánh giá",

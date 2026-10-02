@@ -19,7 +19,10 @@ export function buildNotificationLink(type: NotificationType, payload: Notificat
     case "category_proposal_merged":
       return "/dong-gop";
     case "contribution_resubmitted":
+    case "submission_note_added":
       return "/reviewer";
+    case "submission_claimed":
+      return "/dong-gop";
     case "report_created":
       return "/admin/bao-cao";
     case "role_changed":

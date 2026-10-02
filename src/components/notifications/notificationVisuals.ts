@@ -6,8 +6,11 @@ import {
   KeyRound,
   Lock,
   LockOpen,
+  MessageSquareText,
   PencilLine,
   RefreshCw,
+  ScanSearch,
+  Undo2,
   Tag,
   Trash2,
   Wrench,
@@ -30,6 +33,9 @@ export const NOTIFICATION_ICONS: Record<NotificationIconKey, LucideIcon> = {
   badge: BadgeCheck,
   key: KeyRound,
   alert: AlertTriangle,
+  search: ScanSearch,
+  undo: Undo2,
+  message: MessageSquareText,
 };
 
 /** Ô icon theo tông — chỉ token thương hiệu (CLAUDE.md 4.3), chữ trên nền nhạt đạt tương phản cả 2 theme. */

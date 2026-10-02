@@ -3,20 +3,13 @@ import { REMOVAL_REASON_MAX_LENGTH } from "@/constants/admin";
 import { apiNotFound } from "@/lib/http404";
 import { requireAdminSession } from "@/lib/admin/session";
 import { getContentRows, setContentVisibility } from "@/lib/admin/content";
-import { applyModerationDecision } from "@/lib/reviewerData";
+import { WORKFLOW_ERRORS, decideStandaloneRestaurant, decideSubmission } from "@/lib/submissionWorkflow";
 import type { ModerationStatus } from "@/types/admin";
 
 const TARGET_TYPES = new Set(["food", "restaurant"]);
 const DECISIONS = new Set(["approved", "rejected", "needs_revision"]);
-const STATUSES = new Set(["pending", "approved", "rejected", "needs_revision"]);
+const STATUSES = new Set(["pending", "in_review", "approved", "rejected", "needs_revision", "withdrawn"]);
 const VISIBILITIES = new Set(["visible", "hidden"]);
-
-const DECISION_ERROR_MESSAGES: Record<string, string> = {
-  NOT_FOUND: "Không tìm thấy nội dung.",
-  NOT_PENDING: "Nội dung này không còn ở trạng thái chờ duyệt.",
-  SELF_SUBMITTED: "Không thể tự duyệt nội dung do chính bạn đóng góp (BR-F02/F03).",
-  REASON_REQUIRED: "Cần nhập lý do/ghi chú khi từ chối hoặc yêu cầu sửa.",
-};
 
 export async function GET(request: Request) {
   const admin = await requireAdminSession();
@@ -48,15 +41,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Thiếu hoặc sai decision." }, { status: 400 });
   }
 
-  const result = await applyModerationDecision({
-    reviewerId: admin.id,
-    targetType: targetType as "food" | "restaurant",
-    targetId,
-    decision: decision as "approved" | "rejected" | "needs_revision",
-    note,
-  });
+  // Admin quyết định thẳng món đang pending / in_review (override reviewer đang giữ — có thông báo + AuditLog riêng).
+  const input = { actorId: admin.id, decision: decision as "approved" | "rejected" | "needs_revision", note };
+  const result =
+    targetType === "food"
+      ? await decideSubmission({ ...input, actorRole: "admin", foodId: targetId })
+      : await decideStandaloneRestaurant({ ...input, restaurantId: targetId });
 
-  if (result.error) return NextResponse.json({ error: DECISION_ERROR_MESSAGES[result.error] }, { status: 400 });
+  if (result.error) {
+    const { message, status } = WORKFLOW_ERRORS[result.error];
+    return NextResponse.json({ error: message }, { status });
+  }
   return NextResponse.json({ ok: true });
 }
 

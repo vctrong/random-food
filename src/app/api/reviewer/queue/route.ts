@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { getPendingQueue, requireReviewerSession } from "@/lib/reviewerData";
+import { getReviewerQueue, requireReviewerSession } from "@/lib/reviewerData";
 
-/** UC-F01: hàng chờ kiểm duyệt (Food + Restaurant ở trạng thái pending). */
+/** UC-F01: hàng chờ 2 tab — "Chờ nhận" (pending) và "Đang giữ" (in_review của tôi). */
 export async function GET() {
   const reviewer = await requireReviewerSession();
   if (!reviewer.ok) {
@@ -10,6 +10,5 @@ export async function GET() {
     return NextResponse.json({ error: message }, { status: reviewer.status });
   }
 
-  const items = await getPendingQueue(reviewer.id);
-  return NextResponse.json(items);
+  return NextResponse.json(await getReviewerQueue(reviewer.id));
 }

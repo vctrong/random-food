@@ -2,23 +2,32 @@ import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/requireAuth";
 import { LOCATION_SOURCES } from "@/lib/models/Restaurant";
 import type { LocationSource } from "@/types/restaurant";
-import { updateContribution, type UpdateContributionError, type UpdateContributionInput } from "@/lib/contributions";
+import type { SubmissionField } from "@/features/contributions/submissionRules";
+import { WORKFLOW_ERRORS, describeBlockedFields, editSubmission, type SubmissionEditInput } from "@/lib/submissionWorkflow";
 
-const ERROR_MESSAGES: Record<UpdateContributionError, { message: string; status: number }> = {
-  INVALID_ID: { message: "Mã món ăn không hợp lệ.", status: 400 },
-  NOT_FOUND: { message: "Không tìm thấy món ăn đã đóng góp của bạn.", status: 404 },
-  NOTHING_TO_UPDATE: { message: "Không có thay đổi nào để gửi.", status: 400 },
-  NOT_EDITABLE: { message: "Chỉ chỉnh sửa được khi đội kiểm duyệt yêu cầu bổ sung.", status: 409 },
-  INVALID_FOOD: { message: "Thiếu tên món ăn.", status: 400 },
-  INVALID_PRICE: { message: "Giá tham khảo không hợp lệ.", status: 400 },
-  INVALID_CATEGORY: { message: "Chọn ít nhất 1 danh mục hợp lệ.", status: 400 },
-  TOO_MANY_CATEGORIES: { message: "Mỗi món tối đa 3 danh mục, tính cả danh mục đề xuất.", status: 400 },
-  INVALID_EATING_LEVEL: { message: "Chọn ít nhất 1 mức độ ăn hợp lệ.", status: 400 },
-  INVALID_IMAGES: { message: "Cần 1–5 ảnh, mỗi ảnh là tệp hình dưới 5MB.", status: 400 },
-  INVALID_RESTAURANT: { message: "Thiếu tên, địa chỉ hoặc vị trí quán ăn.", status: 400 },
+/** Key form → field nghiệp vụ, để báo đúng field bị chặn theo trạng thái. */
+const FORM_FIELDS: Record<string, SubmissionField> = {
+  name: "name",
+  description: "description",
+  priceMin: "price",
+  priceMax: "price",
+  categoryIds: "categories",
+  eatingLevels: "eatingLevels",
+  keepImages: "images",
+  images: "images",
+  restaurantName: "restaurant",
+  restaurantAddress: "restaurant",
+  restaurantLat: "restaurant",
+  restaurantLng: "restaurant",
+  restaurantLocationSource: "restaurant",
+  restaurantId: "restaurant",
 };
 
-/** UC-U12: sửa đóng góp `needs_revision` của chính mình và nộp lại (→ pending). */
+/**
+ * UC-U12: chủ đề xuất sửa — `pending` (tối đa 3 lần, cả 2 nhóm field: đổi quán `restaurantId`, hoặc sửa
+ * quán mới `restaurantName/Address/Lat/Lng`) hoặc `needs_revision` (nhóm nhẹ, lưu là gửi lại → pending).
+ * Quyền theo trạng thái kiểm ở lib/submissionWorkflow.ts.
+ */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth();
   if (!auth.ok) return NextResponse.json({ error: "Chưa đăng nhập." }, { status: 401 });
@@ -27,9 +36,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const formData = await request.formData().catch(() => null);
   if (!formData) return NextResponse.json({ error: "Dữ liệu gửi lên không hợp lệ." }, { status: 400 });
 
-  const input: UpdateContributionInput = {};
+  const requestedFields = [...new Set([...formData.keys()].map((key) => FORM_FIELDS[key]).filter(Boolean))];
+  const input: SubmissionEditInput = { requestedFields };
 
-  if (formData.has("name")) {
+  // Nhóm nhẹ gửi cả khối (form luôn gửi đủ) — thiếu field nào thì validate phía service báo lỗi.
+  if (requestedFields.some((field) => field !== "restaurant")) {
     input.food = {
       name: String(formData.get("name") ?? ""),
       description: String(formData.get("description") ?? ""),
@@ -40,6 +51,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       keepImages: formData.getAll("keepImages").map(String).filter(Boolean),
       newImages: formData.getAll("images").filter((item): item is File => item instanceof File && item.size > 0),
     };
+  }
+
+  if (formData.has("restaurantId")) {
+    input.restaurantSwitch = { restaurantId: String(formData.get("restaurantId") ?? "") };
   }
 
   if (formData.has("restaurantName")) {
@@ -55,11 +70,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     };
   }
 
-  const result = await updateContribution(auth.id, id, input);
+  const result = await editSubmission(auth.id, id, input);
   if (result.error) {
-    const { message, status } = ERROR_MESSAGES[result.error];
-    return NextResponse.json({ error: message }, { status });
+    const { message, status } = WORKFLOW_ERRORS[result.error];
+    const blockedFields = "blockedFields" in result ? result.blockedFields : undefined;
+    return NextResponse.json(
+      { error: blockedFields ? describeBlockedFields(blockedFields) : message, ...(blockedFields && { blockedFields }) },
+      { status },
+    );
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, status: result.status, remainingEdits: result.remainingEdits });
 }

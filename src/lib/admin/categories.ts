@@ -121,9 +121,12 @@ export async function getCategoryProposals(): Promise<AdminCategoryProposalRow[]
     const linkedFoods = (proposal.foodIds ?? [])
       .map((id) => foodById.get(String(id)))
       .filter((food): food is NonNullable<typeof food> => Boolean(food && food.visibility !== "deleted"));
-    // "Đang dùng" = món còn gắn đề xuất và chưa bị từ chối — đúng tập món mà quyết định sẽ áp dụng.
+    // "Đang dùng" = món còn gắn đề xuất, chưa bị từ chối/rút — đúng tập món mà quyết định sẽ áp dụng.
     const activeFoods = linkedFoods.filter(
-      (food) => String(food.proposedCategoryId) === String(proposal._id) && food.moderationStatus !== "rejected",
+      (food) =>
+        String(food.proposedCategoryId) === String(proposal._id) &&
+        food.moderationStatus !== "rejected" &&
+        food.moderationStatus !== "withdrawn",
     );
     return {
       id: String(proposal._id),

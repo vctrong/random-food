@@ -22,7 +22,10 @@ export type NotificationIconKey =
   | "unlock"
   | "badge"
   | "key"
-  | "alert";
+  | "alert"
+  | "search"
+  | "undo"
+  | "message";
 
 export interface NotificationContent {
   title: string;
@@ -103,6 +106,44 @@ export function buildNotificationContent(type: NotificationType, payload: Payloa
         icon: "refresh",
         actionLabel: "Mở hàng chờ",
       };
+    case "submission_claimed":
+      return {
+        title: `${subject(payload)} đang được xác minh`,
+        body: "FoodReviewer đã nhận và sẽ đến kiểm tra thực tế. Trong lúc này bạn chỉ gửi được ghi chú đính chính hoặc rút đề xuất.",
+        tone: "primary",
+        icon: "search",
+        actionLabel: "Xem đóng góp",
+      };
+    case "submission_withdrawn":
+      return {
+        title: `${subject(payload)} đã được người gửi rút lại`,
+        body: "Đề xuất đã rời khỏi danh sách bạn đang giữ, không cần xác minh nữa.",
+        tone: "secondary",
+        icon: "undo",
+        actionLabel: null,
+      };
+    case "submission_note_added":
+      return {
+        title: `Người gửi có ghi chú đính chính cho ${targetLabel(payload, false)} ${quoted(str(payload, "name"))}`.trim(),
+        body: str(payload, "excerpt") ? `“${str(payload, "excerpt")}”` : null,
+        tone: "accent",
+        icon: "message",
+        actionLabel: "Mở hàng chờ",
+      };
+    case "submission_overridden": {
+      const decisionLabel: Record<string, string> = {
+        approved: "duyệt",
+        rejected: "từ chối",
+        needs_revision: "yêu cầu chỉnh sửa",
+      };
+      return {
+        title: `Admin đã ${decisionLabel[str(payload, "decision")] ?? "xử lý"} ${targetLabel(payload, false)} ${quoted(str(payload, "name"))}`.trim(),
+        body: "Đề xuất bạn đang giữ đã được Admin xử lý trực tiếp nên không còn trong danh sách của bạn.",
+        tone: "secondary",
+        icon: "badge",
+        actionLabel: null,
+      };
+    }
     case "category_proposal_approved":
       return {
         title: `Danh mục ${quoted(str(payload, "categoryName"))} đã được tạo từ đề xuất của bạn`,

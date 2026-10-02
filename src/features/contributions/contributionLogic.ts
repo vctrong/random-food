@@ -16,13 +16,15 @@ import type {
 
 /**
  * Trạng thái gộp của 1 đóng góp = món + quán do chính user tạo kèm theo (BR-C07).
- * Ưu tiên tình trạng "cần user hành động" trước, để không bị che bởi phần đã duyệt.
+ * Món đã rút / đang xác minh quyết định luôn (quán đi theo món). Còn lại ưu tiên tình trạng
+ * "cần user hành động" trước, để không bị che bởi phần đã duyệt (quán cũ needs_revision).
  */
 export function deriveContributionStatus(
   foodStatus: ContributionStatus,
   foodVisibility: string,
   ownedRestaurantStatus: ContributionStatus | null,
 ): ContributionDisplayStatus {
+  if (foodStatus === "withdrawn" || foodStatus === "in_review") return foodStatus;
   const statuses = ownedRestaurantStatus ? [foodStatus, ownedRestaurantStatus] : [foodStatus];
   if (statuses.includes("needs_revision")) return "needs_revision";
   if (statuses.includes("rejected")) return "rejected";
@@ -30,21 +32,29 @@ export function deriveContributionStatus(
   return foodVisibility === "hidden" ? "hidden" : "approved";
 }
 
+/** Tab nào chứa trạng thái hiển thị này — "Đang chờ" gồm cả chờ nhận và đang xác minh. */
+function tabOf(status: ContributionDisplayStatus): ContributionTab | null {
+  if (status === "in_review") return "pending";
+  if (status === "hidden") return null;
+  return status;
+}
+
 export function summarizeContributions(contributions: Contribution[]): ContributionSummary {
   const count = (status: ContributionDisplayStatus) => contributions.filter((item) => item.status === status).length;
   return {
     total: contributions.length,
     approved: count("approved"),
-    pending: count("pending"),
+    pending: count("pending") + count("in_review"),
     needsRevision: count("needs_revision"),
     rejected: count("rejected"),
+    withdrawn: count("withdrawn"),
   };
 }
 
 export function filterContributions(contributions: Contribution[], tab: ContributionTab, search: string): Contribution[] {
   const query = search.trim().toLowerCase();
   return contributions.filter((item) => {
-    if (tab !== "all" && item.status !== tab) return false;
+    if (tab !== "all" && tabOf(item.status) !== tab) return false;
     if (!query) return true;
     return (
       item.name.toLowerCase().includes(query) ||
@@ -116,7 +126,9 @@ export function getAchievementProgress(contributions: Contribution[]): Achieveme
     new_restaurant: hasApprovedOwnRestaurant,
     many_categories: categoryIds.size >= ACHIEVEMENT_THRESHOLDS.manyCategories,
     loved_by_many: totalSaves >= ACHIEVEMENT_THRESHOLDS.lovedBySaves,
-    steady_contributor: contributions.length >= ACHIEVEMENT_THRESHOLDS.steadySubmissions,
+    // Món đã rút không tính là "đã gửi để cộng đồng xem xét".
+    steady_contributor:
+      contributions.filter((item) => item.status !== "withdrawn").length >= ACHIEVEMENT_THRESHOLDS.steadySubmissions,
   };
 
   return ACHIEVEMENTS.map((achievement) => ({ id: achievement.id, unlocked: unlocked[achievement.id] }));

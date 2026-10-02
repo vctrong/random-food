@@ -4,6 +4,7 @@ import { Food } from "@/lib/models/Food";
 import { Restaurant } from "@/lib/models/Restaurant";
 import { AuditLog } from "@/lib/models/AuditLog";
 import { notify } from "@/lib/notifications/notify";
+import { releaseExpiredClaims } from "@/lib/submissionClaims";
 import "@/lib/models/Category";
 import type { AdminContentRow, ContentTargetType, ModerationStatus } from "@/types/admin";
 
@@ -21,6 +22,7 @@ function toSubmitter(createdBy: unknown): AdminContentRow["submitter"] {
 
 export async function getContentRows(statusFilter?: ModerationStatus): Promise<AdminContentRow[]> {
   await connectDB();
+  await releaseExpiredClaims();
   const query = statusFilter ? { moderationStatus: statusFilter } : {};
 
   const [foods, restaurants] = await Promise.all([

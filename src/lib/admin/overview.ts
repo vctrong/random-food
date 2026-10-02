@@ -25,7 +25,8 @@ export async function getOverviewStats(): Promise<AdminOverviewStats> {
   ] = await Promise.all([
     User.countDocuments({}),
     User.countDocuments({ accountStatus: "banned" }),
-    Food.countDocuments({ moderationStatus: "pending" }),
+    // Còn chờ xử lý = chờ nhận + đang xác minh.
+    Food.countDocuments({ moderationStatus: { $in: ["pending", "in_review"] } }),
     Restaurant.countDocuments({ moderationStatus: "pending" }),
     // Số CASE đang chờ (mỗi case gom mọi báo cáo của 1 đối tượng).
     ReportCase.countDocuments({ status: "pending" }),

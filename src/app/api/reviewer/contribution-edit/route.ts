@@ -4,7 +4,7 @@ import { z } from "zod";
 import { connectDB } from "@/lib/mongodb";
 import { Food } from "@/lib/models/Food";
 import { Restaurant } from "@/lib/models/Restaurant";
-import { requireReviewerSession } from "@/lib/reviewerData";
+import { canReviewerTouchRestaurant, isHeldByReviewer, requireReviewerSession } from "@/lib/reviewerData";
 import { editFood, editRestaurant, type ContentEditError } from "@/lib/contentEdits";
 
 const bodySchema = z.discriminatedUnion("targetType", [
@@ -28,9 +28,9 @@ const bodySchema = z.discriminatedUnion("targetType", [
   }),
 ]);
 
-const ERRORS: Record<ContentEditError | "NOT_PENDING" | "SELF_SUBMITTED", { message: string; status: number }> = {
+const ERRORS: Record<ContentEditError | "NOT_HOLDER" | "SELF_SUBMITTED", { message: string; status: number }> = {
   NOT_FOUND: { message: "Không tìm thấy nội dung.", status: 404 },
-  NOT_PENDING: { message: "Chỉ sửa được nội dung đang chờ duyệt.", status: 409 },
+  NOT_HOLDER: { message: "Chỉ sửa được đề xuất bạn đang nhận xác minh (còn hạn).", status: 403 },
   SELF_SUBMITTED: { message: "Không thể tự sửa đóng góp của chính bạn (BR-F02).", status: 403 },
   FORBIDDEN_FIELD: {
     message: "FoodReviewer chỉ sửa được giá, địa chỉ, vị trí và giờ mở cửa — mục khác hãy yêu cầu người gửi chỉnh sửa.",
@@ -41,7 +41,7 @@ const ERRORS: Record<ContentEditError | "NOT_PENDING" | "SELF_SUBMITTED", { mess
 };
 
 /**
- * FoodReviewer/Admin sửa DỮ KIỆN THỰC TẾ của đóng góp đang chờ duyệt (ngoại lệ BR-F08):
+ * FoodReviewer/Admin sửa DỮ KIỆN THỰC TẾ của đề xuất mình đang giữ (in_review, ngoại lệ BR-F08):
  * giá món; địa chỉ, toạ độ, giờ mở cửa của quán. Mục khác phải dùng "Yêu cầu sửa".
  * Admin dùng route này cũng bị giới hạn như reviewer — toàn quyền sửa chỉ có ở luồng xử lý báo cáo.
  */
@@ -66,8 +66,12 @@ export async function POST(request: Request) {
     createdBy?: unknown;
   } | null;
   if (!item) return fail("NOT_FOUND");
-  if (item.moderationStatus !== "pending") return fail("NOT_PENDING");
   if (String(item.createdBy) === reviewer.id) return fail("SELF_SUBMITTED");
+  const allowed =
+    body.targetType === "food"
+      ? await isHeldByReviewer(reviewer.id, body.targetId)
+      : await canReviewerTouchRestaurant(reviewer.id, body.targetId);
+  if (!allowed) return fail("NOT_HOLDER");
 
   const result =
     body.targetType === "food"

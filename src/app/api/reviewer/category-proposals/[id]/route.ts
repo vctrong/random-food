@@ -3,7 +3,7 @@ import { isValidObjectId } from "mongoose";
 import { z } from "zod";
 import { connectDB } from "@/lib/mongodb";
 import { Food } from "@/lib/models/Food";
-import { requireReviewerSession } from "@/lib/reviewerData";
+import { isHeldByReviewer, requireReviewerSession } from "@/lib/reviewerData";
 import { mergeProposal, rejectProposal, type ProposalActionError } from "@/lib/categoryProposals";
 
 const bodySchema = z.discriminatedUnion("action", [
@@ -11,7 +11,7 @@ const bodySchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("reject"), foodId: z.string(), note: z.string().max(500).optional() }),
 ]);
 
-const ERROR_MESSAGES: Record<ProposalActionError | "FOOD_MISMATCH" | "SELF_SUBMITTED", { message: string; status: number }> = {
+const ERROR_MESSAGES: Record<ProposalActionError | "FOOD_MISMATCH" | "SELF_SUBMITTED" | "NOT_HOLDER", { message: string; status: number }> = {
   INVALID_ID: { message: "Mã đề xuất không hợp lệ.", status: 400 },
   NOT_FOUND: { message: "Không tìm thấy đề xuất danh mục.", status: 404 },
   NOT_PENDING: { message: "Đề xuất này đã được xử lý trước đó.", status: 409 },
@@ -20,6 +20,7 @@ const ERROR_MESSAGES: Record<ProposalActionError | "FOOD_MISMATCH" | "SELF_SUBMI
   INVALID_GROUP: { message: "Nhóm danh mục không hợp lệ.", status: 400 },
   SLUG_TAKEN: { message: "Đã có danh mục trùng tên.", status: 409 },
   FOOD_MISMATCH: { message: "Đề xuất này không gắn với món đang duyệt.", status: 400 },
+  NOT_HOLDER: { message: "Hãy nhận xác minh món này trước khi xử lý đề xuất danh mục.", status: 403 },
   SELF_SUBMITTED: { message: "Không thể tự xử lý đề xuất trên món do chính bạn đóng góp (BR-F02).", status: 403 },
 };
 
@@ -51,8 +52,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const fail = (key: keyof typeof ERROR_MESSAGES) =>
     NextResponse.json({ error: ERROR_MESSAGES[key].message }, { status: ERROR_MESSAGES[key].status });
 
-  if (!food || String(food.proposedCategoryId) !== id || food.moderationStatus !== "pending") return fail("FOOD_MISMATCH");
+  if (!food || String(food.proposedCategoryId) !== id) return fail("FOOD_MISMATCH");
   if (String(food.createdBy) === reviewer.id) return fail("SELF_SUBMITTED");
+  // Chỉ reviewer đang giữ món (in_review, còn hạn) mới xử lý đề xuất đi kèm.
+  if (!(await isHeldByReviewer(reviewer.id, body.foodId))) return fail("NOT_HOLDER");
 
   const result =
     body.action === "merge"

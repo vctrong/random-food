@@ -30,6 +30,10 @@ function makeContribution(overrides: Partial<Contribution> = {}): Contribution {
     ratingCount: 0,
     feedbackHistory: [],
     editable: { food: false, restaurant: false },
+    remainingEdits: null,
+    canWithdraw: false,
+    canSendNote: false,
+    notes: [],
     createdAt: "2026-09-01T00:00:00.000Z",
     updatedAt: "2026-09-01T00:00:00.000Z",
     ...overrides,
@@ -44,6 +48,11 @@ describe("deriveContributionStatus", () => {
   it("chỉ approved khi cả món và quán đều approved", () => {
     expect(deriveContributionStatus("approved", "visible", "pending")).toBe("pending");
     expect(deriveContributionStatus("approved", "visible", "approved")).toBe("approved");
+  });
+
+  it("món đã rút / đang xác minh quyết định trạng thái, quán đi theo món", () => {
+    expect(deriveContributionStatus("withdrawn", "visible", "withdrawn")).toBe("withdrawn");
+    expect(deriveContributionStatus("in_review", "visible", "pending")).toBe("in_review");
   });
 
   it("hidden chỉ áp dụng cho món đã duyệt bị Admin ẩn", () => {
@@ -84,14 +93,24 @@ describe("summarize / filter", () => {
     makeContribution({ id: "a", name: "Cơm tấm", status: "approved" }),
     makeContribution({ id: "b", name: "Hủ tiếu", status: "pending" }),
     makeContribution({ id: "c", name: "Bún mắm", status: "needs_revision" }),
+    makeContribution({ id: "d", name: "Bánh xèo", status: "in_review" }),
+    makeContribution({ id: "e", name: "Lẩu mắm", status: "withdrawn" }),
   ];
 
   it("đếm theo trạng thái", () => {
-    expect(summarizeContributions(list)).toEqual({ total: 3, approved: 1, pending: 1, needsRevision: 1, rejected: 0 });
+    expect(summarizeContributions(list)).toEqual({
+      total: 5,
+      approved: 1,
+      pending: 2,
+      needsRevision: 1,
+      rejected: 0,
+      withdrawn: 1,
+    });
   });
 
   it("lọc theo tab và tìm kiếm không phân biệt hoa thường", () => {
-    expect(filterContributions(list, "pending", "").map((item) => item.id)).toEqual(["b"]);
+    expect(filterContributions(list, "pending", "").map((item) => item.id)).toEqual(["b", "d"]);
+    expect(filterContributions(list, "withdrawn", "").map((item) => item.id)).toEqual(["e"]);
     expect(filterContributions(list, "all", "CƠM").map((item) => item.id)).toEqual(["a"]);
   });
 });
@@ -109,5 +128,13 @@ describe("getAchievementProgress", () => {
       .filter((item) => item.unlocked)
       .map((item) => item.id);
     expect(unlockedIds).toEqual(["first_approved", "loved_by_many"]);
+  });
+
+  it("món đã rút không tính vào thành tựu Chăm chỉ", () => {
+    const steady = (list: Contribution[]) =>
+      getAchievementProgress(list).find((item) => item.id === "steady_contributor")?.unlocked;
+    const four = Array.from({ length: 4 }, (_, index) => makeContribution({ id: String(index), status: "pending" }));
+    expect(steady([...four, makeContribution({ id: "w", status: "withdrawn" })])).toBe(false);
+    expect(steady([...four, makeContribution({ id: "p", status: "pending" })])).toBe(true);
   });
 });
