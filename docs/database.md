@@ -134,7 +134,8 @@ erDiagram
   closedAt: ISODate,                // khi businessStatus = "closed"
   mergedIntoRestaurantId: ObjectId, // quán trùng đã gộp vào quán gốc (visibility = "deleted") — mọi tham chiếu cũ
                                      // tự trỏ sang quán gốc (lib/restaurants.ts::resolveMergedRestaurantId)
-  moderationStatus: "pending",      // "pending" | "approved" | "rejected" | "needs_revision"
+  moderationStatus: "pending",      // "pending" | "approved" | "rejected" | "needs_revision" | "withdrawn"
+                                     // withdrawn: quán mới đi kèm 1 đề xuất món bị user rút (không còn món nào khác dùng)
   visibility: "visible",            // "visible" | "hidden" | "deleted"
   moderationNote: null,
   verification: {
@@ -174,9 +175,13 @@ erDiagram
   priceRange: { min: 25000, max: 45000 },
   caloriesEstimate: { min: 450, max: 650 }, // optional, chỉ tham khảo UX
   tags: ["bún", "cay"],
-  moderationStatus: "pending",      // "pending" | "approved" | "rejected" | "needs_revision"
+  moderationStatus: "pending",      // "pending" | "in_review" | "needs_revision" | "approved" | "rejected" | "withdrawn"
+                                     // — chỉ đổi qua lib/submissionWorkflow.ts (contribute-food.md mục 8)
   visibility: "visible",            // "visible" | "hidden" | "deleted" — độc lập với moderationStatus
-  moderationNote: null,             // lý do reject/needs_revision
+  moderationNote: null,             // lý do reject/needs_revision — đây chính là "review_note" hiện cho user
+  reviewerId: ObjectId,             // ref users — reviewer đang giữ (chỉ có khi in_review)
+  claimedAt: ISODate,               // lúc nhận xác minh; quá CLAIM_TTL_HOURS (48h) thì tự nhả về pending
+  editCount: 0,                     // số lần user tự sửa khi pending (tối đa MAX_PENDING_EDITS = 3, tính cả đổi quán), reset khi gửi lại
   verification: {
     verifiedBy: ObjectId,
     verifiedAt: ISODate,
@@ -193,10 +198,31 @@ erDiagram
 **Index:**
 - `{ moderationStatus: 1, visibility: 1, eatingLevels: 1 }` — index chính cho query Random Food (BR-R03/R04) và cho `GET /api/foods` (trang `/mon-an`)
 - `{ restaurantId: 1 }`
+- `{ moderationStatus: 1, claimedAt: 1 }` — nhả đề xuất quá hạn · `{ reviewerId: 1, moderationStatus: 1 }` — tab "Đang giữ"
 - `{ categoryIds: 1 }`
 - `{ name: "text", description: "text", tags: "text" }`
 
 > Food chỉ "public/random được" khi `moderationStatus = approved` **và** `visibility = visible`. `GET /api/foods` (dùng cho trang danh sách món ăn) lọc đúng 2 điều kiện này.
+
+---
+
+## 4b. `submissionnotes` (`src/lib/models/SubmissionNote.ts`) — mới 2026-10
+
+Ghi chú đính chính user gửi reviewer khi đề xuất đang `in_review` (không sửa trực tiếp được).
+
+```js
+{
+  _id: ObjectId,
+  submissionId: ObjectId,   // ref foods — mỗi đề xuất là 1 món
+  authorId: ObjectId,       // ref users — chủ đề xuất
+  content: "Giá đúng là 35.000–45.000đ, mình gõ nhầm",  // 1–1000 ký tự
+  createdAt: ISODate
+}
+```
+
+**Index:** `{ submissionId: 1, createdAt: 1 }`. Rate limit 10 ghi chú/giờ/user (`rateLimits`).
+
+> **Migration 2026-10:** `npm run migrate:submission-review` (dry-run) / `-- --apply` — gán `editCount: 0` cho món cũ, tạo index. Không đổi giá trị trạng thái nào.
 
 ---
 

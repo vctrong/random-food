@@ -151,7 +151,7 @@ Ghi chú (kcal) chỉ mang tính ước lượng UX, **không phải dữ liệu
 | UC-F09 | Xin rút khỏi vai trò FoodReviewer | BR-05 |
 
 **Business Rules — FoodReviewer:**
-- **BR-F01**: Chỉ được duyệt nội dung đang `pending`.
+- **BR-F01** *(cập nhật 2026-10)*: Phải "Nhận xác minh" (`pending → in_review`) rồi mới duyệt / từ chối / yêu cầu sửa; chỉ thao tác trên đề xuất mình đang giữ, giữ tối đa 48h. Admin được quyết định thẳng khi `pending` hoặc `in_review` (override — báo reviewer đang giữ, AuditLog `admin_override_decision`).
 - **BR-F02**: Không được tự duyệt Food/Restaurant do chính mình đóng góp.
 - **BR-F03**: Nếu FoodReviewer là người đóng góp → phải do Reviewer khác hoặc Admin duyệt. Nếu hệ thống chỉ có 1 FoodReviewer tại thời điểm đó và họ là người đóng góp → tự động chuyển cho **Admin** xử lý (không được tự duyệt, không bị kẹt quy trình).
 - **BR-F04**: Approve phải kèm: người duyệt, ngày xác minh, ghi chú thẩm định (ảnh minh chứng nếu có).
@@ -205,17 +205,22 @@ Ghi chú (kcal) chỉ mang tính ước lượng UX, **không phải dữ liệu
 - **BR-C07** *(mới, giải quyết flow tạo mới)*: Khi User đóng góp Food tại Restaurant chưa tồn tại trong hệ thống, hệ thống tự tạo Restaurant kèm `status = pending` song song với Food. FoodReviewer thẩm định thực tế và duyệt **cả hai cùng lúc**. Nếu Restaurant đã `approved` sẵn từ trước, User chỉ cần đóng góp Food mới, không cần duyệt lại Restaurant.
 
 ### Trạng thái Food/Restaurant (2 tầng độc lập)
-- `moderationStatus`: `pending → approved / rejected / needs_revision` (do FoodReviewer xử lý, `needs_revision → pending` sau khi User sửa).
+- `moderationStatus` của **Food** (cập nhật 2026-10): `pending → in_review` (FoodReviewer "Nhận xác minh") `→ approved / rejected / needs_revision`; user rút được (`withdrawn`) khi `pending / in_review / needs_revision`; `in_review → pending` khi reviewer nhả hoặc quá 48h. Chi tiết: [`contribute-food.md`](contribute-food.md) mục 8. Restaurant mới đi theo món của nó.
 - `visibility`: `visible → hidden / deleted` (do Admin xử lý sau khi có report/vi phạm, độc lập với moderationStatus).
 - Chỉ hiển thị công khai/random khi `moderationStatus = approved` **và** `visibility = visible`.
 
 ```mermaid
 stateDiagram-v2
     [*] --> Pending
-    Pending --> Approved: FoodReviewer duyệt
-    Pending --> Rejected: FoodReviewer từ chối (có lý do)
-    Pending --> NeedsRevision: yêu cầu bổ sung (có lý do)
+    Pending --> InReview: FoodReviewer nhận xác minh
+    Pending --> Withdrawn: User rút
+    InReview --> Approved: FoodReviewer đang giữ duyệt
+    InReview --> Rejected: từ chối (có lý do)
+    InReview --> NeedsRevision: yêu cầu chỉnh sửa (có lý do)
+    InReview --> Pending: reviewer nhả / quá 48h
+    InReview --> Withdrawn: User rút (báo reviewer)
     NeedsRevision --> Pending: User chỉnh sửa & gửi lại
+    NeedsRevision --> Withdrawn: User rút
     Approved --> Hidden: Admin ẩn (do report/vi phạm)
     Hidden --> Approved: Admin gỡ ẩn
     Approved --> Deleted: Admin xóa vĩnh viễn

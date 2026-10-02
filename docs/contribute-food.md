@@ -113,3 +113,72 @@ Mọi request đi qua proxy Next.js (`/api/geocode`, `/api/geocode/reverse`, `li
 
 - ~~Script dọn ảnh mồ côi~~ — đã có (2026-09): cron + `/admin/don-anh` + `npm run cleanup:images`, xem [`database.md`](database.md) mục 12b. Còn thiếu: ảnh cũ bị thay khi sửa đóng góp / xoá món chưa được gắn lại tag `unattached` (gọi `markImagesUnattached`).
 - Áp dụng `CategoryPicker`, bản đồ mới và ảnh quán cho `ContributionEditModal` (sửa đóng góp `needs_revision`) — làm sau khi form chính được test xong. **Validate phía server đã áp dụng chung** (`lib/contributions.ts` dùng `validateFoodCategories`, mô tả không bắt buộc, toạ độ không bắt buộc).
+
+## 8. Luồng xác minh: Nhận xác minh, sửa theo trạng thái, rút, ghi chú đính chính (2026-10)
+
+> Code: luật thuần `features/contributions/submissionRules.ts` (có test) · mọi chuyển trạng thái `lib/submissionWorkflow.ts` (có test, mock model) · nhả quá hạn `lib/submissionClaims.ts`.
+> Mỗi **đề xuất = 1 Food**. Quán mới user tạo kèm (BR-C07) đi theo món, không còn là mục riêng trong hàng chờ.
+
+### Trạng thái (giữ chữ thường, tương thích dữ liệu cũ)
+
+| Đặc tả | `moderationStatus` | Badge user |
+|---|---|---|
+| PENDING | `pending` | Chờ xác minh |
+| IN_REVIEW | `in_review` | Đang xác minh |
+| NEEDS_CHANGES | `needs_revision` | Cần chỉnh sửa |
+| APPROVED | `approved` | Đã duyệt |
+| REJECTED | `rejected` | Bị từ chối |
+| WITHDRAWN | `withdrawn` | Đã rút |
+
+`review_note` = field có sẵn `moderationNote`.
+
+### Chuyển trạng thái hợp lệ (`SUBMISSION_TRANSITIONS`, chặn mọi chuyển khác)
+
+| Từ | Sang | Ai | API |
+|---|---|---|---|
+| pending | in_review | Reviewer "Nhận xác minh" | `POST /api/reviewer/claim {action:"claim"}` |
+| pending / in_review / needs_revision | withdrawn | Chủ đề xuất | `POST /api/contributions/[id]/withdraw` |
+| in_review | approved / rejected / needs_revision | Reviewer đang giữ (còn hạn) | `POST /api/reviewer/decision` |
+| in_review | pending | Reviewer nhả / hệ thống khi quá 48h | `POST /api/reviewer/claim {action:"release"}` |
+| needs_revision | pending | Chủ đề xuất sửa & gửi lại | `PATCH /api/contributions/[id]` |
+| pending / in_review | approved / rejected / needs_revision | **Admin** (override) | `POST /api/admin/content` |
+
+Mỗi chuyển là 1 `findOneAndUpdate` có điều kiện trạng thái nguồn → 2 reviewer nhận cùng lúc chỉ 1 người thắng ("Đề xuất đã được người khác nhận hoặc đã bị rút"); user sửa đúng lúc reviewer vừa nhận thì bản sửa không lọt (409).
+
+### Hết hạn giữ — kiểm tra lazy, không dùng cron
+- `CLAIM_TTL_HOURS = 48`. Vercel Hobby chỉ cho cron 1 lần/ngày (nhả trễ tới 24h) nên **không dùng cron**: `releaseExpiredClaims()` chạy đầu mỗi lần đọc hàng chờ reviewer, trang "Món đã đóng góp", `/admin/noi-dung` và trước khi user sửa; ghi AuditLog `release_submission` (`metadata.auto = true`).
+- Mọi thao tác reviewer đều kèm điều kiện `claimedAt` còn hạn, nên dù chưa ai mở trang, reviewer quá hạn cũng không thao tác được (lỗi "Đã quá hạn giữ đề xuất"). Nhận xác minh chấp nhận cả đề xuất `in_review` đã quá hạn.
+
+### Quyền sửa (kiểm ở server, field bị chặn trả 403 kèm `blockedFields`)
+
+| Trạng thái | Nhóm nhẹ (tên, mô tả, giá, ảnh, danh mục, mức độ ăn) | Nhóm nặng (quán / địa chỉ / vị trí) |
+|---|---|---|
+| pending | ✅ — tối đa `MAX_PENDING_EDITS = 3` lần (tính chung cả 2 nhóm) | ✅ — đổi sang quán có sẵn khác (approved, đang hiển thị, chưa đóng cửa), **hoặc** sửa tên / địa chỉ / vị trí quán mới do chính user tạo (quán còn pending) |
+| in_review | ❌ — chỉ gửi ghi chú đính chính / rút | ❌ |
+| needs_revision | ✅ — lưu là gửi lại → pending, **reset `editCount = 0`** | ❌ — muốn đổi quán thì rút & tạo đề xuất mới |
+| approved / rejected / withdrawn | ❌ | ❌ |
+
+Lý do reset `editCount` khi gửi lại: needs_revision do reviewer chủ động yêu cầu nên user không lạm dụng được, và sau khi gửi lại user vẫn cần lượt để tự đính chính.
+
+### Quán mới đi kèm
+- Duyệt món → duyệt luôn quán `pending` (món đã duyệt phải thuộc quán hợp lệ — BR-C02).
+- Từ chối / rút món → quán chuyển `rejected` / `withdrawn` **chỉ khi không còn món nào khác** (chưa bị từ chối/rút, chưa xoá) dùng quán đó. Hiện quán `pending` luôn chỉ có 1 món (chọn quán có sẵn chỉ nhận quán approved; gộp quán chỉ gộp vào quán approved) — kiểm tra để phòng dữ liệu lệch.
+- Yêu cầu chỉnh sửa → quán giữ `pending`, bị khoá sửa.
+- User đổi món từ quán mới sang quán có sẵn (khi `pending`) → quán mới đi theo cascade như rút: `withdrawn` nếu không còn món nào khác dùng. API: `PATCH /api/contributions/[id]` với field `restaurantId` (không gửi kèm `restaurantName…` trong cùng lần).
+- Reviewer đang giữ món sửa được dữ kiện thực tế (địa chỉ, vị trí, giờ mở cửa) của quán mới ngay trong thẻ món.
+- Quán `pending` **không** đi kèm đề xuất món nào đang mở (chỉ còn ở dữ liệu cũ) vẫn hiện riêng ở tab "Chờ nhận" và quyết định thẳng như trước (`decideStandaloneRestaurant`).
+
+### Ghi chú đính chính & thông báo
+- Collection `submissionnotes` ([`database.md`](database.md) mục 4b). Chỉ gửi khi `in_review` còn hạn; reviewer thấy toàn bộ ghi chú trong thẻ "Đang giữ" (khối nổi bật) + nhận thông báo `submission_note_added`.
+- Thông báo mới (chỉ trong app + realtime, không email): `submission_claimed` (user), `submission_withdrawn`, `submission_note_added`, `submission_overridden` (reviewer) — [`notifications.md`](notifications.md) mục 1.
+
+### UI
+- User (`/dong-gop`): badge 6 trạng thái; tab "Chờ / đang xác minh" (gồm `in_review`) và "Đã rút"; form sửa disable nhóm nặng kèm giải thích, hiện số lần sửa còn lại; "Rút đề xuất" (xác nhận ngay trong modal chi tiết); ô ghi chú đính chính khi `in_review`; hiện lý do khi `needs_revision`. Món đã rút không tính thành tựu "Chăm chỉ".
+- Reviewer (`/reviewer`): tab "Chờ nhận" / "Đang giữ"; nút Nhận xác minh, Nhả, Duyệt, Từ chối, Yêu cầu chỉnh sửa; đếm ngược thời hạn giữ; ghi chú đính chính nổi bật. Badge sidebar chỉ đếm món chờ nhận + quán đứng riêng.
+- Admin (`/admin/noi-dung`): lọc thêm "Đang xác minh", "Đã rút"; cảnh báo khi quyết định thay reviewer đang giữ.
+
+### Ảnh của món đã rút
+Cron dọn ảnh không phân biệt trạng thái món: ảnh còn nằm trong `foods.images` (kể cả món `rejected`/`withdrawn`) luôn được giữ (`lib/media/imageUsage.ts`) — món đã rút xử lý y như món bị từ chối, không cần code riêng.
+
+### Migration
+`npm run migrate:submission-review` (dry-run) → `npm run migrate:submission-review -- --apply`. Idempotent, chỉ thêm field/index.

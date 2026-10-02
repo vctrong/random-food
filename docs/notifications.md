@@ -16,11 +16,15 @@ Câu chữ **không lưu DB** — frontend dựng từ `type + payload`. Danh s�
 
 | `type` | Người nhận | Điểm gọi | `payload` chính | Email |
 |---|---|---|---|---|
-| `food_approved` | Người đóng góp | `reviewerData.applyModerationDecision` | `targetType` (`food`/`restaurant`), `targetId`, `name`, `foodId?` (quán: món của user tại quán — để "Sửa ngay" mở đúng form) | Tuỳ chọn, mặc định **bật** |
+| `food_approved` | Người đóng góp | `submissionWorkflow.decideSubmission` / `decideStandaloneRestaurant` | `targetType` (`food`/`restaurant`), `targetId`, `name`, `foodId?` (quán: món của user tại quán — để "Sửa ngay" mở đúng form) | Tuỳ chọn, mặc định **bật** |
 | `food_rejected` | Người đóng góp | như trên | + `reason` | Tuỳ chọn, mặc định **bật** |
 | `food_needs_revision` | Người đóng góp | như trên | + `feedback` | Tuỳ chọn, mặc định **bật** |
 | `content_corrected` | Người đóng góp | `contentEdits` (Reviewer/Admin sửa giá; địa chỉ, vị trí, giờ mở cửa) | `targetType`, `targetId`, `name`, `fields[]` | Không |
 | `contribution_resubmitted` | FoodReviewer đã yêu cầu sửa | User nộp lại bản sửa (`PATCH /api/contributions/[id]`) | `targetType`, `targetId`, `name` | Không |
+| `submission_claimed` | Người đóng góp | `submissionWorkflow.claimSubmission` (reviewer bấm "Nhận xác minh") | `targetType`, `targetId`, `name` | Không (chỉ trong app + realtime) |
+| `submission_withdrawn` | Reviewer đang giữ (còn hạn) | `submissionWorkflow.withdrawSubmission` khi rút từ `in_review` | `targetType`, `targetId`, `name` | Không |
+| `submission_note_added` | Reviewer đang giữ | `submissionWorkflow.addSubmissionNote` | `targetType`, `targetId`, `name`, `excerpt` (≤ 140 ký tự) | Không |
+| `submission_overridden` | Reviewer đang giữ bị Admin quyết định thay | `submissionWorkflow.decideSubmission` (actorRole `admin`) | `targetType`, `targetId`, `name`, `decision` | Không |
 | `category_proposal_approved` | Mọi `proposerIds` | `categoryProposals.approveProposalAsCategory` | `proposalName`, `categoryName` | Không |
 | `category_proposal_rejected` | Mọi `proposerIds` | `categoryProposals.rejectProposal` | `proposalName`, `reason?` | Không |
 | `category_proposal_merged` | Mọi `proposerIds` | `categoryProposals.mergeProposal` | `proposalName`, `categoryName` | Không |
