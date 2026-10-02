@@ -4,7 +4,7 @@
  * + AuditLog (lịch sử quyết định), xem src/lib/reviewerData.ts.
  */
 
-import type { LocationSource } from "@/types/restaurant";
+import type { LocationSource, OpeningSchedule } from "@/types/restaurant";
 
 export type ModerationTargetType = "food" | "restaurant";
 
@@ -60,7 +60,8 @@ export interface ReviewQueueItem {
   categoryNames: string[];
   eatingLevels: string[];
   restaurantName: string | null;
-  openingHours: string | null;
+  /** Giờ mở cửa của quán (đã resolve chuỗi cũ); null khi món không có quán. */
+  openingSchedule: OpeningSchedule | null;
   /** Ảnh quán (quán mới, hoặc quán của món) — rỗng thì hiển thị ảnh mặc định. */
   restaurantImages: string[];
   /** Độ tin cậy vị trí quán; null = dữ liệu cũ chưa có field. */

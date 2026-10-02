@@ -23,7 +23,8 @@ import type {
   ReviewQueueProposal,
   ReviewSubmitter,
 } from "@/types/reviewer";
-import type { LocationSource } from "@/types/restaurant";
+import type { LocationSource, OpeningSchedule } from "@/types/restaurant";
+import { resolveOpeningSchedule } from "@/features/opening-hours/openingHours";
 
 /**
  * Lớp truy vấn dữ liệu cho khu vực thẩm định FoodReviewer (BR_UC mục 3.3) — chỉ đọc.
@@ -116,6 +117,7 @@ interface LeanQueueFood {
     name?: string;
     address?: string;
     openingHours?: string;
+    openingSchedule?: OpeningSchedule;
     images?: string[];
     locationSource?: LocationSource;
     location?: { coordinates?: [number, number] };
@@ -130,7 +132,7 @@ interface LeanQueueFood {
   createdAt?: Date;
 }
 
-const QUEUE_RESTAURANT_FIELDS = "name address location locationSource images openingHours moderationStatus createdBy";
+const QUEUE_RESTAURANT_FIELDS = "name address location locationSource images openingHours openingSchedule moderationStatus createdBy";
 
 async function findQueueFoods(filter: Record<string, unknown>): Promise<LeanQueueFood[]> {
   return (await Food.find(filter)
@@ -222,7 +224,7 @@ export async function getReviewerQueue(reviewerId: string): Promise<ReviewQueue>
       categoryNames: toCategoryNames(food.categoryIds),
       eatingLevels: food.eatingLevels ?? [],
       restaurantName: restaurant?.name ?? null,
-      openingHours: restaurant?.openingHours ?? null,
+      openingSchedule: restaurant ? resolveOpeningSchedule(restaurant.openingSchedule, restaurant.openingHours) : null,
       restaurantImages: restaurant?.images ?? [],
       locationSource: restaurant?.locationSource ?? null,
       proposal: proposal
@@ -271,7 +273,7 @@ export async function getReviewerQueue(reviewerId: string): Promise<ReviewQueue>
         categoryNames: [],
         eatingLevels: [],
         restaurantName: null,
-        openingHours: restaurant.openingHours ?? null,
+        openingSchedule: resolveOpeningSchedule(restaurant.openingSchedule as OpeningSchedule | undefined, restaurant.openingHours),
         restaurantImages: restaurant.images ?? [],
         locationSource: (restaurant.locationSource as LocationSource | undefined) ?? null,
         proposal: null,

@@ -21,7 +21,17 @@ const FORM_FIELDS: Record<string, SubmissionField> = {
   restaurantLng: "restaurant",
   restaurantLocationSource: "restaurant",
   restaurantId: "restaurant",
+  restaurantOpeningSchedule: "restaurant",
 };
+
+/** JSON hỏng → trả chuỗi gốc để validate phía service báo lỗi giờ mở cửa. */
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
 
 /**
  * UC-U12: chủ đề xuất sửa — `pending` (tối đa 3 lần, cả 2 nhóm field: đổi quán `restaurantId`, hoặc sửa
@@ -67,6 +77,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         ? { lat: Number(formData.get("restaurantLat")), lng: Number(formData.get("restaurantLng")) }
         : null,
       locationSource: (LOCATION_SOURCES as readonly string[]).includes(source) ? (source as LocationSource) : "pin_confirmed",
+      ...(formData.has("restaurantOpeningSchedule") && {
+        openingSchedule: parseJson(String(formData.get("restaurantOpeningSchedule"))),
+      }),
     };
   }
 

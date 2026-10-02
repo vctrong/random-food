@@ -401,6 +401,31 @@ describe("sửa đề xuất", () => {
     expect((await editSubmission(OWNER, FOOD_ID, { restaurantSwitch: { restaurantId: "a00000000000000000000aa2" } }, NOW)).error).toBe("EDIT_LIMIT");
   });
 
+  it("PENDING: sửa giờ mở cửa quán mới — chặn giờ sai, lưu lịch + chuỗi tóm tắt, 'Không rõ giờ' bỏ chuỗi", async () => {
+    const food = seedFood();
+    const restaurant = seedRestaurant({ openingHours: "06:00 - 21:00" });
+    const withHours = (openingSchedule: unknown): SubmissionEditInput => ({
+      restaurant: { ...restaurantEdit.restaurant!, openingSchedule },
+    });
+
+    const invalid = { status: "known", mode: "daily", days: [] };
+    expect((await editSubmission(OWNER, FOOD_ID, withHours(invalid), NOW)).error).toBe("INVALID_OPENING_HOURS");
+    expect(food.editCount).toBe(0);
+
+    const night = {
+      status: "known",
+      mode: "daily",
+      days: Array.from({ length: 7 }, (_, day) => ({ day, closed: false, allDay: false, ranges: [{ open: "18:00", close: "02:00" }] })),
+    };
+    expect((await editSubmission(OWNER, FOOD_ID, withHours(night), NOW)).error).toBeNull();
+    expect(restaurant.openingSchedule).toEqual(night);
+    expect(restaurant.openingHours).toBe("Hằng ngày 18:00–02:00");
+
+    expect((await editSubmission(OWNER, FOOD_ID, withHours({ status: "unknown" }), NOW)).error).toBeNull();
+    expect(restaurant.openingSchedule).toEqual({ status: "unknown" });
+    expect(restaurant.openingHours).toBeUndefined();
+  });
+
   it("reviewer nhận xác minh đúng lúc user đang lưu → bản sửa không lọt", async () => {
     const food = seedFood();
     // Giữa lúc đọc và lúc ghi, reviewer nhận đề xuất.

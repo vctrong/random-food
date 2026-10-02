@@ -1,5 +1,6 @@
 import type { AchievementId } from "@/constants/contribution";
 import type { EatingLevel } from "@/types/food";
+import type { OpeningSchedule } from "@/types/restaurant";
 
 /** Trạng thái kiểm duyệt (`moderationStatus`) của Food/Restaurant — docs/contribute-food.md mục 8. */
 export type ContributionStatus = "pending" | "in_review" | "approved" | "needs_revision" | "rejected" | "withdrawn";
@@ -17,6 +18,8 @@ export interface ContributionRestaurant {
   name: string;
   address: string;
   location: { lat: number; lng: number } | null;
+  /** Đã resolve cả chuỗi giờ cũ; "unknown" = chưa có giờ mở cửa. */
+  openingSchedule: OpeningSchedule;
   status: ContributionStatus;
   moderationNote: string | null;
   /** Quán do chính user tạo kèm món (BR-C07). */

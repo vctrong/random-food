@@ -10,6 +10,7 @@ import { hitRateLimit } from "@/lib/rateLimit";
 import { isEatingLevel } from "@/constants/categories";
 import { FALLBACK_CATEGORY_SLUG, MAX_CATEGORIES_PER_FOOD } from "@/constants/categoryGroups";
 import { MAX_FOOD_IMAGES, MAX_RESTAURANT_IMAGES } from "@/constants/limits";
+import { openingScheduleSchema, toStoredOpeningHours } from "@/features/opening-hours/openingHours";
 
 /**
  * User đóng góp Food mới (UC-U10, BR-C01→C07). Ảnh đã được client upload thẳng
@@ -37,6 +38,8 @@ export const foodSubmissionSchema = z.object({
       location: locationSchema.nullable(),
       locationSource: z.enum(["gps", "pin_confirmed", "geocoded", "none"]),
       images: z.array(z.string().url()).max(MAX_RESTAURANT_IMAGES),
+      // Bắt buộc: giờ hợp lệ HOẶC { status: "unknown" } ("Không rõ giờ").
+      openingSchedule: openingScheduleSchema,
     }),
   ]),
 });
@@ -136,10 +139,11 @@ export async function submitFood(
   if (input.restaurant.mode === "existing") {
     restaurantId = input.restaurant.id;
   } else {
-    const { name, address, location, locationSource, images } = input.restaurant;
+    const { name, address, location, locationSource, images, openingSchedule } = input.restaurant;
     const restaurant = await Restaurant.create({
       name,
       address,
+      ...toStoredOpeningHours(openingSchedule),
       ...(location ? { location: { type: "Point", coordinates: [location.lng, location.lat] } } : {}),
       locationSource,
       images,

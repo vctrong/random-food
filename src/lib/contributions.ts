@@ -9,6 +9,8 @@ import { releaseExpiredClaims } from "@/lib/submissionClaims";
 import { deriveContributionStatus } from "@/features/contributions/contributionLogic";
 import { getEditPermission, isClaimExpired, remainingEdits } from "@/features/contributions/submissionRules";
 import type { Contribution, ContributionFeedback, ContributionStatus, SubmissionNoteItem } from "@/types/contribution";
+import type { OpeningSchedule } from "@/types/restaurant";
+import { resolveOpeningSchedule } from "@/features/opening-hours/openingHours";
 
 /**
  * Lớp dữ liệu cho trang "Món đã đóng góp" (UC-U11, UC-U12) — chỉ đọc. Ghép từ Food
@@ -28,6 +30,8 @@ interface PopulatedRestaurant {
   name: string;
   address: string;
   location?: { coordinates?: [number, number] };
+  openingHours?: string;
+  openingSchedule?: OpeningSchedule;
   moderationStatus: ContributionStatus;
   moderationNote?: string;
   createdBy?: unknown;
@@ -63,7 +67,7 @@ export async function listContributionsForUser(userId: string): Promise<Contribu
   const foods = (await Food.find({ createdBy: userId, visibility: { $ne: "deleted" } })
     .sort({ createdAt: -1 })
     .populate("categoryIds", "name")
-    .populate("restaurantId", "name address location moderationStatus moderationNote createdBy")
+    .populate("restaurantId", "name address location openingHours openingSchedule moderationStatus moderationNote createdBy")
     .populate("verification.verifiedBy", "name")
     .lean()) as unknown as LeanFood[];
   if (foods.length === 0) return [];
@@ -149,6 +153,7 @@ export async function listContributionsForUser(userId: string): Promise<Contribu
             name: restaurantDoc.name,
             address: restaurantDoc.address,
             location: coordinates ? { lat: coordinates[1], lng: coordinates[0] } : null,
+            openingSchedule: resolveOpeningSchedule(restaurantDoc.openingSchedule, restaurantDoc.openingHours),
             status: restaurantDoc.moderationStatus,
             moderationNote: restaurantDoc.moderationNote ?? null,
             isOwnedByUser: isOwnedRestaurant,

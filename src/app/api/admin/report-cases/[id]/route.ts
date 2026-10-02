@@ -3,6 +3,7 @@ import { z } from "zod";
 import { apiNotFound } from "@/lib/http404";
 import { requireAdminSession } from "@/lib/admin/session";
 import { getReportCaseDetail, resolveReportCase, type ResolveCaseError } from "@/lib/admin/reportCases";
+import { openingScheduleSchema } from "@/features/opening-hours/openingHours";
 
 const note = z.string().trim().min(1).max(500);
 const location = z.object({ lat: z.number(), lng: z.number() }).nullable();
@@ -29,7 +30,7 @@ const bodySchema = z.discriminatedUnion("action", [
         name: z.string().optional(),
         address: z.string().optional(),
         location: location.optional(),
-        openingHours: z.string().optional(),
+        openingSchedule: openingScheduleSchema.optional(),
         removeImages: z.array(z.string()).optional(),
       })
       .strict()

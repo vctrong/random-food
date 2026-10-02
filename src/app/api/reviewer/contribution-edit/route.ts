@@ -6,6 +6,7 @@ import { Food } from "@/lib/models/Food";
 import { Restaurant } from "@/lib/models/Restaurant";
 import { canReviewerTouchRestaurant, isHeldByReviewer, requireReviewerSession } from "@/lib/reviewerData";
 import { editFood, editRestaurant, type ContentEditError } from "@/lib/contentEdits";
+import { openingScheduleSchema } from "@/features/opening-hours/openingHours";
 
 const bodySchema = z.discriminatedUnion("targetType", [
   z.object({
@@ -22,7 +23,7 @@ const bodySchema = z.discriminatedUnion("targetType", [
       .object({
         address: z.string().optional(),
         location: z.object({ lat: z.number(), lng: z.number() }).nullable().optional(),
-        openingHours: z.string().optional(),
+        openingSchedule: openingScheduleSchema.optional(),
       })
       .strict(),
   }),
@@ -33,7 +34,7 @@ const ERRORS: Record<ContentEditError | "NOT_HOLDER" | "SELF_SUBMITTED", { messa
   NOT_HOLDER: { message: "Chỉ sửa được đề xuất bạn đang nhận xác minh (còn hạn).", status: 403 },
   SELF_SUBMITTED: { message: "Không thể tự sửa đóng góp của chính bạn (BR-F02).", status: 403 },
   FORBIDDEN_FIELD: {
-    message: "FoodReviewer chỉ sửa được giá, địa chỉ, vị trí và giờ mở cửa — mục khác hãy yêu cầu người gửi chỉnh sửa.",
+    message: "Dữ liệu chưa hợp lệ — FoodReviewer chỉ sửa được giá, địa chỉ, vị trí và giờ mở cửa (giờ phải hợp lệ hoặc “Không rõ giờ”).",
     status: 403,
   },
   INVALID_VALUE: { message: "Giá trị chưa hợp lệ.", status: 400 },

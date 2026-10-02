@@ -1,6 +1,6 @@
 import type { CategoryGroup } from "@/constants/categoryGroups";
 import type { ReportCaseAction, ReportCaseStatus, ReportReason, ReportTargetType } from "@/constants/reports";
-import type { LocationSource } from "@/types/restaurant";
+import type { LocationSource, OpeningSchedule } from "@/types/restaurant";
 
 export type { ReportTargetType };
 /** Type cho toàn bộ khu vực Admin (src/app/admin, src/lib/admin, src/app/api/admin). */
@@ -186,7 +186,7 @@ export type AdminReportCaseTarget =
       address: string;
       location: { lat: number; lng: number } | null;
       locationSource: LocationSource | null;
-      openingHours: string | null;
+      openingSchedule: OpeningSchedule;
       images: string[];
       businessStatus: "open" | "closed";
       foodCount: number;

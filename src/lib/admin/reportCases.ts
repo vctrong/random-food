@@ -22,7 +22,8 @@ import type {
   AdminReportCaseTarget,
   AdminReportEntry,
 } from "@/types/admin";
-import type { LocationSource } from "@/types/restaurant";
+import type { LocationSource, OpeningSchedule } from "@/types/restaurant";
+import { resolveOpeningSchedule } from "@/features/opening-hours/openingHours";
 
 /**
  * Xử lý case báo cáo — CHỈ Admin (BR-A09, BR-M10→M14). Route gọi phải kiểm
@@ -179,6 +180,7 @@ async function loadTarget(targetType: ReportTargetType, targetId: unknown): Prom
     location?: { coordinates?: [number, number] };
     locationSource?: LocationSource;
     openingHours?: string;
+    openingSchedule?: OpeningSchedule;
     images?: string[];
     businessStatus?: "open" | "closed";
     createdBy?: unknown;
@@ -192,7 +194,7 @@ async function loadTarget(targetType: ReportTargetType, targetId: unknown): Prom
     address: restaurant.address,
     location: coordinates ? { lat: coordinates[1], lng: coordinates[0] } : null,
     locationSource: restaurant.locationSource ?? null,
-    openingHours: restaurant.openingHours ?? null,
+    openingSchedule: resolveOpeningSchedule(restaurant.openingSchedule, restaurant.openingHours),
     images: restaurant.images ?? [],
     businessStatus: restaurant.businessStatus ?? "open",
     foodCount: await Food.countDocuments({ restaurantId: restaurant._id, visibility: { $ne: "deleted" } }),

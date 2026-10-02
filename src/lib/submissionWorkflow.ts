@@ -15,6 +15,7 @@ import { markImagesUnattached, parseOwnUploadUrl, uploadImageFile } from "@/lib/
 import { hitRateLimit } from "@/lib/rateLimit";
 import { releaseExpiredClaims } from "@/lib/submissionClaims";
 import { normalizeVietnamese } from "@/lib/vietnameseText";
+import { toStoredOpeningHours, validateOpeningSchedule } from "@/features/opening-hours/openingHours";
 import { isEatingLevel } from "@/constants/categories";
 import { MAX_FOOD_IMAGES, MAX_FOOD_IMAGE_BYTES } from "@/constants/limits";
 import {
@@ -32,7 +33,7 @@ import {
   type SubmissionField,
 } from "@/features/contributions/submissionRules";
 import type { ModerationDecision } from "@/types/reviewer";
-import type { LocationSource } from "@/types/restaurant";
+import type { LocationSource, OpeningSchedule } from "@/types/restaurant";
 
 /**
  * NƠI DUY NHẤT đổi trạng thái đề xuất món (docs/contribute-food.md mục 8). Mỗi đề xuất
@@ -65,7 +66,8 @@ export type WorkflowError =
   | "TOO_MANY_CATEGORIES"
   | "INVALID_EATING_LEVEL"
   | "INVALID_IMAGES"
-  | "INVALID_RESTAURANT";
+  | "INVALID_RESTAURANT"
+  | "INVALID_OPENING_HOURS";
 
 export const WORKFLOW_ERRORS: Record<WorkflowError, { message: string; status: number }> = {
   INVALID_ID: { message: "Mã đề xuất không hợp lệ.", status: 400 },
@@ -101,6 +103,7 @@ export const WORKFLOW_ERRORS: Record<WorkflowError, { message: string; status: n
   INVALID_EATING_LEVEL: { message: "Chọn ít nhất 1 mức độ ăn hợp lệ.", status: 400 },
   INVALID_IMAGES: { message: "Cần 1–5 ảnh, mỗi ảnh là tệp hình dưới 5MB.", status: 400 },
   INVALID_RESTAURANT: { message: "Thiếu tên, địa chỉ hoặc vị trí quán ăn.", status: 400 },
+  INVALID_OPENING_HOURS: { message: "Giờ mở cửa chưa hợp lệ — nhập lại giờ hoặc chọn “Không rõ giờ”.", status: 400 },
 };
 
 /** Thông báo lỗi FIELDS_BLOCKED kèm tên field bị chặn. */
@@ -549,6 +552,8 @@ export interface SubmissionEditInput {
     address: string;
     location: { lat: number; lng: number } | null;
     locationSource: LocationSource;
+    /** Bỏ trống = giữ nguyên giờ mở cửa; có thì phải qua openingScheduleSchema. */
+    openingSchedule?: unknown;
   };
   /** Đổi món sang 1 quán có sẵn khác (approved, đang hiển thị, chưa đóng cửa). */
   restaurantSwitch?: { restaurantId: string };
@@ -622,6 +627,9 @@ export async function editSubmission(
       !location ||
       (Number.isFinite(location.lat) && Number.isFinite(location.lng) && Math.abs(location.lat) <= 90 && Math.abs(location.lng) <= 180);
     if (!name.trim() || !address.trim() || !isValidCoordinate) return fail("INVALID_RESTAURANT");
+    if (input.restaurant.openingSchedule !== undefined && validateOpeningSchedule(input.restaurant.openingSchedule)) {
+      return fail("INVALID_OPENING_HOURS");
+    }
   }
 
   const foodSet: Record<string, unknown> = { updatedAt: now };
@@ -689,6 +697,8 @@ export async function editSubmission(
 
   if (input.restaurant) {
     const { name, address, location, locationSource } = input.restaurant;
+    const hours =
+      input.restaurant.openingSchedule !== undefined ? toStoredOpeningHours(input.restaurant.openingSchedule as OpeningSchedule) : null;
     // findOneAndUpdate không chạy hook pre("validate") của Restaurant → tự tính field chuẩn hoá.
     await Restaurant.updateOne(
       { _id: food.restaurantId, createdBy: userId, moderationStatus: "pending" },
@@ -700,9 +710,15 @@ export async function editSubmission(
           addressNormalized: normalizeVietnamese(address.trim()),
           ...(location && { location: { type: "Point", coordinates: [location.lng, location.lat] } }),
           locationSource: location ? (locationSource === "none" ? "pin_confirmed" : locationSource) : "none",
+          ...(hours && { openingSchedule: hours.openingSchedule }),
+          ...(hours?.openingHours && { openingHours: hours.openingHours }),
           updatedAt: now,
         },
-        $unset: { moderationNote: "", ...(!location && { location: "" }) },
+        $unset: {
+          moderationNote: "",
+          ...(!location && { location: "" }),
+          ...(hours && !hours.openingHours && { openingHours: "" }),
+        },
       },
     );
   }

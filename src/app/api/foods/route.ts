@@ -3,6 +3,8 @@ import { connectDB } from "@/lib/mongodb";
 import { Food } from "@/lib/models/Food";
 // Đăng ký model để .populate() bên dưới hoạt động.
 import "@/lib/models/Restaurant";
+import { resolveOpeningSchedule } from "@/features/opening-hours/openingHours";
+import type { OpeningSchedule } from "@/types/restaurant";
 import "@/lib/models/Category";
 import { requireAuth } from "@/lib/requireAuth";
 import { foodSubmissionSchema, submitFood, type FoodSubmissionError } from "@/lib/foodSubmission";
@@ -13,7 +15,7 @@ export async function GET() {
   const foods = await Food.find({ moderationStatus: "approved", visibility: "visible" })
     .sort({ createdAt: -1 })
     .populate("categoryIds", "name slug icon")
-    .populate("restaurantId", "name address location openingHours images businessStatus")
+    .populate("restaurantId", "name address location openingHours openingSchedule images businessStatus")
     .lean();
 
   return NextResponse.json(
@@ -24,6 +26,7 @@ export async function GET() {
         address: string;
         location?: { coordinates?: [number, number] };
         openingHours?: string;
+        openingSchedule?: OpeningSchedule;
         images?: string[];
         businessStatus?: string;
       } | null;
@@ -61,7 +64,7 @@ export async function GET() {
               address: restaurant.address,
               // GeoJSON lưu [lng, lat] — đổi sang {lat, lng} cho dễ dùng ở Leaflet.
               location: coordinates ? { lat: coordinates[1], lng: coordinates[0] } : null,
-              openingHours: restaurant.openingHours?.trim() || null,
+              openingSchedule: resolveOpeningSchedule(restaurant.openingSchedule, restaurant.openingHours),
               images: restaurant.images ?? [],
               isClosed: restaurant.businessStatus === "closed",
             }

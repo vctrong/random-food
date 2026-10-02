@@ -1,3 +1,4 @@
+import type { OpeningSchedule } from "@/types/restaurant";
 /**
  * Mức độ ăn thật từ schema Mongoose `Food.eatingLevels` (docs/database.md,
  * docs/BR_UC.md mục 2.1) — snack/normal/hearty/full.
@@ -21,8 +22,8 @@ export interface FoodRestaurantSummary {
   name: string;
   address: string;
   location: FoodRestaurantLocation | null;
-  /** Chuỗi tự do nhập tay (vd "06:00 - 21:00") — chỉ hiển thị nguyên văn, không suy ra "đang mở cửa". */
-  openingHours?: string | null;
+  /** Giờ mở cửa có cấu trúc (đã resolve cả dữ liệu chuỗi cũ) — hiển thị qua OpeningHoursSummary. */
+  openingSchedule?: OpeningSchedule;
   /** Ảnh quán (có thể rỗng) — hiển thị qua RestaurantImage để có ảnh mặc định. */
   images?: string[];
   /** Quán đã ngừng hoạt động (businessStatus = "closed") — ẩn khỏi random, /mon-an, tìm kiếm; trang chi tiết hiện badge. */

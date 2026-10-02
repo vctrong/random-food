@@ -4,6 +4,13 @@ import { Food } from "@/lib/models/Food";
 import { Restaurant } from "@/lib/models/Restaurant";
 import { AuditLog } from "@/lib/models/AuditLog";
 import { notify } from "@/lib/notifications/notify";
+import {
+  formatOpeningSchedule,
+  openingScheduleSchema,
+  resolveOpeningSchedule,
+  toStoredOpeningHours,
+} from "@/features/opening-hours/openingHours";
+import type { OpeningSchedule } from "@/types/restaurant";
 
 /**
  * Sửa trực tiếp nội dung món/quán (BR-F08 ngoại lệ, BR-M13):
@@ -27,13 +34,14 @@ export interface RestaurantEdit {
   address?: string;
   /** null = bỏ toạ độ. */
   location?: { lat: number; lng: number } | null;
-  openingHours?: string;
+  /** Giờ mở cửa có cấu trúc (thay ô chữ tự do cũ). */
+  openingSchedule?: OpeningSchedule;
   name?: string;
   removeImages?: string[];
 }
 
 const REVIEWER_FOOD_FIELDS = new Set<keyof FoodEdit>(["priceMin", "priceMax"]);
-const REVIEWER_RESTAURANT_FIELDS = new Set<keyof RestaurantEdit>(["address", "location", "openingHours"]);
+const REVIEWER_RESTAURANT_FIELDS = new Set<keyof RestaurantEdit>(["address", "location", "openingSchedule"]);
 
 export type ContentEditError = "NOT_FOUND" | "FORBIDDEN_FIELD" | "INVALID_VALUE" | "NOTHING_CHANGED";
 
@@ -193,12 +201,17 @@ export async function editRestaurant({
       restaurant.locationSource = after ? "pin_confirmed" : "none";
     }
   }
-  if (edit.openingHours !== undefined) {
-    const openingHours = edit.openingHours.trim().slice(0, 100);
-    if (openingHours !== (restaurant.openingHours ?? "")) {
-      changes.push({ field: "openingHours", before: restaurant.openingHours ?? "", after: openingHours });
+  if (edit.openingSchedule !== undefined) {
+    const parsed = openingScheduleSchema.safeParse(edit.openingSchedule);
+    if (!parsed.success) return { error: "INVALID_VALUE" };
+    const before = resolveOpeningSchedule(restaurant.openingSchedule as OpeningSchedule | undefined, restaurant.openingHours);
+    if (!sameJson(before, parsed.data)) {
+      // Giữ tên field "openingHours" để nhãn thông báo content_corrected ("giờ mở cửa") không đổi.
+      changes.push({ field: "openingHours", before: formatOpeningSchedule(before), after: formatOpeningSchedule(parsed.data) });
+      const stored = toStoredOpeningHours(parsed.data);
+      restaurant.openingSchedule = stored.openingSchedule;
+      restaurant.openingHours = stored.openingHours;
     }
-    restaurant.openingHours = openingHours || undefined;
   }
   if (edit.name !== undefined) {
     const name = edit.name.trim();
