@@ -13,6 +13,7 @@ import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/ToastProvider";
 import { ContributionStatusBadge } from "@/components/food/ContributionStatusBadge";
 import { CorrectionNoteBox } from "@/components/food/CorrectionNoteBox";
+import { OpeningHoursSummary } from "@/components/restaurant/OpeningHoursSummary";
 import { canEditContribution, getCurrentFeedback, getEditActionLabel } from "@/components/food/ContributionCard";
 import type { Contribution } from "@/types/contribution";
 
@@ -152,6 +153,7 @@ function DetailBody({
             <MapPin className="size-4 shrink-0 mt-0.5 text-accent-ink" aria-hidden />
             {contribution.restaurant.address}
           </p>
+          <OpeningHoursSummary schedule={contribution.restaurant.openingSchedule} className="text-sm text-text-secondary" />
           <a
             href={getGoogleMapsUrl(contribution.restaurant.location, contribution.restaurant.address)}
             target="_blank"

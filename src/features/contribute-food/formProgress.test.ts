@@ -13,6 +13,7 @@ const empty: ContributeFormSnapshot = {
   hasSelectedRestaurant: false,
   newRestaurantName: "",
   newRestaurantAddress: "",
+  openingHoursValid: false,
 };
 
 describe("countMissingFields", () => {
@@ -25,9 +26,17 @@ describe("countMissingFields", () => {
   });
 
   it("quán mới tính 1 mục, cần cả tên lẫn địa chỉ", () => {
-    const base = { ...empty, restaurantMode: "new" as const, newRestaurantName: "Quán Cô Ba" };
+    const base = { ...empty, restaurantMode: "new" as const, newRestaurantName: "Quán Cô Ba", openingHoursValid: true };
     expect(countMissingFields(base)).toBe(6);
     expect(countMissingFields({ ...base, newRestaurantAddress: "45 Mậu Thân" })).toBe(5);
+  });
+
+  it("giờ mở cửa chỉ bắt buộc khi tạo quán mới (giờ hợp lệ hoặc Không rõ giờ)", () => {
+    const filledNew = { ...empty, restaurantMode: "new" as const, newRestaurantName: "Quán Cô Ba", newRestaurantAddress: "45 Mậu Thân" };
+    expect(countMissingFields(filledNew)).toBe(6);
+    expect(countMissingFields({ ...filledNew, openingHoursValid: true })).toBe(5);
+    // Chọn quán có sẵn thì không hỏi giờ.
+    expect(countMissingFields({ ...empty, hasSelectedRestaurant: true })).toBe(5);
   });
 
   it("giá đến nhỏ hơn giá từ là chưa hợp lệ", () => {

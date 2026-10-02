@@ -30,6 +30,7 @@ import { LocationConfidenceBadge } from "@/components/reviewer/LocationConfidenc
 import { ProposalReviewPanel } from "@/components/reviewer/ProposalReviewPanel";
 import { FactEditPanel } from "@/components/reviewer/FactEditPanel";
 import { RestaurantImage } from "@/components/restaurant/RestaurantImage";
+import { OpeningHoursSummary } from "@/components/restaurant/OpeningHoursSummary";
 import { RestaurantMap } from "@/components/map/RestaurantMap";
 import { EATING_LEVEL_LABELS, isEatingLevel } from "@/constants/categories";
 import { CLAIM_TTL_HOURS } from "@/features/contributions/submissionRules";
@@ -370,7 +371,11 @@ export function ReviewerQueueContent({ initialQueue, categories }: ReviewerQueue
                       {EATING_LEVEL_LABELS[level]}
                     </Badge>
                   ))}
-                  {selected.openingHours && <Badge variant="neutral">Mở cửa: {selected.openingHours}</Badge>}
+                  {selected.openingSchedule && (
+                    <Badge variant="neutral">
+                      <OpeningHoursSummary schedule={selected.openingSchedule} />
+                    </Badge>
+                  )}
                   {selected.editCount > 0 && <Badge variant="neutral">Người gửi đã sửa {selected.editCount} lần</Badge>}
                 </div>
 

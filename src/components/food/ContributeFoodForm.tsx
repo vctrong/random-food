@@ -12,6 +12,7 @@ import { ImageUploader } from "@/components/food/ImageUploader";
 import { CategoryPicker } from "@/components/food/CategoryPicker";
 import { RestaurantPicker } from "@/components/restaurant/RestaurantPicker";
 import { RestaurantLocationField } from "@/components/map/RestaurantLocationField";
+import { OpeningHoursField } from "@/components/restaurant/OpeningHoursField";
 import { useContributeFoodForm } from "@/features/contribute-food/useContributeFoodForm";
 import { formatPriceInput, isPriceValid, parsePrice } from "@/features/contribute-food/formProgress";
 import type { CategoryOption } from "@/types/category";
@@ -38,6 +39,7 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
     restaurantName: useId(),
     restaurantAddress: useId(),
     restaurantImages: useId(),
+    openingHours: useId(),
   };
 
   const minPrice = parsePrice(form.priceMin);
@@ -257,6 +259,23 @@ export function ContributeFoodForm({ categories }: { categories: CategoryOption[
               addressInputId={ids.restaurantAddress}
               onPickExisting={form.pickExistingRestaurant}
             />
+
+            <div className="flex flex-col gap-2">
+              <FieldLabel
+                id={ids.openingHours}
+                required
+                valid={form.validity.openingHours}
+                hint="Có nghỉ trưa, mở qua đêm hay nghỉ ngày nào thì chọn “Chi tiết từng ngày”."
+              >
+                Giờ mở cửa
+              </FieldLabel>
+              <OpeningHoursField
+                value={form.openingSchedule}
+                onChange={form.setOpeningSchedule}
+                showErrors={form.openingSchedule !== null}
+                labelledBy={ids.openingHours}
+              />
+            </div>
 
             <div className="flex flex-col gap-2">
               <FieldLabel id={ids.restaurantImages} hint={`Tối đa ${MAX_RESTAURANT_IMAGES} ảnh mặt tiền/không gian quán.`}>

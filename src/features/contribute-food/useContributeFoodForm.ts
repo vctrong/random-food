@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import { MAX_FOOD_IMAGES, MAX_RESTAURANT_IMAGES } from "@/constants/limits";
 import { submitNewFood, type NewFoodPayload } from "@/services/contributionService";
 import type { EatingLevel } from "@/types/food";
-import type { RestaurantOption } from "@/types/restaurant";
+import type { OpeningSchedule, RestaurantOption } from "@/types/restaurant";
+import { validateOpeningSchedule } from "@/features/opening-hours/openingHours";
 import { countMissingFields, getFieldValidity, parsePrice } from "./formProgress";
 import { useImageUploads } from "./useImageUploads";
 import { useRestaurantLocation } from "./useRestaurantLocation";
@@ -26,6 +27,9 @@ export function useContributeFoodForm() {
   const [selectedRestaurant, setSelectedRestaurant] = useState<RestaurantOption | null>(null);
   const [newRestaurantName, setNewRestaurantName] = useState("");
   const location = useRestaurantLocation(newRestaurantName);
+  /** null = chưa nhập — bắt buộc nhập giờ hợp lệ hoặc chọn "Không rõ giờ". */
+  const [openingSchedule, setOpeningSchedule] = useState<OpeningSchedule | null>(null);
+  const openingHoursValid = openingSchedule !== null && validateOpeningSchedule(openingSchedule) === null;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +46,7 @@ export function useContributeFoodForm() {
     hasSelectedRestaurant: Boolean(selectedRestaurant),
     newRestaurantName,
     newRestaurantAddress: location.address,
+    openingHoursValid,
   };
   const validity = getFieldValidity(snapshot);
   const missingCount = countMissingFields(snapshot);
@@ -85,6 +90,7 @@ export function useContributeFoodForm() {
               location: location.pin.location,
               locationSource: location.pin.location ? location.pin.source : "none",
               images: restaurantImages.urls,
+              openingSchedule: openingSchedule ?? { status: "unknown" },
             },
     };
   }, [
@@ -102,6 +108,7 @@ export function useContributeFoodForm() {
     location.address,
     location.pin,
     restaurantImages.urls,
+    openingSchedule,
   ]);
 
   async function submit(): Promise<boolean> {
@@ -142,6 +149,8 @@ export function useContributeFoodForm() {
     newRestaurantName,
     setNewRestaurantName,
     location,
+    openingSchedule,
+    setOpeningSchedule,
     validity,
     missingCount,
     isUploading,

@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
 import { PinLocationEditor } from "@/components/map/PinLocationEditor";
+import { OpeningHoursField } from "@/components/restaurant/OpeningHoursField";
+import { validateOpeningSchedule } from "@/features/opening-hours/openingHours";
 import { formatPriceInput, parsePrice } from "@/features/contribute-food/formProgress";
 import { getApiErrorMessage, getNetworkErrorMessage } from "@/lib/errorMessages";
 import type { ReviewQueueItem } from "@/types/reviewer";
@@ -48,7 +50,7 @@ export function FactEditPanel({ item, disabled, onSaved }: FactEditPanelProps) {
   const [priceMin, setPriceMin] = useState(item.priceMin !== null ? formatPriceInput(String(item.priceMin)) : "");
   const [priceMax, setPriceMax] = useState(item.priceMax !== null ? formatPriceInput(String(item.priceMax)) : "");
   const [address, setAddress] = useState(item.address ?? "");
-  const [openingHours, setOpeningHours] = useState(item.openingHours ?? "");
+  const [openingSchedule, setOpeningSchedule] = useState(item.openingSchedule);
   const [location, setLocation] = useState(item.location);
   const [note, setNote] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -62,13 +64,16 @@ export function FactEditPanel({ item, disabled, onSaved }: FactEditPanelProps) {
   const restaurantChanges = restaurantTargetId
     ? {
         ...(address.trim() !== (item.address ?? "") && { address: address.trim() }),
-        ...(openingHours.trim() !== (item.openingHours ?? "") && { openingHours: openingHours.trim() }),
+        ...(openingSchedule && JSON.stringify(openingSchedule) !== JSON.stringify(item.openingSchedule) && { openingSchedule }),
         ...(JSON.stringify(location) !== JSON.stringify(item.location) && { location }),
       }
     : {};
   const restaurantChanged = Object.keys(restaurantChanges).length > 0;
   const hasChanges = priceChanged || restaurantChanged;
-  const valid = (!priceChanged || (min !== null && max !== null && max >= min)) && (!restaurantChanged || address.trim().length > 0);
+  const scheduleError = restaurantTargetId && openingSchedule ? validateOpeningSchedule(openingSchedule) : null;
+  const valid =
+    (!priceChanged || (min !== null && max !== null && max >= min)) &&
+    (!restaurantChanged || (address.trim().length > 0 && !scheduleError));
   const scopeLabel = [isFood && "giá", restaurantTargetId && "địa chỉ · vị trí · giờ mở cửa"].filter(Boolean).join(" · ");
 
   async function save() {
@@ -82,7 +87,7 @@ export function FactEditPanel({ item, disabled, onSaved }: FactEditPanelProps) {
     }
     if (!error && restaurantChanged && restaurantTargetId) {
       error = await postEdit({ targetType: "restaurant", targetId: restaurantTargetId, note, restaurant: restaurantChanges });
-      if (!error) Object.assign(changes, { address: address.trim(), openingHours: openingHours.trim() || null, location });
+      if (!error) Object.assign(changes, { address: address.trim(), openingSchedule, location });
     }
     setIsSaving(false);
 
@@ -143,17 +148,10 @@ export function FactEditPanel({ item, disabled, onSaved }: FactEditPanelProps) {
                 <input id={ids.address} value={address} maxLength={300} onChange={(event) => setAddress(event.target.value)} className={inputClass} />
               </div>
               <div className="flex flex-col gap-1">
-                <label htmlFor={ids.hours} className="text-xs font-semibold text-text-primary">
+                <span id={ids.hours} className="text-xs font-semibold text-text-primary">
                   Giờ mở cửa
-                </label>
-                <input
-                  id={ids.hours}
-                  value={openingHours}
-                  maxLength={100}
-                  placeholder="Vd: 06:00 - 21:00"
-                  onChange={(event) => setOpeningHours(event.target.value)}
-                  className={inputClass}
-                />
+                </span>
+                <OpeningHoursField value={openingSchedule} onChange={setOpeningSchedule} showErrors labelledBy={ids.hours} />
               </div>
               <PinLocationEditor initial={item.location} value={location} onChange={setLocation} />
             </>

@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Clock, Heart, MapPin, Navigation, RotateCw, Star, Store, UtensilsCrossed } from "lucide-react";
+import { ArrowLeft, Heart, MapPin, Navigation, RotateCw, Star, Store, UtensilsCrossed } from "lucide-react";
 import type { Food } from "@/types/food";
 import { cn, formatPriceRange, getGoogleMapsUrl } from "@/lib/utils";
 import { FoodImage } from "@/components/food/FoodImage";
+import { OpeningHoursSummary } from "@/components/restaurant/OpeningHoursSummary";
 
 interface HeroResultCardProps {
   food: Food;
@@ -77,12 +78,7 @@ export function HeroResultCard({ food, isSaved, isSpinning, onToggleSave, onResp
                   {formatPriceRange(food.priceMin, food.priceMax)}
                 </span>
               )}
-              {restaurant?.openingHours && (
-                <span className="inline-flex items-center gap-1 text-text-secondary">
-                  <Clock className="size-3.5" aria-hidden />
-                  {restaurant.openingHours}
-                </span>
-              )}
+              {restaurant && <OpeningHoursSummary schedule={restaurant.openingSchedule} showStatus className="text-text-secondary" />}
               {restaurant?.address && (
                 <span className="inline-flex items-center gap-1 text-text-secondary sm:hidden min-w-0">
                   <MapPin className="size-3.5 shrink-0" aria-hidden />

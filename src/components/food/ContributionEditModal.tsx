@@ -13,6 +13,9 @@ import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/ToastProvider";
 import { LocationPicker, DEFAULT_CAN_THO_CENTER } from "@/components/map/LocationPicker";
 import { RestaurantPicker } from "@/components/restaurant/RestaurantPicker";
+import { OpeningHoursField } from "@/components/restaurant/OpeningHoursField";
+import { OpeningHoursSummary } from "@/components/restaurant/OpeningHoursSummary";
+import { validateOpeningSchedule } from "@/features/opening-hours/openingHours";
 import { getCurrentFeedback, getEditActionLabel } from "@/components/food/ContributionCard";
 import type { EatingLevel } from "@/types/food";
 import type { Contribution } from "@/types/contribution";
@@ -79,6 +82,9 @@ function EditForm({
   // Quán chưa có toạ độ: chỉ gửi vị trí khi user thật sự kéo ghim (không lưu tâm bản đồ mặc định).
   const [isLocationTouched, setIsLocationTouched] = useState(false);
   const [switchTo, setSwitchTo] = useState<RestaurantOption | null>(null);
+  const [openingSchedule, setOpeningSchedule] = useState(restaurant?.openingSchedule ?? null);
+  const isScheduleDirty = JSON.stringify(openingSchedule) !== JSON.stringify(restaurant?.openingSchedule ?? null);
+  const scheduleError = openingSchedule ? validateOpeningSchedule(openingSchedule) : null;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +112,10 @@ function EditForm({
   const isDetailsDirty =
     canEditDetails &&
     !switchTo &&
-    (restaurantName.trim() !== (restaurant?.name ?? "") || restaurantAddress.trim() !== (restaurant?.address ?? "") || isLocationTouched);
+    (restaurantName.trim() !== (restaurant?.name ?? "") ||
+      restaurantAddress.trim() !== (restaurant?.address ?? "") ||
+      isLocationTouched ||
+      isScheduleDirty);
   const isRestaurantDirty = switchTo !== null || isDetailsDirty;
   // Sửa khi pending tốn 1 lượt nên phải có thay đổi; gửi lại từ needs_revision thì luôn cho gửi.
   const hasChanges = isResubmit || (canEditFood && isFoodDirty) || (canEditRestaurant && isRestaurantDirty);
@@ -122,9 +131,10 @@ function EditForm({
         categoryIds.length > 0 &&
         eatingLevels.length > 0 &&
         imageCount >= 1);
-    const restaurantOk = !isDetailsDirty || (restaurantName.trim().length > 0 && restaurantAddress.trim().length > 0);
+    const restaurantOk =
+      !isDetailsDirty || (restaurantName.trim().length > 0 && restaurantAddress.trim().length > 0 && !scheduleError);
     return foodOk && restaurantOk;
-  }, [canEditFood, isDetailsDirty, name, priceMin, priceMax, categoryIds.length, eatingLevels.length, imageCount, restaurantName, restaurantAddress]);
+  }, [canEditFood, isDetailsDirty, name, priceMin, priceMax, categoryIds.length, eatingLevels.length, imageCount, restaurantName, restaurantAddress, scheduleError]);
 
   function handleImagesChange(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -175,6 +185,7 @@ function EditForm({
         formData.append("restaurantLat", String(restaurantLocation.lat));
         formData.append("restaurantLng", String(restaurantLocation.lng));
       }
+      if (openingSchedule) formData.append("restaurantOpeningSchedule", JSON.stringify(openingSchedule));
     }
 
     const result = await saveContributionEdit(contribution.id, formData);
@@ -347,6 +358,7 @@ function EditForm({
           <p className="text-sm text-text-primary">
             {restaurant.name} <span className="text-text-secondary">· {restaurant.address}</span>
           </p>
+          <OpeningHoursSummary schedule={restaurant.openingSchedule} className="text-xs text-text-secondary" />
           <p className="text-xs text-text-secondary">{restaurantLockReason}</p>
         </section>
       )}
@@ -399,11 +411,25 @@ function EditForm({
                   }}
                 />
               </div>
+              <div className="flex flex-col gap-1.5">
+                <span id="edit-opening-hours" className="text-sm font-medium text-text-primary">
+                  Giờ mở cửa
+                </span>
+                <OpeningHoursField
+                  value={openingSchedule}
+                  onChange={setOpeningSchedule}
+                  showErrors={isScheduleDirty}
+                  labelledBy="edit-opening-hours"
+                />
+              </div>
             </>
           ) : (
-            <p className="text-sm text-text-primary p-4 rounded-2xl bg-background">
-              {restaurant.name} <span className="text-text-secondary">· {restaurant.address}</span>
-            </p>
+            <div className="text-sm text-text-primary p-4 rounded-2xl bg-background flex flex-col gap-1">
+              <p>
+                {restaurant.name} <span className="text-text-secondary">· {restaurant.address}</span>
+              </p>
+              <OpeningHoursSummary schedule={restaurant.openingSchedule} className="text-xs text-text-secondary" />
+            </div>
           )}
 
           {!switchTo && (

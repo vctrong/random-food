@@ -12,6 +12,9 @@ import { useToast } from "@/components/ui/ToastProvider";
 import { RestaurantImage } from "@/components/restaurant/RestaurantImage";
 import { RestaurantMap } from "@/components/map/RestaurantMap";
 import { PinLocationEditor } from "@/components/map/PinLocationEditor";
+import { OpeningHoursField } from "@/components/restaurant/OpeningHoursField";
+import { OpeningHoursSummary } from "@/components/restaurant/OpeningHoursSummary";
+import { validateOpeningSchedule } from "@/features/opening-hours/openingHours";
 import { LocationConfidenceBadge } from "@/components/reviewer/LocationConfidenceBadge";
 import { useRestaurantSearch } from "@/features/contribute-food/useRestaurantSearch";
 import { formatPriceInput, parsePrice } from "@/features/contribute-food/formProgress";
@@ -418,9 +421,9 @@ function TargetView({ target, onReopened }: { target: AdminReportCaseTarget; onR
             {target.businessStatus === "closed" && <Badge variant="neutral">Đã đóng cửa</Badge>}
           </p>
           <p className="break-words text-sm text-text-secondary">{target.address}</p>
-          <p className="text-xs text-text-secondary">
-            {target.openingHours ? `Giờ mở cửa: ${target.openingHours} · ` : ""}
-            {target.foodCount} món
+          <p className="flex flex-wrap items-center gap-x-2 text-xs text-text-secondary">
+            <OpeningHoursSummary schedule={target.openingSchedule} />
+            <span>· {target.foodCount} món</span>
           </p>
         </div>
       </div>
@@ -486,7 +489,7 @@ function EditForm({
   const [priceMin, setPriceMin] = useState(food?.priceMin != null ? formatPriceInput(String(food.priceMin)) : "");
   const [priceMax, setPriceMax] = useState(food?.priceMax != null ? formatPriceInput(String(food.priceMax)) : "");
   const [address, setAddress] = useState(restaurant?.address ?? "");
-  const [openingHours, setOpeningHours] = useState(restaurant?.openingHours ?? "");
+  const [openingSchedule, setOpeningSchedule] = useState(restaurant?.openingSchedule ?? null);
   const [location, setLocation] = useState(restaurant?.location ?? null);
   const [removed, setRemoved] = useState<string[]>([]);
 
@@ -505,12 +508,13 @@ function EditForm({
     fields = {
       ...(name.trim() !== target.name && { name }),
       ...(address.trim() !== restaurant?.address && { address }),
-      ...(openingHours.trim() !== (restaurant?.openingHours ?? "") && { openingHours }),
+      ...(openingSchedule && JSON.stringify(openingSchedule) !== JSON.stringify(restaurant?.openingSchedule ?? null) && { openingSchedule }),
       ...(JSON.stringify(location) !== JSON.stringify(restaurant?.location ?? null) && { location }),
       ...removeImages,
     };
   }
   const hasChanges = Object.keys(fields).length > 0;
+  const scheduleError = restaurant && openingSchedule ? validateOpeningSchedule(openingSchedule) : null;
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-primary-line bg-primary-soft/30 p-4">
@@ -534,14 +538,10 @@ function EditForm({
       ) : (
         <>
           <input value={address} onChange={(event) => setAddress(event.target.value)} maxLength={300} aria-label="Địa chỉ" className={inputClass} />
-          <input
-            value={openingHours}
-            onChange={(event) => setOpeningHours(event.target.value)}
-            maxLength={100}
-            aria-label="Giờ mở cửa"
-            placeholder="Giờ mở cửa, vd 06:00 - 21:00"
-            className={inputClass}
-          />
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-semibold text-text-primary">Giờ mở cửa</span>
+            <OpeningHoursField value={openingSchedule} onChange={setOpeningSchedule} showErrors />
+          </div>
           <PinLocationEditor initial={restaurant?.location ?? null} value={location} onChange={setLocation} />
         </>
       )}
@@ -584,7 +584,7 @@ function EditForm({
         </Button>
         <Button
           size="sm"
-          disabled={!hasChanges}
+          disabled={!hasChanges || Boolean(scheduleError)}
           isLoading={isSaving}
           leftIcon={<CheckCircle2 className="size-4" aria-hidden />}
           onClick={() => onSave(food ? { food: fields } : { restaurant: fields })}

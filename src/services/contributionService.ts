@@ -1,6 +1,6 @@
 import type { AchievementStatus, Contribution, SubmissionNoteItem } from "@/types/contribution";
 import { getApiErrorMessage, getNetworkErrorMessage } from "@/lib/errorMessages";
-import type { LocationSource } from "@/types/restaurant";
+import type { LocationSource, OpeningSchedule } from "@/types/restaurant";
 
 /**
  * Lớp duy nhất "biết" đóng góp của user đến từ đâu — gọi API `/api/contributions`.
@@ -40,6 +40,7 @@ export interface NewFoodPayload {
         location: { lat: number; lng: number } | null;
         locationSource: LocationSource;
         images: string[];
+        openingSchedule: OpeningSchedule;
       };
 }
 

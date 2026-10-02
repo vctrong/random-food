@@ -1,6 +1,7 @@
 /**
  * Mục bắt buộc của form đóng góp món (BR-C04 cập nhật: mô tả KHÔNG bắt buộc).
  * "Quán" tính 1 mục dù chọn quán có sẵn hay tạo quán mới (tên + địa chỉ).
+ * "Giờ mở cửa" chỉ bắt buộc khi tạo quán mới: giờ hợp lệ hoặc "Không rõ giờ".
  */
 
 export interface ContributeFormSnapshot {
@@ -15,9 +16,11 @@ export interface ContributeFormSnapshot {
   hasSelectedRestaurant: boolean;
   newRestaurantName: string;
   newRestaurantAddress: string;
+  /** Giờ mở cửa quán mới đã hợp lệ (validateOpeningSchedule) hoặc chọn "Không rõ giờ". */
+  openingHoursValid: boolean;
 }
 
-export type RequiredField = "images" | "name" | "price" | "eatingLevels" | "categories" | "restaurant";
+export type RequiredField = "images" | "name" | "price" | "eatingLevels" | "categories" | "restaurant" | "openingHours";
 
 export function isPriceValid(min: number | null, max: number | null): boolean {
   return min !== null && max !== null && min >= 0 && max >= min;
@@ -34,6 +37,7 @@ export function getFieldValidity(form: ContributeFormSnapshot): Record<RequiredF
       form.restaurantMode === "existing"
         ? form.hasSelectedRestaurant
         : form.newRestaurantName.trim().length > 0 && form.newRestaurantAddress.trim().length > 0,
+    openingHours: form.restaurantMode === "existing" || form.openingHoursValid,
   };
 }
 

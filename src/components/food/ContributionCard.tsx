@@ -19,6 +19,7 @@ import { MAX_PENDING_EDITS } from "@/features/contributions/submissionRules";
 import { EATING_LEVEL_LABELS } from "@/constants/categories";
 import { cn, formatDate, formatPriceRange, isAllowedImageHost } from "@/lib/utils";
 import { ContributionStatusBadge } from "@/components/food/ContributionStatusBadge";
+import { OpeningHoursSummary } from "@/components/restaurant/OpeningHoursSummary";
 import type { Contribution } from "@/types/contribution";
 
 interface ContributionCardProps {
@@ -88,6 +89,7 @@ export function ContributionCard({ contribution, onOpenDetail, onEdit }: Contrib
                   {restaurant.isOwnedByUser ? "Quán bạn thêm: " : "Quán: "}
                   <span className="font-semibold text-text-primary">{restaurant.name}</span>
                   <span className="block text-xs truncate">{restaurant.address}</span>
+                  <OpeningHoursSummary schedule={restaurant.openingSchedule} className="text-xs" />
                 </span>
               </p>
             )}
