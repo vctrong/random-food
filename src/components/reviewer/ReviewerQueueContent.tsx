@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -9,9 +9,14 @@ import {
   Clock,
   EditIcon,
   ExternalLink,
+  Hand,
   Lock,
   MapPin,
+  MessageSquareText,
+  ScanSearch,
   Search,
+  Store,
+  Undo2,
   UtensilsCrossed,
   XCircle,
 } from "lucide-react";
@@ -20,22 +25,24 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useToast } from "@/components/ui/ToastProvider";
 import { QueueCard } from "@/components/reviewer/QueueCard";
+import { ClaimCountdown } from "@/components/reviewer/ClaimCountdown";
 import { LocationConfidenceBadge } from "@/components/reviewer/LocationConfidenceBadge";
 import { ProposalReviewPanel } from "@/components/reviewer/ProposalReviewPanel";
 import { FactEditPanel } from "@/components/reviewer/FactEditPanel";
 import { RestaurantImage } from "@/components/restaurant/RestaurantImage";
 import { RestaurantMap } from "@/components/map/RestaurantMap";
 import { EATING_LEVEL_LABELS, isEatingLevel } from "@/constants/categories";
-import { cn, formatPriceRange, formatRelativeTime, getGoogleMapsUrl } from "@/lib/utils";
-import type { ModerationDecision, ReviewQueueItem } from "@/types/reviewer";
+import { CLAIM_TTL_HOURS } from "@/features/contributions/submissionRules";
+import { cn, formatDateTime, formatPriceRange, formatRelativeTime, getGoogleMapsUrl } from "@/lib/utils";
+import type { ModerationDecision, ReviewQueue, ReviewQueueItem } from "@/types/reviewer";
 import type { CategoryOption } from "@/types/category";
 
 interface ReviewerQueueContentProps {
-  initialItems: ReviewQueueItem[];
+  initialQueue: ReviewQueue;
   categories: CategoryOption[];
 }
 
-type TypeFilter = "all" | "food" | "restaurant";
+type QueueTab = "available" | "mine";
 
 const NOTE_PRESETS = [
   { label: "+ Ảnh đạt chuẩn", text: "Ảnh chụp thực tế rõ nét, đúng món/địa điểm." },
@@ -44,72 +51,131 @@ const NOTE_PRESETS = [
   { label: "- Địa chỉ chưa rõ", text: "Địa chỉ/toạ độ chưa đủ chi tiết để xác minh." },
 ];
 
-export function ReviewerQueueContent({ initialItems, categories }: ReviewerQueueContentProps) {
+async function postJson(url: string, body: unknown): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await response.json().catch(() => ({}));
+    return response.ok ? { ok: true } : { ok: false, error: data.error ?? "Có lỗi xảy ra, thử lại sau." };
+  } catch {
+    return { ok: false, error: "Không kết nối được máy chủ, thử lại sau." };
+  }
+}
+
+export function ReviewerQueueContent({ initialQueue, categories }: ReviewerQueueContentProps) {
   const router = useRouter();
   const { showToast } = useToast();
-  const [items, setItems] = useState(initialItems);
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [queue, setQueue] = useState(initialQueue);
+  const [tab, setTab] = useState<QueueTab>(initialQueue.mine.length > 0 ? "mine" : "available");
   const [search, setSearch] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(initialItems[0]?.id ?? null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [note, setNote] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState<ModerationDecision | null>(null);
+  const [pendingAction, setPendingAction] = useState<ModerationDecision | "claim" | "release" | null>(null);
 
+  const items = tab === "mine" ? queue.mine : queue.available;
   const filteredItems = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return items.filter((item) => {
-      if (typeFilter !== "all" && item.targetType !== typeFilter) return false;
-      if (!query) return true;
-      return (
+    if (!query) return items;
+    return items.filter(
+      (item) =>
         item.name.toLowerCase().includes(query) ||
         (item.address ?? "").toLowerCase().includes(query) ||
-        item.submitter.name.toLowerCase().includes(query)
-      );
-    });
-  }, [items, typeFilter, search]);
+        item.submitter.name.toLowerCase().includes(query),
+    );
+  }, [items, search]);
 
   const selected = items.find((item) => item.id === selectedId) ?? filteredItems[0] ?? null;
+  const isMine = selected?.status === "in_review";
+  const needsClaim = Boolean(selected && selected.requiresClaim && !isMine);
+
+  /** Tải lại cả 2 tab từ server (state khởi tạo từ props nên router.refresh không tự cập nhật). */
+  const reloadQueue = useCallback(async () => {
+    try {
+      const response = await fetch("/api/reviewer/queue", { cache: "no-store" });
+      if (response.ok) setQueue((await response.json()) as ReviewQueue);
+    } catch {
+      // Giữ dữ liệu đang hiển thị; lần thao tác sau sẽ tải lại.
+    }
+    router.refresh(); // cập nhật badge hàng chờ ở sidebar
+  }, [router]);
+
+  function selectItem(item: ReviewQueueItem) {
+    setSelectedId(item.id);
+    setNote("");
+  }
+
+  function switchTab(next: QueueTab) {
+    setTab(next);
+    setSelectedId(null);
+    setNote("");
+  }
+
+  async function handleClaim() {
+    if (!selected) return;
+    setPendingAction("claim");
+    const result = await postJson("/api/reviewer/claim", { action: "claim", foodId: selected.id });
+    setPendingAction(null);
+    if (!result.ok) {
+      showToast(result.error ?? "Không nhận được đề xuất này.", "error");
+      await reloadQueue();
+      return;
+    }
+    showToast(`Đã nhận xác minh "${selected.name}". Bạn có ${CLAIM_TTL_HOURS} giờ để xử lý.`, "success");
+    const claimedId = selected.id;
+    await reloadQueue();
+    setTab("mine");
+    setSelectedId(claimedId);
+  }
+
+  async function handleRelease() {
+    if (!selected) return;
+    setPendingAction("release");
+    const result = await postJson("/api/reviewer/claim", { action: "release", foodId: selected.id });
+    setPendingAction(null);
+    if (!result.ok) {
+      showToast(result.error ?? "Không nhả được đề xuất này.", "error");
+    } else {
+      showToast(`Đã nhả "${selected.name}" về hàng chờ.`, "success");
+      setSelectedId(null);
+      setNote("");
+    }
+    await reloadQueue();
+  }
 
   async function handleDecision(decision: ModerationDecision) {
     if (!selected) return;
     if (decision !== "approved" && !note.trim()) {
-      showToast("Cần nhập ghi chú/lý do trước khi gửi quyết định này.", "warning");
+      showToast(
+        decision === "needs_revision" ? "Cần nhập lý do yêu cầu chỉnh sửa để người gửi biết sửa gì." : "Cần nhập lý do từ chối.",
+        "warning",
+      );
       return;
     }
 
-    setIsSubmitting(decision);
-    try {
-      const response = await fetch("/api/reviewer/decision", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetType: selected.targetType, targetId: selected.id, decision, note }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        showToast(data.error ?? "Có lỗi xảy ra, thử lại sau.", "error");
-        return;
-      }
-
-      const successMessage =
-        decision === "approved"
-          ? `Đã duyệt "${selected.name}".`
-          : decision === "rejected"
-            ? `Đã từ chối "${selected.name}".`
-            : `Đã gửi yêu cầu chỉnh sửa cho "${selected.name}".`;
-      showToast(successMessage, "success");
-
-      setItems((prev) => prev.filter((item) => item.id !== selected.id));
-      setSelectedId(null);
-      setNote("");
-      router.refresh();
-    } finally {
-      setIsSubmitting(null);
+    setPendingAction(decision);
+    const result = await postJson("/api/reviewer/decision", { targetType: selected.targetType, targetId: selected.id, decision, note });
+    setPendingAction(null);
+    if (!result.ok) {
+      showToast(result.error ?? "Có lỗi xảy ra, thử lại sau.", "error");
+      await reloadQueue();
+      return;
     }
+
+    const successMessage =
+      decision === "approved"
+        ? `Đã duyệt "${selected.name}".`
+        : decision === "rejected"
+          ? `Đã từ chối "${selected.name}".`
+          : `Đã gửi yêu cầu chỉnh sửa cho "${selected.name}".`;
+    showToast(successMessage, "success");
+    setSelectedId(null);
+    setNote("");
+    await reloadQueue();
   }
 
   /** Đề xuất đã gộp/từ chối — cập nhật mọi món trong hàng chờ dùng chung đề xuất đó. */
   function handleProposalResolved({ proposalId, mergedCategory }: { proposalId: string; mergedCategory: CategoryOption | null }) {
-    setItems((prev) =>
-      prev.map((item) =>
+    const update = (list: ReviewQueueItem[]) =>
+      list.map((item) =>
         item.proposal?.id !== proposalId
           ? item
           : {
@@ -120,48 +186,40 @@ export function ReviewerQueueContent({ initialItems, categories }: ReviewerQueue
                   ? [...item.categoryNames, mergedCategory.name]
                   : item.categoryNames,
             },
-      ),
-    );
+      );
+    setQueue((prev) => ({ available: update(prev.available), mine: update(prev.mine) }));
   }
 
-  function selectItem(item: ReviewQueueItem) {
-    setSelectedId(item.id);
-    setNote("");
+  function patchSelected(changes: Partial<ReviewQueueItem>) {
+    if (!selected) return;
+    const update = (list: ReviewQueueItem[]) => list.map((item) => (item.id === selected.id ? { ...item, ...changes } : item));
+    setQueue((prev) => ({ available: update(prev.available), mine: update(prev.mine) }));
   }
 
-  if (items.length === 0) {
-    return (
-      <EmptyState
-        icon={ClipboardList}
-        title="Hàng chờ duyệt trống"
-        description="Hiện chưa có món ăn hoặc quán ăn nào chờ thẩm định. Quay lại sau nhé."
-      />
-    );
-  }
+  const tabs: { id: QueueTab; label: string; count: number }[] = [
+    { id: "available", label: "Chờ nhận", count: queue.available.length },
+    { id: "mine", label: "Đang giữ", count: queue.mine.length },
+  ];
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
       {/* Danh sách hàng chờ */}
       <section className="xl:col-span-5 flex flex-col gap-3">
         <div className="flex flex-col gap-3 bg-surface border border-border rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            {(
-              [
-                { id: "all", label: `Tất cả (${items.length})` },
-                { id: "food", label: `Món ăn (${items.filter((item) => item.targetType === "food").length})` },
-                { id: "restaurant", label: `Quán mới (${items.filter((item) => item.targetType === "restaurant").length})` },
-              ] as const
-            ).map((tab) => (
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-background" role="tablist" aria-label="Hàng chờ">
+            {tabs.map((item) => (
               <button
-                key={tab.id}
+                key={item.id}
                 type="button"
-                onClick={() => setTypeFilter(tab.id)}
+                role="tab"
+                aria-selected={tab === item.id}
+                onClick={() => switchTab(item.id)}
                 className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors",
-                  typeFilter === tab.id ? "bg-primary-strong text-white" : "text-text-secondary hover:bg-primary-soft",
+                  "flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all",
+                  tab === item.id ? "bg-surface shadow-sm text-primary" : "text-text-secondary hover:text-text-primary",
                 )}
               >
-                {tab.label}
+                {item.label} ({item.count})
               </button>
             ))}
           </div>
@@ -171,13 +229,20 @@ export function ReviewerQueueContent({ initialItems, categories }: ReviewerQueue
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Tìm theo tên món, quán, người gửi..."
+              aria-label="Tìm hồ sơ"
               className="w-full h-9 pl-9 pr-3 rounded-xl bg-background text-sm text-text-primary placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
         </div>
 
         <div className="flex flex-col gap-2.5">
-          {filteredItems.length === 0 ? (
+          {items.length === 0 ? (
+            <div className="text-center text-sm text-text-secondary py-10 px-4">
+              {tab === "mine"
+                ? "Bạn chưa giữ đề xuất nào. Sang tab “Chờ nhận” để nhận xác minh."
+                : "Hiện chưa có đề xuất nào chờ nhận. Quay lại sau nhé."}
+            </div>
+          ) : filteredItems.length === 0 ? (
             <div className="text-center text-sm text-text-secondary py-10">Không tìm thấy hồ sơ phù hợp.</div>
           ) : (
             filteredItems.map((item) => (
@@ -193,7 +258,7 @@ export function ReviewerQueueContent({ initialItems, categories }: ReviewerQueue
           <EmptyState icon={ClipboardList} title="Chọn 1 hồ sơ" description="Chọn 1 mục ở danh sách bên trái để xem chi tiết." />
         ) : (
           <div className="flex flex-col bg-surface border border-border rounded-3xl shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3.5 bg-primary-soft/50">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3.5 bg-primary-soft/50">
               <span className="text-xs font-bold uppercase tracking-wider text-secondary-strong dark:text-text-primary">
                 {selected.targetType === "food" ? "Thẩm định món ăn" : "Thẩm định quán ăn mới"}
               </span>
@@ -202,7 +267,44 @@ export function ReviewerQueueContent({ initialItems, categories }: ReviewerQueue
               </span>
             </div>
 
+            {isMine && selected.claimExpiresAt && (
+              <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-b border-border">
+                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-text-primary">
+                  <ScanSearch className="size-4 text-primary" aria-hidden />
+                  Bạn đang giữ đề xuất này
+                  <ClaimCountdown expiresAt={selected.claimExpiresAt} className="ml-1" />
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  isLoading={pendingAction === "release"}
+                  disabled={pendingAction !== null}
+                  onClick={handleRelease}
+                  leftIcon={<Undo2 className="size-4" aria-hidden />}
+                >
+                  Nhả
+                </Button>
+              </div>
+            )}
+
             <div className="p-5 flex flex-col gap-4">
+              {isMine && selected.notes.length > 0 && (
+                <div className="p-4 rounded-2xl bg-accent-soft border border-accent/60 flex flex-col gap-2" role="status">
+                  <span className="flex items-center gap-1.5 text-sm font-bold text-text-primary">
+                    <MessageSquareText className="size-4 text-accent-ink" aria-hidden />
+                    Người gửi có {selected.notes.length} ghi chú đính chính — đọc trước khi xác minh
+                  </span>
+                  <ul className="flex flex-col gap-2">
+                    {selected.notes.map((item) => (
+                      <li key={item.id} className="p-3 rounded-xl bg-surface text-sm text-text-primary">
+                        <p className="whitespace-pre-line leading-relaxed">{item.content}</p>
+                        <span className="block mt-1 text-xs text-text-secondary">{formatDateTime(item.createdAt)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {selected.images.length > 0 ? (
                 <div className="grid grid-cols-4 gap-2">
                   <div className="col-span-4 relative h-64 rounded-2xl overflow-hidden bg-primary-soft">
@@ -235,9 +337,7 @@ export function ReviewerQueueContent({ initialItems, categories }: ReviewerQueue
                 <div className="flex items-baseline justify-between flex-wrap gap-2">
                   <h2 className="text-xl font-heading font-bold text-text-primary">{selected.name}</h2>
                   {selected.priceMin !== null && selected.priceMax !== null && (
-                    <span className="text-lg font-bold text-primary">
-                      {formatPriceRange(selected.priceMin, selected.priceMax)}
-                    </span>
+                    <span className="text-lg font-bold text-primary">{formatPriceRange(selected.priceMin, selected.priceMax)}</span>
                   )}
                 </div>
 
@@ -252,6 +352,13 @@ export function ReviewerQueueContent({ initialItems, categories }: ReviewerQueue
                   </div>
                 )}
 
+                {selected.hasNewRestaurant && (
+                  <p className="flex items-start gap-2 text-xs text-text-secondary p-3 rounded-xl bg-secondary-soft">
+                    <Store className="size-4 shrink-0 text-secondary-strong dark:text-text-primary" aria-hidden />
+                    Quán này do người gửi thêm mới kèm món. Duyệt hoặc từ chối món sẽ áp dụng luôn cho quán.
+                  </p>
+                )}
+
                 <div className="flex items-center gap-2 flex-wrap">
                   {selected.categoryNames.map((name) => (
                     <Badge key={name} variant="blue">
@@ -264,13 +371,12 @@ export function ReviewerQueueContent({ initialItems, categories }: ReviewerQueue
                     </Badge>
                   ))}
                   {selected.openingHours && <Badge variant="neutral">Mở cửa: {selected.openingHours}</Badge>}
+                  {selected.editCount > 0 && <Badge variant="neutral">Người gửi đã sửa {selected.editCount} lần</Badge>}
                 </div>
 
                 {selected.description && (
                   <div className="p-4 rounded-2xl bg-background flex flex-col gap-1.5">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary">
-                      Mô tả từ người gửi
-                    </span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary">Mô tả từ người gửi</span>
                     <p className="text-sm text-text-primary leading-relaxed">{selected.description}</p>
                   </div>
                 )}
@@ -307,14 +413,7 @@ export function ReviewerQueueContent({ initialItems, categories }: ReviewerQueue
                   )}
                 </div>
 
-                <FactEditPanel
-                  key={`facts-${selected.id}`}
-                  item={selected}
-                  disabled={!selected.canDecide}
-                  onSaved={(changes) =>
-                    setItems((prev) => prev.map((item) => (item.id === selected.id ? { ...item, ...changes } : item)))
-                  }
-                />
+                <FactEditPanel key={`facts-${selected.id}`} item={selected} disabled={!selected.canDecide} onSaved={patchSelected} />
 
                 {selected.targetType === "food" && selected.proposal?.status === "pending" && (
                   <ProposalReviewPanel
@@ -335,75 +434,91 @@ export function ReviewerQueueContent({ initialItems, categories }: ReviewerQueue
                 </div>
               )}
 
-              <div className="flex flex-col gap-3 pt-1">
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary">
-                    Gắn nhận xét nhanh
-                  </span>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {NOTE_PRESETS.map((preset) => (
-                      <button
-                        key={preset.label}
-                        type="button"
-                        disabled={!selected.canDecide}
-                        onClick={() => setNote((prev) => (prev.trim() ? `${prev}\n${preset.text}` : preset.text))}
-                        className="px-3 py-1 rounded-full bg-primary-soft hover:bg-primary-soft/70 text-primary text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
+              {needsClaim ? (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-2xl bg-primary-soft/60">
+                  <p className="flex-1 text-sm text-text-secondary">
+                    Nhận xác minh để giữ đề xuất trong {CLAIM_TTL_HOURS} giờ — trong lúc đó người gửi không sửa được nữa, và bạn mới
+                    duyệt, từ chối hoặc yêu cầu chỉnh sửa được. Quá hạn chưa xử lý thì đề xuất tự quay về “Chờ nhận”.
+                  </p>
+                  <Button
+                    isLoading={pendingAction === "claim"}
+                    disabled={selected.isSelfSubmitted || pendingAction !== null}
+                    onClick={handleClaim}
+                    leftIcon={<Hand className="size-4" aria-hidden />}
+                    className="shrink-0"
+                  >
+                    Nhận xác minh
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3 pt-1">
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary">Gắn nhận xét nhanh</span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {NOTE_PRESETS.map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          disabled={!selected.canDecide}
+                          onClick={() => setNote((prev) => (prev.trim() ? `${prev}\n${preset.text}` : preset.text))}
+                          className="px-3 py-1 rounded-full bg-primary-soft hover:bg-primary-soft/70 text-primary text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="reviewer-note" className="text-sm font-semibold text-text-primary">
-                    Ghi chú thẩm định (gửi tới người đóng góp)
-                  </label>
-                  <textarea
-                    id="reviewer-note"
-                    rows={3}
-                    disabled={!selected.canDecide}
-                    value={note}
-                    onChange={(event) => setNote(event.target.value)}
-                    placeholder="Bắt buộc khi Từ chối hoặc Yêu cầu sửa..."
-                    className="w-full p-3.5 rounded-2xl bg-background text-sm text-text-primary placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
-                  />
-                </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="reviewer-note" className="text-sm font-semibold text-text-primary">
+                      Ghi chú thẩm định / lý do (gửi tới người đóng góp)
+                    </label>
+                    <textarea
+                      id="reviewer-note"
+                      rows={3}
+                      disabled={!selected.canDecide}
+                      value={note}
+                      onChange={(event) => setNote(event.target.value)}
+                      placeholder="Bắt buộc khi Từ chối hoặc Yêu cầu chỉnh sửa — người gửi sẽ thấy nội dung này..."
+                      className="w-full p-3.5 rounded-2xl bg-background text-sm text-text-primary placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
+                    />
+                  </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <Button
-                    variant="primary"
-                    disabled={!selected.canDecide}
-                    isLoading={isSubmitting === "approved"}
-                    onClick={() => handleDecision("approved")}
-                    leftIcon={<CheckCircle2 className="size-4" aria-hidden />}
-                  >
-                    Duyệt hồ sơ
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    disabled={!selected.canDecide}
-                    isLoading={isSubmitting === "needs_revision"}
-                    onClick={() => handleDecision("needs_revision")}
-                    leftIcon={<EditIcon className="size-4" aria-hidden />}
-                  >
-                    Yêu cầu sửa
-                  </Button>
-                  <Button
-                    variant="outline"
-                    disabled={!selected.canDecide}
-                    isLoading={isSubmitting === "rejected"}
-                    onClick={() => handleDecision("rejected")}
-                    leftIcon={<XCircle className="size-4 text-accent-ink" aria-hidden />}
-                  >
-                    Từ chối
-                  </Button>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <Button
+                      variant="primary"
+                      disabled={!selected.canDecide || pendingAction !== null}
+                      isLoading={pendingAction === "approved"}
+                      onClick={() => handleDecision("approved")}
+                      leftIcon={<CheckCircle2 className="size-4" aria-hidden />}
+                    >
+                      Duyệt
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      disabled={!selected.canDecide || pendingAction !== null}
+                      isLoading={pendingAction === "needs_revision"}
+                      onClick={() => handleDecision("needs_revision")}
+                      leftIcon={<EditIcon className="size-4" aria-hidden />}
+                    >
+                      Yêu cầu chỉnh sửa
+                    </Button>
+                    <Button
+                      variant="outline"
+                      disabled={!selected.canDecide || pendingAction !== null}
+                      isLoading={pendingAction === "rejected"}
+                      onClick={() => handleDecision("rejected")}
+                      leftIcon={<XCircle className="size-4 text-accent-ink" aria-hidden />}
+                    >
+                      Từ chối
+                    </Button>
+                  </div>
+                  <p className="flex items-center gap-1.5 text-xs text-text-secondary">
+                    <Clock className="size-3.5" aria-hidden />
+                    Mọi quyết định đều được ghi vào Audit Log và thông báo tới người đóng góp (BR-F09).
+                  </p>
                 </div>
-                <p className="flex items-center gap-1.5 text-xs text-text-secondary">
-                  <Clock className="size-3.5" aria-hidden />
-                  Mọi quyết định đều được ghi vào Audit Log và thông báo tới người đóng góp (BR-F09).
-                </p>
-              </div>
+              )}
             </div>
           </div>
         )}

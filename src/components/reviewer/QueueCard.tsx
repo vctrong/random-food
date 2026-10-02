@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { Lock, MapPin, Tags, UtensilsCrossed } from "lucide-react";
+import { Lock, MapPin, MessageSquareText, Store, Tags, UtensilsCrossed } from "lucide-react";
 import { RestaurantImage } from "@/components/restaurant/RestaurantImage";
+import { ClaimCountdown } from "@/components/reviewer/ClaimCountdown";
 import { cn, formatPriceRange, formatRelativeTime } from "@/lib/utils";
 import type { ReviewQueueItem } from "@/types/reviewer";
 
@@ -58,6 +59,23 @@ export function QueueCard({ item, isActive, onSelect }: QueueCardProps) {
             <span className="text-[11px] text-text-secondary whitespace-nowrap">{formatRelativeTime(item.createdAt)}</span>
           </div>
           <h3 className="text-sm font-semibold text-text-primary truncate">{item.name}</h3>
+          {item.status === "in_review" && item.claimExpiresAt && <ClaimCountdown expiresAt={item.claimExpiresAt} />}
+          {(item.hasNewRestaurant || item.notes.length > 0) && (
+            <div className="flex flex-wrap gap-1.5">
+              {item.hasNewRestaurant && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-secondary-soft px-2 py-0.5 text-[11px] font-semibold text-secondary-strong dark:text-text-primary">
+                  <Store className="size-3" aria-hidden />
+                  Kèm quán mới
+                </span>
+              )}
+              {item.notes.length > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent-ink">
+                  <MessageSquareText className="size-3" aria-hidden />
+                  {item.notes.length} ghi chú đính chính
+                </span>
+              )}
+            </div>
+          )}
           {item.proposal?.status === "pending" && (
             <span className="self-start inline-flex items-center gap-1 rounded-full border border-dashed border-accent-strong/50 bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent-ink">
               <Tags className="size-3" aria-hidden />

@@ -38,6 +38,7 @@ const GROUPS: SettingGroup[] = [
       { label: "Món/quán được duyệt", description: "Đóng góp của bạn đã được công khai.", email: { kind: "optional", type: "food_approved" } },
       { label: "Món/quán bị từ chối", description: "Kèm lý do từ đội kiểm duyệt.", email: { kind: "optional", type: "food_rejected" } },
       { label: "Cần bạn chỉnh sửa", description: "Kèm góp ý, có nút mở thẳng form sửa.", email: { kind: "optional", type: "food_needs_revision" } },
+      { label: "Đề xuất được nhận xác minh", description: "FoodReviewer bắt đầu kiểm tra — đề xuất tạm khoá sửa.", email: { kind: "none" } },
       { label: "Thông tin được chỉnh giúp", description: "Đội kiểm duyệt sửa giá, địa chỉ, vị trí hoặc giờ mở cửa.", email: { kind: "none" } },
       { label: "Kết quả đề xuất danh mục", description: "Đề xuất được duyệt, gộp hoặc từ chối.", email: { kind: "none" } },
     ],

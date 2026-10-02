@@ -20,11 +20,13 @@ interface ContentModerationContentProps {
 
 type StatusFilter = "all" | ModerationStatus;
 
-const STATUS_VARIANT: Record<ModerationStatus, "warning" | "success" | "pink" | "blue"> = {
+const STATUS_VARIANT: Record<ModerationStatus, "warning" | "success" | "pink" | "blue" | "neutral"> = {
   pending: "warning",
+  in_review: "blue",
   approved: "success",
   rejected: "pink",
   needs_revision: "blue",
+  withdrawn: "neutral",
 };
 
 export function ContentModerationContent({ initialRows }: ContentModerationContentProps) {
@@ -139,10 +141,12 @@ export function ContentModerationContent({ initialRows }: ContentModerationConte
                 onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
                 className="h-10 px-3 rounded-xl bg-background text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
               >
-                <option value="pending">Chờ duyệt</option>
+                <option value="pending">Chờ xác minh</option>
+                <option value="in_review">Đang xác minh</option>
                 <option value="approved">Đã duyệt</option>
                 <option value="rejected">Từ chối</option>
                 <option value="needs_revision">Cần sửa</option>
+                <option value="withdrawn">Đã rút</option>
                 <option value="all">Tất cả</option>
               </select>
             </div>
@@ -209,6 +213,11 @@ export function ContentModerationContent({ initialRows }: ContentModerationConte
               )}
 
               <div className="pt-2 border-t border-border space-y-3">
+                {selected.moderationStatus === "in_review" && (
+                  <p className="text-sm text-text-secondary bg-warning/15 rounded-xl px-3 py-2">
+                    Đề xuất đang được một FoodReviewer giữ để xác minh. Quyết định ở đây sẽ thay họ — Reviewer đó sẽ nhận thông báo.
+                  </p>
+                )}
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}

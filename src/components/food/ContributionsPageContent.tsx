@@ -46,9 +46,10 @@ interface ContributionsPageContentProps {
 const TABS: { id: ContributionTab; label: string; count: (summary: ContributionSummary) => number }[] = [
   { id: "all", label: "Tất cả", count: (s) => s.total },
   { id: "approved", label: "Đã duyệt", count: (s) => s.approved },
-  { id: "pending", label: "Đang kiểm duyệt", count: (s) => s.pending },
+  { id: "pending", label: "Chờ / đang xác minh", count: (s) => s.pending },
   { id: "needs_revision", label: "Cần chỉnh sửa", count: (s) => s.needsRevision },
   { id: "rejected", label: "Bị từ chối", count: (s) => s.rejected },
+  { id: "withdrawn", label: "Đã rút", count: (s) => s.withdrawn },
 ];
 
 const SORT_OPTIONS: { id: ContributionSort; label: string }[] = [
@@ -90,7 +91,9 @@ export function ContributionsPageContent({ initialContributions, initialAchievem
   const { showToast } = useToast();
   // ?edit=<foodId> — nút "Sửa ngay" trong thông báo yêu cầu sửa mở thẳng form (kèm góp ý của Reviewer).
   const editParam = searchParams.get("edit");
-  const [detailTarget, setDetailTarget] = useState<Contribution | null>(null);
+  // Lưu id thay vì bản sao để modal chi tiết tự cập nhật sau khi tải lại (gửi ghi chú, rút...).
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const detailTarget = detailId ? (contributions.find((item) => item.id === detailId) ?? null) : null;
   const [editTarget, setEditTarget] = useState<Contribution | null>(null);
   const [handledEditParam, setHandledEditParam] = useState<string | null>(null);
   const requestedEdit = editParam ? contributions.find((item) => item.id === editParam) : undefined;
@@ -101,7 +104,7 @@ export function ContributionsPageContent({ initialContributions, initialAchievem
   if (editParam !== handledEditParam) {
     setHandledEditParam(editParam);
     if (requestedEdit && canOpenRequestedEdit) {
-      setDetailTarget(null);
+      setDetailId(null);
       setEditTarget(requestedEdit);
     }
   }
@@ -122,7 +125,7 @@ export function ContributionsPageContent({ initialContributions, initialAchievem
   const rangeEnd = Math.min(page * CONTRIBUTIONS_PAGE_SIZE, filteredCount);
 
   function startEdit(contribution: Contribution) {
-    setDetailTarget(null);
+    setDetailId(null);
     setEditTarget(contribution);
   }
 
@@ -172,10 +175,10 @@ export function ContributionsPageContent({ initialContributions, initialAchievem
         />
         <StatCard
           icon={Clock}
-          label="Đang kiểm duyệt"
+          label="Chờ / đang xác minh"
           value={summary.pending}
           unit="hồ sơ"
-          hint="FoodReviewer đang xử lý"
+          hint="Còn chờ nhận thì vẫn sửa được"
           accent="text-primary bg-primary-soft"
         />
         <StatCard
@@ -252,7 +255,12 @@ export function ContributionsPageContent({ initialContributions, initialAchievem
           ) : (
             <div className="flex flex-col gap-4">
               {visible.map((contribution) => (
-                <ContributionCard key={contribution.id} contribution={contribution} onOpenDetail={setDetailTarget} onEdit={startEdit} />
+                <ContributionCard
+                  key={contribution.id}
+                  contribution={contribution}
+                  onOpenDetail={(item) => setDetailId(item.id)}
+                  onEdit={startEdit}
+                />
               ))}
             </div>
           )}
@@ -327,7 +335,12 @@ export function ContributionsPageContent({ initialContributions, initialAchievem
         </aside>
       </div>
 
-      <ContributionDetailModal contribution={detailTarget} onClose={() => setDetailTarget(null)} onEdit={startEdit} />
+      <ContributionDetailModal
+        contribution={detailTarget}
+        onClose={() => setDetailId(null)}
+        onEdit={startEdit}
+        onChanged={refresh}
+      />
       <ContributionEditModal
         contribution={editTarget}
         categories={categories}

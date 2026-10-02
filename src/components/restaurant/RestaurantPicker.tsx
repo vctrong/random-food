@@ -14,8 +14,8 @@ import type { RestaurantOption } from "@/types/restaurant";
 interface RestaurantPickerProps {
   selected: RestaurantOption | null;
   onSelect: (restaurant: RestaurantOption) => void;
-  /** Không thấy quán → chuyển sang tạo quán mới, điền sẵn tên vừa gõ. */
-  onCreateNew: (prefillName: string) => void;
+  /** Không thấy quán → chuyển sang tạo quán mới, điền sẵn tên vừa gõ. Bỏ trống = chỉ chọn quán có sẵn. */
+  onCreateNew?: (prefillName: string) => void;
   labelledBy: string;
 }
 
@@ -162,14 +162,19 @@ export function RestaurantPicker({ selected, onSelect, onCreateNew, labelledBy }
           typed ? (
             <span>
               Chưa có quán nào khớp “{typed}”.
-              <br />
-              Có thể quán chưa có trên NayAnGi — thêm mới luôn nha.
+              {onCreateNew && (
+                <>
+                  <br />
+                  Có thể quán chưa có trên NayAnGi — thêm mới luôn nha.
+                </>
+              )}
             </span>
           ) : (
             "Chưa có quán nào được duyệt."
           )
         }
         footer={
+          onCreateNew && (
           <button
             type="button"
             onClick={() => {
@@ -181,6 +186,7 @@ export function RestaurantPicker({ selected, onSelect, onCreateNew, labelledBy }
             <Plus className="size-4 shrink-0" aria-hidden />
             <span className="truncate">{typed ? `Thêm quán mới: “${typed}”` : "Không thấy quán? Thêm quán mới"}</span>
           </button>
+          )
         }
       />
     </ResponsivePicker>

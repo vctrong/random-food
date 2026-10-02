@@ -2,7 +2,20 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { BadgeCheck, Bookmark, ExternalLink, Hourglass, MessageSquareText, PenLine, Star, Store, UtensilsCrossed } from "lucide-react";
+import {
+  BadgeCheck,
+  Bookmark,
+  ExternalLink,
+  Hourglass,
+  MessageSquareText,
+  PenLine,
+  ScanSearch,
+  Star,
+  Store,
+  Undo2,
+  UtensilsCrossed,
+} from "lucide-react";
+import { MAX_PENDING_EDITS } from "@/features/contributions/submissionRules";
 import { EATING_LEVEL_LABELS } from "@/constants/categories";
 import { cn, formatDate, formatPriceRange, isAllowedImageHost } from "@/lib/utils";
 import { ContributionStatusBadge } from "@/components/food/ContributionStatusBadge";
@@ -12,6 +25,15 @@ interface ContributionCardProps {
   contribution: Contribution;
   onOpenDetail: (contribution: Contribution) => void;
   onEdit: (contribution: Contribution) => void;
+}
+
+/** Nhãn nút sửa theo trạng thái: needs_revision là sửa xong gửi lại luôn. */
+export function getEditActionLabel(contribution: Contribution): string {
+  return contribution.foodStatus === "needs_revision" ? "Chỉnh sửa & gửi lại" : "Chỉnh sửa";
+}
+
+export function canEditContribution(contribution: Contribution): boolean {
+  return contribution.editable.food || contribution.editable.restaurant;
 }
 
 /** Phản hồi hiện tại của đội kiểm duyệt — ghép ghi chú của món và của quán (nếu quán do user tạo kèm). */
@@ -112,8 +134,26 @@ export function ContributionCard({ contribution, onOpenDetail, onEdit }: Contrib
             <div className="p-3 rounded-xl bg-primary-soft/60 flex items-start gap-2 text-xs text-text-secondary">
               <Hourglass className="size-4 shrink-0 mt-0.5 text-primary" aria-hidden />
               <p>
-                FoodReviewer sẽ kiểm tra thông tin món và địa chỉ quán thực tế trước khi công khai. Bạn sẽ nhận thông báo khi có kết quả.
+                Đang chờ FoodReviewer nhận xác minh. Phát hiện nhập sai thì sửa ngay lúc này nha
+                {contribution.remainingEdits !== null && (
+                  <span className="font-semibold text-text-primary">
+                    {" "}— còn {contribution.remainingEdits}/{MAX_PENDING_EDITS} lần sửa
+                  </span>
+                )}
+                .
               </p>
+            </div>
+          ) : status === "in_review" ? (
+            <div className="p-3 rounded-xl bg-secondary-soft flex items-start gap-2 text-xs text-text-secondary">
+              <ScanSearch className="size-4 shrink-0 mt-0.5 text-secondary-strong dark:text-text-primary" aria-hidden />
+              <p>
+                FoodReviewer đang xác minh thực tế nên đề xuất tạm khoá sửa. Có gì sai, bạn gửi ghi chú đính chính hoặc rút đề xuất.
+              </p>
+            </div>
+          ) : status === "withdrawn" ? (
+            <div className="p-3 rounded-xl bg-background flex items-start gap-2 text-xs text-text-secondary">
+              <Undo2 className="size-4 shrink-0 mt-0.5" aria-hidden />
+              <p>Bạn đã rút đề xuất này — chỉ còn để xem lại.</p>
             </div>
           ) : (
             <div
@@ -149,14 +189,24 @@ export function ContributionCard({ contribution, onOpenDetail, onEdit }: Contrib
         >
           Xem chi tiết
         </button>
-        {contribution.status === "needs_revision" && (
+        {contribution.canSendNote && (
+          <button
+            type="button"
+            onClick={() => onOpenDetail(contribution)}
+            className="h-9 px-4 rounded-full border border-border text-text-primary text-sm font-semibold hover:bg-primary-soft transition-colors inline-flex items-center gap-1.5"
+          >
+            <MessageSquareText className="size-4" aria-hidden />
+            Gửi ghi chú đính chính
+          </button>
+        )}
+        {canEditContribution(contribution) && (
           <button
             type="button"
             onClick={() => onEdit(contribution)}
-            className="h-9 px-4 rounded-full bg-accent-strong text-white text-sm font-semibold shadow-sm hover:opacity-90 active:scale-95 transition-all inline-flex items-center gap-1.5"
+            className="h-9 px-4 rounded-full bg-accent-strong text-white text-sm font-semibold shadow-sm hover:bg-accent-strong-hover active:scale-95 transition-all inline-flex items-center gap-1.5"
           >
             <PenLine className="size-4" aria-hidden />
-            Chỉnh sửa & nộp lại
+            {getEditActionLabel(contribution)}
           </button>
         )}
         {contribution.status === "approved" && (

@@ -19,10 +19,27 @@ interface FactEditPanelProps {
   onSaved: (changes: Partial<ReviewQueueItem>) => void;
 }
 
+/** Gửi 1 lần chỉnh dữ kiện; trả thông báo lỗi hoặc null. */
+async function postEdit(body: unknown): Promise<string | null> {
+  try {
+    const response = await fetch("/api/reviewer/contribution-edit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (response.ok) return null;
+    const data = (await response.json().catch(() => ({}))) as { error?: string };
+    return getApiErrorMessage(response.status, data.error);
+  } catch {
+    return getNetworkErrorMessage();
+  }
+}
+
 /**
- * Ngoại lệ BR-F08: FoodReviewer chỉnh ngay DỮ KIỆN THỰC TẾ của đóng góp đang chờ
- * duyệt — giá món; địa chỉ, vị trí, giờ mở cửa của quán. Tên, mô tả, ảnh, danh mục
- * thì dùng "Yêu cầu sửa". Server chặn các field khác (api/reviewer/contribution-edit).
+ * Ngoại lệ BR-F08: FoodReviewer chỉnh ngay DỮ KIỆN THỰC TẾ của đề xuất mình đang giữ —
+ * giá món; địa chỉ, vị trí, giờ mở cửa của quán (quán mới đi kèm món, hoặc quán đứng riêng).
+ * Tên, mô tả, ảnh, danh mục thì dùng "Yêu cầu chỉnh sửa". Server chặn field khác
+ * (api/reviewer/contribution-edit).
  */
 export function FactEditPanel({ item, disabled, onSaved }: FactEditPanelProps) {
   const { showToast } = useToast();
@@ -37,47 +54,46 @@ export function FactEditPanel({ item, disabled, onSaved }: FactEditPanelProps) {
   const [isSaving, setIsSaving] = useState(false);
 
   const isFood = item.targetType === "food";
+  // Quán sửa được: quán đứng riêng, hoặc quán mới user tạo kèm món (vẫn đang chờ duyệt).
+  const restaurantTargetId = isFood ? (item.hasNewRestaurant ? item.restaurantId : null) : item.id;
   const min = parsePrice(priceMin);
   const max = parsePrice(priceMax);
-  const priceChanged = min !== item.priceMin || max !== item.priceMax;
-  const restaurantChanges = {
-    ...(address.trim() !== (item.address ?? "") && { address: address.trim() }),
-    ...(openingHours.trim() !== (item.openingHours ?? "") && { openingHours: openingHours.trim() }),
-    ...(JSON.stringify(location) !== JSON.stringify(item.location) && { location }),
-  };
-  const hasChanges = isFood ? priceChanged : Object.keys(restaurantChanges).length > 0;
-  const valid = isFood ? min !== null && max !== null && max >= min : address.trim().length > 0;
+  const priceChanged = isFood && (min !== item.priceMin || max !== item.priceMax);
+  const restaurantChanges = restaurantTargetId
+    ? {
+        ...(address.trim() !== (item.address ?? "") && { address: address.trim() }),
+        ...(openingHours.trim() !== (item.openingHours ?? "") && { openingHours: openingHours.trim() }),
+        ...(JSON.stringify(location) !== JSON.stringify(item.location) && { location }),
+      }
+    : {};
+  const restaurantChanged = Object.keys(restaurantChanges).length > 0;
+  const hasChanges = priceChanged || restaurantChanged;
+  const valid = (!priceChanged || (min !== null && max !== null && max >= min)) && (!restaurantChanged || address.trim().length > 0);
+  const scopeLabel = [isFood && "giá", restaurantTargetId && "địa chỉ · vị trí · giờ mở cửa"].filter(Boolean).join(" · ");
 
   async function save() {
     if (!hasChanges || !valid) return;
     setIsSaving(true);
-    try {
-      const body = isFood
-        ? { targetType: "food", targetId: item.id, note, food: { priceMin: min, priceMax: max } }
-        : { targetType: "restaurant", targetId: item.id, note, restaurant: restaurantChanges };
-      const response = await fetch("/api/reviewer/contribution-edit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = (await response.json().catch(() => ({}))) as { error?: string };
-      if (!response.ok) {
-        showToast(getApiErrorMessage(response.status, data.error), "error");
-        return;
-      }
-      showToast("Đã chỉnh thông tin và báo cho người đóng góp.", "success");
-      onSaved(
-        isFood
-          ? { priceMin: min, priceMax: max }
-          : { address: address.trim(), openingHours: openingHours.trim() || null, location },
-      );
-      setNote("");
-      setOpen(false);
-    } catch {
-      showToast(getNetworkErrorMessage(), "error");
-    } finally {
-      setIsSaving(false);
+    const changes: Partial<ReviewQueueItem> = {};
+    let error: string | null = null;
+    if (priceChanged) {
+      error = await postEdit({ targetType: "food", targetId: item.id, note, food: { priceMin: min, priceMax: max } });
+      if (!error) Object.assign(changes, { priceMin: min, priceMax: max });
     }
+    if (!error && restaurantChanged && restaurantTargetId) {
+      error = await postEdit({ targetType: "restaurant", targetId: restaurantTargetId, note, restaurant: restaurantChanges });
+      if (!error) Object.assign(changes, { address: address.trim(), openingHours: openingHours.trim() || null, location });
+    }
+    setIsSaving(false);
+
+    if (Object.keys(changes).length > 0) onSaved(changes);
+    if (error) {
+      showToast(error, "error");
+      return;
+    }
+    showToast("Đã chỉnh thông tin và báo cho người đóng góp.", "success");
+    setNote("");
+    setOpen(false);
   }
 
   return (
@@ -91,15 +107,13 @@ export function FactEditPanel({ item, disabled, onSaved }: FactEditPanelProps) {
       >
         <PencilLine className="size-4 text-primary" aria-hidden />
         <span className="flex-1">Chỉnh dữ kiện thực tế</span>
-        <span className="hidden sm:inline text-xs font-normal text-text-secondary">
-          {isFood ? "giá" : "địa chỉ · vị trí · giờ mở cửa"}
-        </span>
+        <span className="hidden sm:inline text-xs font-normal text-text-secondary">{scopeLabel}</span>
         <ChevronDown className={cn("size-4 text-text-secondary transition-transform", open && "rotate-180")} aria-hidden />
       </button>
 
       {open && (
         <div className="flex flex-col gap-3 border-t border-border p-4">
-          {isFood ? (
+          {isFood && (
             <div className="grid grid-cols-2 gap-3">
               {[
                 { id: ids.min, label: "Giá từ (đ)", value: priceMin, set: setPriceMin },
@@ -119,11 +133,12 @@ export function FactEditPanel({ item, disabled, onSaved }: FactEditPanelProps) {
                 </div>
               ))}
             </div>
-          ) : (
+          )}
+          {restaurantTargetId && (
             <>
               <div className="flex flex-col gap-1">
                 <label htmlFor={ids.address} className="text-xs font-semibold text-text-primary">
-                  Địa chỉ
+                  Địa chỉ quán
                 </label>
                 <input id={ids.address} value={address} maxLength={300} onChange={(event) => setAddress(event.target.value)} className={inputClass} />
               </div>
@@ -153,7 +168,7 @@ export function FactEditPanel({ item, disabled, onSaved }: FactEditPanelProps) {
             className="w-full resize-none rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/15"
           />
           <p className="text-xs text-text-secondary">
-            Tên, mô tả, ảnh và danh mục không sửa ở đây — hãy dùng “Yêu cầu sửa” để người gửi tự chỉnh.
+            Tên, mô tả, ảnh và danh mục không sửa ở đây — hãy dùng “Yêu cầu chỉnh sửa” để người gửi tự chỉnh.
           </p>
           <div className="flex justify-end">
             <Button type="button" size="sm" onClick={() => void save()} disabled={!hasChanges || !valid} isLoading={isSaving}>
