@@ -1,4 +1,5 @@
 import { Schema, model, models, type InferSchemaType } from "mongoose";
+import { SUBMISSION_STATUSES } from "@/features/contributions/submissionRules";
 
 const foodSchema = new Schema({
   restaurantId: { type: Schema.Types.ObjectId, ref: "Restaurant", required: true },
@@ -25,13 +26,16 @@ const foodSchema = new Schema({
     max: { type: Number },
   },
   tags: [{ type: String }],
-  moderationStatus: {
-    type: String,
-    enum: ["pending", "approved", "rejected", "needs_revision"],
-    default: "pending",
-  },
+  /** pending | in_review | needs_revision | approved | rejected | withdrawn — chuyển trạng thái chỉ qua lib/submissionWorkflow.ts. */
+  moderationStatus: { type: String, enum: SUBMISSION_STATUSES, default: "pending" },
   visibility: { type: String, enum: ["visible", "hidden", "deleted"], default: "visible" },
+  /** Lý do reject / needs_revision — hiển thị cho user. */
   moderationNote: { type: String },
+  /** Reviewer đang giữ đề xuất (`in_review`) và thời điểm nhận — hết hạn thì tự nhả. */
+  reviewerId: { type: Schema.Types.ObjectId, ref: "User" },
+  claimedAt: { type: Date },
+  /** Số lần user tự sửa khi đang `pending` (tối đa MAX_PENDING_EDITS); reset khi gửi lại từ needs_revision. */
+  editCount: { type: Number, default: 0 },
   verification: {
     verifiedBy: { type: Schema.Types.ObjectId, ref: "User" },
     verifiedAt: { type: Date },
@@ -46,6 +50,8 @@ const foodSchema = new Schema({
 
 foodSchema.index({ moderationStatus: 1, visibility: 1, eatingLevels: 1 });
 foodSchema.index({ restaurantId: 1 });
+foodSchema.index({ moderationStatus: 1, claimedAt: 1 });
+foodSchema.index({ reviewerId: 1, moderationStatus: 1 });
 foodSchema.index({ categoryIds: 1 });
 foodSchema.index({ name: "text", description: "text", tags: "text" });
 

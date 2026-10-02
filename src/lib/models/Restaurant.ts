@@ -34,7 +34,8 @@ const restaurantSchema = new Schema({
   mergedIntoRestaurantId: { type: Schema.Types.ObjectId, ref: "Restaurant" },
   moderationStatus: {
     type: String,
-    enum: ["pending", "approved", "rejected", "needs_revision"],
+    // withdrawn: quán mới đi kèm 1 đề xuất món đã bị user rút (không còn món nào khác dùng).
+    enum: ["pending", "approved", "rejected", "needs_revision", "withdrawn"],
     default: "pending",
   },
   visibility: { type: String, enum: ["visible", "hidden", "deleted"], default: "visible" },
