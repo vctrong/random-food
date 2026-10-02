@@ -19,7 +19,7 @@ const cspReportOnlyHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""};
   style-src 'self' 'unsafe-inline';
-  img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com https://picsum.photos https://*.tile.openstreetmap.org;
+  img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com https://picsum.photos https://server.arcgisonline.com https://*.basemaps.cartocdn.com;
   font-src 'self' data:;
   connect-src 'self';
   object-src 'none';
@@ -38,8 +38,9 @@ const securityHeaders = [
   // Trùng lặp có chủ đích với CSP frame-ancestors — X-Frame-Options cho trình duyệt cũ chưa hiểu CSP.
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  // Tắt hết các quyền trình duyệt không dùng tới (không có tính năng camera/mic/geolocation nào trong app).
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
+  // Tắt quyền trình duyệt không dùng tới. geolocation=(self): nút "Tôi đang ở quán này" / "Ưu tiên quán gần tôi"
+  // cần định vị trên chính site này (trước đây `geolocation=()` chặn hẳn, nút luôn báo lỗi).
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), payment=(), usb=()" },
   { key: "Content-Security-Policy-Report-Only", value: cspReportOnlyHeader },
 ];
 

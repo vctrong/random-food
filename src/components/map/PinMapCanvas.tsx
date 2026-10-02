@@ -3,6 +3,7 @@
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
+import { MAP_MAX_ZOOM, addBaseLayers, watchContainerSize } from "@/components/map/mapLayers";
 import { cn } from "@/lib/utils";
 import type { RestaurantOption } from "@/types/restaurant";
 
@@ -69,7 +70,7 @@ export default function PinMapCanvas({
     const map = L.map(container, {
       center: [center.lat, center.lng],
       zoom,
-      maxZoom: 19,
+      maxZoom: MAP_MAX_ZOOM,
       zoomControl: false,
       // Zoom quanh TÂM để ghim giữa không trượt khỏi vị trí đã chọn.
       scrollWheelZoom: "center",
@@ -79,16 +80,7 @@ export default function PinMapCanvas({
     mapRef.current = map;
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
-    const street = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    }).addTo(map);
-    // Ảnh vệ tinh Esri (không cần API key) — dễ nhận ra mái nhà/ngõ khi chỉnh ghim.
-    const satellite = L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      { maxZoom: 19, attribution: "Tiles &copy; Esri &mdash; Maxar, Earthstar Geographics" },
-    );
-    L.control.layers({ "Đường phố": street, "Vệ tinh": satellite }, undefined, { position: "topright" }).addTo(map);
+    addBaseLayers(map);
     markersRef.current = L.layerGroup().addTo(map);
 
     map.on("movestart", () => setIsMoving(true));
@@ -105,11 +97,10 @@ export default function PinMapCanvas({
       callbacksRef.current.onUserMoveEnd?.({ lat: current.lat, lng: current.lng });
     });
 
-    const resizeObserver = new ResizeObserver(() => map.invalidateSize());
-    resizeObserver.observe(container);
+    const stopWatching = watchContainerSize(map, container);
 
     return () => {
-      resizeObserver.disconnect();
+      stopWatching();
       map.remove();
       mapRef.current = null;
       markersRef.current = null;

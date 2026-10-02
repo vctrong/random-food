@@ -3,6 +3,7 @@
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef } from "react";
 import L from "leaflet";
+import { MAP_MAX_ZOOM, addBaseLayers, watchContainerSize } from "@/components/map/mapLayers";
 
 interface LocationPickerMapProps {
   lat: number;
@@ -50,26 +51,10 @@ export default function LocationPickerMap({ lat, lng, onPick }: LocationPickerMa
       delete leafletContainer._leaflet_id;
     }
 
-    const map = L.map(container, { center: [lat, lng], zoom: 15, maxZoom: 19 });
+    const map = L.map(container, { center: [lat, lng], zoom: 15, maxZoom: MAP_MAX_ZOOM });
     mapRef.current = map;
-
-    const streetLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    }).addTo(map);
-
-    // Ảnh vệ tinh Esri (không cần API key) — giúp nhận ra mái nhà/ngõ khi chấm tay quán chưa có trên bản đồ.
-    const satelliteLayer = L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      {
-        maxZoom: 19,
-        attribution: "Tiles &copy; Esri &mdash; Maxar, Earthstar Geographics",
-      },
-    );
-
-    L.control
-      .layers({ "Đường phố": streetLayer, "Vệ tinh": satelliteLayer }, undefined, { position: "topright" })
-      .addTo(map);
+    addBaseLayers(map);
+    const stopWatching = watchContainerSize(map, container);
 
     const marker = L.marker([lat, lng], { icon: createPinIcon(), draggable: true }).addTo(map);
     markerRef.current = marker;
@@ -85,6 +70,7 @@ export default function LocationPickerMap({ lat, lng, onPick }: LocationPickerMa
     });
 
     return () => {
+      stopWatching();
       map.remove();
       mapRef.current = null;
       markerRef.current = null;
