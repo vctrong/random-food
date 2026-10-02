@@ -15,6 +15,7 @@
 | Danh mục | ✦ | 1–3, **tính cả 1 danh mục đề xuất** |
 | Quán | ✦ | 1 mục: chọn quán có sẵn, *hoặc* tên + địa chỉ quán mới |
 | Vị trí trên bản đồ | (nếu có) | |
+| Giờ mở cửa | ✦ (chỉ khi tạo quán mới) | Giờ hợp lệ **hoặc** "Không rõ giờ" — [`opening-hours.md`](opening-hours.md) |
 | Ảnh quán | (nếu có) | 0–3 ảnh |
 
 - Nhãn dùng `components/ui/FieldLabel.tsx`: ✦ màu accent "thở" nhẹ → điền hợp lệ thì xoay/nở thành ✓ primary (~200ms). Có text ẩn cho screen reader; input đặt `aria-required`; hiệu ứng tắt theo `prefers-reduced-motion` / Cài đặt "Giảm chuyển động".
@@ -60,6 +61,8 @@
 - **Đường B** — user kéo bản đồ (ghim cố định giữa, zoom quanh tâm) hoặc bấm "📍 Tôi đang ở quán này" → reverse geocode → điền ô địa chỉ; nếu user đã tự sửa ô địa chỉ thì chỉ hiện gợi ý "Dùng địa chỉ này / Giữ của tôi".
 - Mobile: bản đồ nhỏ chỉ để xem, chạm để mở toàn màn hình, chỉnh xong bấm "Xác nhận vị trí".
 - Mặc định ở trung tâm Cần Thơ, zoom 15 (mức phường). Có nút "Bỏ ghim".
+- **Lớp nền (mọi bản đồ, `components/map/mapLayers.ts`)**: mặc định **Vệ tinh** (Esri World Imagery + lớp nhãn tên đường/địa danh của Esri), nút chuyển sang **Đường phố** (CARTO Voyager). Lựa chọn nhớ trong `localStorage` (`nayangi:map-base-layer`, lỗi → vệ tinh). Không dùng `tile.openstreetmap.org` trực tiếp: DNS một số nhà mạng trả NXDOMAIN cho `openstreetmap.org` → bản đồ xám trơn. Domain tile phải khớp `img-src` CSP (`next.config.ts`). CARTO miễn phí ~75k lượt xem/tháng cho dự án phi thương mại.
+- `Permissions-Policy: geolocation=(self)` — cần cho nút "📍 Tôi đang ở quán này" / "Ưu tiên quán gần tôi" (trước đây `geolocation=()` chặn hẳn).
 - Hiện marker quán đã duyệt trong 300m quanh ghim; quán ≤ 50m (ưu tiên tên giống) → "Quán này có sẵn rồi phải không?" + "Chọn quán này / Không phải". Chỉ gợi ý, không chặn.
 - `locationSource`: `gps` / `pin_confirmed` / `geocoded` (không đụng bản đồ, geocode được) / `none` (geocode thất bại hoặc bỏ ghim — vẫn gửi được). Logic: `features/contribute-food/locationLogic.ts` (có test).
 - Màn duyệt reviewer/admin: badge độ tin cậy theo `locationSource`, bản đồ nhỏ, link "Mở trên Google Maps".

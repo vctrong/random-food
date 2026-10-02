@@ -128,7 +128,12 @@ erDiagram
                                      // KHÔNG lưu URL ảnh mặc định — fallback khi hiển thị (RestaurantImage)
   nameNormalized: "quan bun bo co ba",          // không dấu, lowercase — tự cập nhật khi save (pre validate)
   addressNormalized: "123 nguyen van cu ninh kieu can tho",
-  openingHours: "06:00 - 21:00",
+  openingHours: "Hằng ngày 06:00–21:00",   // chuỗi TÓM TẮT do server sinh từ openingSchedule (giữ cho chỗ cũ đọc chuỗi)
+  openingSchedule: {                // giờ mở cửa có cấu trúc — chi tiết: opening-hours.md
+    status: "known",                //   "known" | "unknown" ("Không rõ giờ" — reviewer bổ sung)
+    mode: "daily",                  //   "daily" | "weekly" (chế độ form)
+    days: [{ day: 0, closed: false, allDay: false, ranges: [{ open: "06:00", close: "21:00" }] } /* …đủ 7 ngày */]
+  },
   businessStatus: "open",          // "open" | "closed" — quán đóng cửa ẩn khỏi random, /mon-an, tìm kiếm,
                                      // chọn quán, quán gần; không xoá dữ liệu (BR-M12)
   closedAt: ISODate,                // khi businessStatus = "closed"
